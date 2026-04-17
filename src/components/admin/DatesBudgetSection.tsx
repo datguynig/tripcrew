@@ -7,6 +7,8 @@ import {
 } from "@/app/(app)/trips/[slug]/admin/actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { useToast } from "@/hooks/useToast";
 
 const INPUT_CLASS =
@@ -60,19 +62,11 @@ export function DatesBudgetSection({
         name="startDate"
         helper="Drives the T-minus counter."
       >
-        <input
-          type="date"
-          defaultValue={startDate ?? ""}
-          className={INPUT_CLASS}
-        />
+        <DatePicker name="startDate" defaultValue={startDate} />
       </Field>
 
       <Field label="End date" name="endDate">
-        <input
-          type="date"
-          defaultValue={endDate ?? ""}
-          className={INPUT_CLASS}
-        />
+        <DatePicker name="endDate" defaultValue={endDate} />
       </Field>
 
       <Field
@@ -80,10 +74,9 @@ export function DatesBudgetSection({
         name="voteDeadline"
         helper="Soft deadline shown on the Where to? tab. Not enforced."
       >
-        <input
-          type="datetime-local"
-          defaultValue={isoToLocalInput(voteDeadline)}
-          className={INPUT_CLASS}
+        <DateTimePicker
+          name="voteDeadline"
+          defaultValue={isoToLocalInput(voteDeadline) || null}
         />
       </Field>
 

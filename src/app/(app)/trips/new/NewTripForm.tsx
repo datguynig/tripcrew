@@ -4,6 +4,8 @@ import { useActionState } from "react";
 import { createTrip, type CreateTripState } from "@/lib/actions/trips";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { DateTimePicker } from "@/components/ui/DateTimePicker";
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -27,24 +29,16 @@ export function NewTripForm() {
         />
       </Field>
 
-      <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
-        <Field
-          label="Start date"
-          name="startDate"
-          helper="Optional, set later if unknown"
-        >
-          <input
-            type="date"
-            className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
-          />
-        </Field>
-        <Field label="End date" name="endDate">
-          <input
-            type="date"
-            className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
-          />
-        </Field>
-      </div>
+      <Field
+        label="Start date"
+        name="startDate"
+        helper="Optional, set later if unknown"
+      >
+        <DatePicker name="startDate" />
+      </Field>
+      <Field label="End date" name="endDate">
+        <DatePicker name="endDate" />
+      </Field>
 
       <Field
         label="Destination candidates"
@@ -63,10 +57,7 @@ export function NewTripForm() {
         name="voteDeadline"
         helper="Optional soft deadline — shown to the crew, not enforced"
       >
-        <input
-          type="datetime-local"
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
-        />
+        <DateTimePicker name="voteDeadline" />
       </Field>
 
       {state?.error && (
