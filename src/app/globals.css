@@ -50,12 +50,14 @@ body {
   color: var(--color-bg);
 }
 
-button,
-input,
-textarea,
-select {
-  font-family: inherit;
-  color: inherit;
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    color: inherit;
+  }
 }
 
 .tabular {
