@@ -32,13 +32,13 @@ export default async function ShortlistPage({
       .returns<Vote[]>(),
   ]);
 
+  const lead =
+    trip.meta?.section_leads?.shortlist ??
+    "Vote yes, meh, or no. Ranked by consensus. Tap twice to clear.";
+
   return (
     <section className="py-14 pb-24 section-enter">
-      <SectionHeader
-        code="§ 03"
-        title="Shortlist."
-        lead="Vote yes, meh, or no. Ranked by consensus. Tap twice to clear."
-      />
+      <SectionHeader code="§ 03" title="Shortlist." lead={lead} />
       <ShortlistBoard
         activities={activities ?? []}
         initialVotes={votes ?? []}

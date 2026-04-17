@@ -47,12 +47,16 @@ export default async function BookingsPage({
   const done = bookings?.filter((b) => b.done).length ?? 0;
   const total = bookings?.length ?? 0;
 
+  const lead =
+    trip.meta?.section_leads?.bookings ??
+    "The checklist. Claim one, book it, tick it. Simple accountability.";
+
   return (
     <section className="py-14 pb-24 section-enter">
       <SectionHeader
         code={`§ 04 · ${done}/${total}`}
         title="Bookings."
-        lead="The checklist. Claim one, book it, tick it. Simple accountability."
+        lead={lead}
       />
       <BookingsList initial={bookings ?? []} crew={crew} tripId={trip.id} />
     </section>

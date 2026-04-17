@@ -42,13 +42,13 @@ export default async function LedgerPage({
       return [{ id: row.user_id, name: profile.name }];
     }) ?? [];
 
+  const lead =
+    trip.meta?.section_leads?.ledger ??
+    "Pool everything, split even. Log what you pay, balances update.";
+
   return (
     <section className="py-14 pb-24 section-enter">
-      <SectionHeader
-        code="§ 05"
-        title="Ledger."
-        lead="Pool everything, split even. Log what you pay, balances update."
-      />
+      <SectionHeader code="§ 05" title="Ledger." lead={lead} />
       <Ledger
         initial={expenses ?? []}
         crew={crew}
