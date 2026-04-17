@@ -30,10 +30,17 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const isServerAction = request.headers.has("next-action");
   const isAuthRoute =
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/callback") ||
     pathname.startsWith("/profile");
+
+  // Server Actions are POSTed with internal Next.js headers. Redirecting them
+  // from middleware turns them into an invalid action response on the client.
+  if (isServerAction) {
+    return response;
+  }
 
   if (!user && !isAuthRoute) {
     const url = request.nextUrl.clone();
