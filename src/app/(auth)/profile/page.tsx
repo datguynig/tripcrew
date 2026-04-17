@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createProfile, type ProfileState } from "./actions";
+import { Button } from "@/components/ui/Button";
 
 export default function ProfilePage() {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
@@ -41,13 +42,14 @@ export default function ProfilePage() {
               {state.error}
             </div>
           )}
-          <button
+          <Button
             type="submit"
             disabled={pending}
-            className="bg-fg text-bg border-0 py-4 px-6 text-[13px] font-semibold uppercase tracking-[0.1em] cursor-pointer rounded-lg mt-5 hover:bg-accent transition-colors disabled:opacity-60"
+            size="lg"
+            className="mt-5 uppercase tracking-[0.1em] font-semibold"
           >
             {pending ? "Saving…" : "Enter →"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

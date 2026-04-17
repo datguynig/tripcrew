@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getUserTrips } from "@/lib/auth";
+import { buttonClasses } from "@/components/ui/Button";
 
 export const revalidate = 0;
 
@@ -29,10 +30,7 @@ export default async function Dashboard() {
         >
           Your trips<span className="text-accent">.</span>
         </h1>
-        <Link
-          href="/trips/new"
-          className="bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer"
-        >
+        <Link href="/trips/new" className={buttonClasses()}>
           Create trip
         </Link>
       </div>
@@ -46,10 +44,7 @@ export default async function Dashboard() {
             Start planning — invite your crew, vote on the destination, split
             the money.
           </div>
-          <Link
-            href="/trips/new"
-            className="inline-block bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer"
-          >
+          <Link href="/trips/new" className={buttonClasses()}>
             Create your first trip
           </Link>
         </div>

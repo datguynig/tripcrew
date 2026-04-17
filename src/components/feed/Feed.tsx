@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { addPost } from "@/lib/actions/feed";
 
 import type { Post } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 type CrewMap = Record<string, string>;
 
@@ -100,12 +101,7 @@ export function Feed({ initial, authorsById, tripId }: Props) {
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 min-h-[72px] leading-[1.5] resize-y"
         />
         <div className="flex justify-end">
-          <button
-            onClick={handlePost}
-            className="bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer active:scale-[0.98]"
-          >
-            Post
-          </button>
+          <Button onClick={handlePost}>Post</Button>
         </div>
       </div>
 

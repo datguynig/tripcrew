@@ -9,6 +9,7 @@ import {
   toggleBookingDone,
 } from "@/lib/actions/bookings";
 import type { Booking } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 type CrewOption = { id: string; name: string };
 
@@ -117,12 +118,7 @@ export function BookingsList({ initial, crew, tripId }: Props) {
           placeholder="Add a booking..."
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
         />
-        <button
-          onClick={handleAdd}
-          className="bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer active:scale-[0.98]"
-        >
-          Add
-        </button>
+        <Button onClick={handleAdd}>Add</Button>
       </div>
 
       {bookings.length === 0 ? (
@@ -166,13 +162,14 @@ export function BookingsList({ initial, crew, tripId }: Props) {
                   </option>
                 ))}
               </select>
-              <button
+              <Button
+                variant="icon"
                 onClick={() => handleDelete(b.id)}
                 aria-label="Delete booking"
-                className="w-7 h-7 flex items-center justify-center rounded-md text-fg-4 hover:text-err hover:bg-bg-2 transition-colors cursor-pointer text-sm"
+                className="hover:text-err"
               >
                 ✕
-              </button>
+              </Button>
             </div>
           ))}
         </div>

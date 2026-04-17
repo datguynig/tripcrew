@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addExpense, deleteExpense } from "@/lib/actions/ledger";
 import type { Expense } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 type CrewOption = { id: string; name: string };
 
@@ -174,12 +175,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
           placeholder="Amount (£)"
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
         />
-        <button
-          onClick={handleAdd}
-          className="bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer active:scale-[0.98]"
-        >
-          Log
-        </button>
+        <Button onClick={handleAdd}>Log</Button>
       </div>
 
       {expenses.length === 0 ? (
@@ -210,13 +206,14 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
                   £{Math.round(Number(e.amount)).toLocaleString()}
                 </div>
                 {mine ? (
-                  <button
+                  <Button
+                    variant="icon"
                     onClick={() => handleDelete(e.id)}
                     aria-label="Delete expense"
-                    className="w-7 h-7 flex items-center justify-center rounded-md text-fg-4 hover:text-err hover:bg-bg-2 transition-colors cursor-pointer text-sm"
+                    className="hover:text-err"
                   >
                     ✕
-                  </button>
+                  </Button>
                 ) : (
                   <div />
                 )}

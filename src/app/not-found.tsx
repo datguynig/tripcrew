@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/Button";
 
 export default function NotFound() {
   return (
@@ -15,7 +16,10 @@ export default function NotFound() {
         </p>
         <Link
           href="/"
-          className="inline-block bg-fg text-bg py-4 px-6 text-[13px] font-semibold uppercase tracking-[0.1em] rounded-lg hover:bg-accent transition-colors"
+          className={buttonClasses({
+            size: "lg",
+            className: "uppercase tracking-[0.1em] font-semibold",
+          })}
         >
           Back to base →
         </Link>

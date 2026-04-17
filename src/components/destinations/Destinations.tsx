@@ -9,6 +9,7 @@ import {
   removeCandidate,
 } from "@/lib/actions/destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
+import { Button } from "@/components/ui/Button";
 
 type Props = {
   tripId: string;
@@ -307,12 +308,9 @@ export function Destinations({
               {error}
             </span>
           )}
-          <button
-            onClick={handlePropose}
-            className="bg-fg text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer active:scale-[0.98] ml-auto"
-          >
+          <Button onClick={handlePropose} className="ml-auto">
             Propose
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -408,13 +406,14 @@ export function Destinations({
                 </div>
 
                 {canRemove ? (
-                  <button
+                  <Button
+                    variant="icon"
                     onClick={() => handleRemove(c.id)}
                     aria-label="Remove candidate"
-                    className="w-7 h-7 flex items-center justify-center rounded-md text-fg-4 hover:text-err hover:bg-bg-2 transition-colors cursor-pointer text-sm max-[780px]:justify-self-start"
+                    className="hover:text-err max-[780px]:justify-self-start"
                   >
                     ✕
-                  </button>
+                  </Button>
                 ) : (
                   <div className="max-[780px]:hidden" />
                 )}
@@ -435,13 +434,13 @@ export function Destinations({
               undone from here.
             </div>
           </div>
-          <button
+          <Button
+            tone="accent"
             onClick={handleLock}
             disabled={ranked.length === 0}
-            className="bg-accent text-bg px-[22px] py-[11px] text-[13px] font-medium rounded-md hover:opacity-90 transition-opacity cursor-pointer active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Lock destination
-          </button>
+          </Button>
         </div>
       )}
     </>

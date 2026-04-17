@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { createTrip, type CreateTripState } from "@/lib/actions/trips";
+import { Button } from "@/components/ui/Button";
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -69,13 +70,9 @@ export function NewTripForm() {
       )}
 
       <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-fg text-bg px-[22px] py-[12px] text-[13px] font-medium rounded-md hover:bg-accent transition-colors cursor-pointer disabled:opacity-60"
-        >
+        <Button type="submit" disabled={pending}>
           {pending ? "Creating…" : "Create trip"}
-        </button>
+        </Button>
       </div>
     </form>
   );
