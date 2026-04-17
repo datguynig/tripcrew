@@ -28,7 +28,7 @@ export default async function FeedPage({
       .returns<Post[]>(),
     supabase
       .from("trip_members")
-      .select("user_id, profiles(name)")
+      .select("user_id, profiles!trip_members_user_id_fkey(name)")
       .eq("trip_id", trip.id),
   ]);
 

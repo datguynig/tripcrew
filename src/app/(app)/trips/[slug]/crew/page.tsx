@@ -26,7 +26,7 @@ export default async function CrewPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("trip_members")
-    .select("user_id, joined_at, profiles(name)")
+    .select("user_id, joined_at, profiles!trip_members_user_id_fkey(name)")
     .eq("trip_id", trip.id)
     .order("joined_at", { ascending: true });
 

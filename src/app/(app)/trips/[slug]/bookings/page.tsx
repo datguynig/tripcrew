@@ -30,7 +30,7 @@ export default async function BookingsPage({
       .returns<Booking[]>(),
     supabase
       .from("trip_members")
-      .select("user_id, profiles(name)")
+      .select("user_id, profiles!trip_members_user_id_fkey(name)")
       .eq("trip_id", trip.id)
       .order("joined_at", { ascending: true }),
   ]);
