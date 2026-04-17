@@ -12,15 +12,18 @@ const TABS = [
   { code: "06", label: "Feed", path: "/feed" },
 ] as const;
 
-export function Nav({ slug }: { slug: string }) {
+export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
   const pathname = usePathname();
   const base = `/trips/${slug}`;
+  const tabs = isAdmin
+    ? [...TABS, { code: "07", label: "Admin", path: "/admin" } as const]
+    : TABS;
 
   return (
     <div className="sticky top-[49px] z-40 bg-bg/85 backdrop-blur-md border-b border-line">
       <div className="max-w-[1280px] mx-auto px-7">
         <nav className="nav-scroll flex gap-0 overflow-x-auto">
-          {TABS.map((tab) => {
+          {tabs.map((tab) => {
             const href = `${base}${tab.path}`;
             const active =
               tab.path === "" ? pathname === href : pathname.startsWith(href);
