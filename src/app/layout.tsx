@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/Toaster";
 
 const interTight = Inter_Tight({
   variable: "--font-sans",
@@ -30,7 +31,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-bg text-fg font-sans">{children}</body>
+      <body className="min-h-full bg-bg text-fg font-sans">
+        {children}
+        <Toaster />
+      </body>
     </html>
   );
 }
