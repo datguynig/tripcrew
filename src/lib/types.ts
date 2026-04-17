@@ -121,6 +121,9 @@ export type TripInvite = {
   invited_by: string | null;
   invited_at: string;
   accepted_at: string | null;
+  token: string | null;
+  expires_at: string | null;
+  accepted_by: string | null;
 };
 
 export type CrewMember = Profile & {
