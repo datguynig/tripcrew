@@ -31,6 +31,7 @@ export type Trip = {
   destination: string | null;
   vote_deadline: string | null;
   created_by: string | null;
+  owner_id: string | null;
   meta: TripMeta;
   start_date: string | null;
   end_date: string | null;
