@@ -8,17 +8,17 @@ const FOCUS =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg";
 
 const BASE =
-  `inline-flex items-center justify-center font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${FOCUS}`;
+  `inline-flex items-center justify-center font-semibold rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${FOCUS}`;
 
 const SIZES: Record<Size, string> = {
-  sm: "h-8 px-3 text-xs",
+  sm: "h-8 px-3 text-[13px]",
   md: "h-10 px-[22px] text-[13px]",
   lg: "h-12 px-7 text-sm",
 };
 
 const VARIANTS: Record<Variant, Record<Tone, string>> = {
   primary: {
-    default: "bg-fg text-bg hover:bg-accent",
+    default: "bg-fg text-bg hover:opacity-90 active:scale-[0.98]",
     accent: "bg-accent text-bg hover:opacity-90 active:scale-[0.98]",
   },
   secondary: {
@@ -38,7 +38,7 @@ const VARIANTS: Record<Variant, Record<Tone, string>> = {
   },
   icon: {
     default:
-      "h-8 w-8 p-0 text-fg-3 hover:text-fg hover:bg-bg-2 border border-transparent",
+      "h-8 w-8 p-0 text-fg-2 hover:text-fg hover:bg-bg-2 border border-transparent",
     accent: "h-8 w-8 p-0 text-accent hover:bg-accent/10",
   },
 };
