@@ -20,14 +20,16 @@ export function TopBar({
           {tripLabel ?? "TripCrew"}
         </Link>
         <div className="flex items-center gap-2 py-[6px] pl-3 pr-[6px] border border-line-2 rounded-full font-mono text-[11px] tracking-[0.08em] uppercase">
+          <span className="w-[22px] h-[22px] bg-fg text-bg rounded-full flex items-center justify-center text-[10px] font-semibold">
+            {getInitials(profile.name)}
+          </span>
+          <span className="truncate max-w-[140px]">{profile.name}</span>
+          <span className="w-px h-3 bg-line-2 mx-1" />
           <Link
             href="/account"
-            className="flex items-center gap-2 hover:text-fg-2 transition-colors"
+            className="text-fg-3 hover:text-fg transition-colors text-[11px] tracking-[0.08em] uppercase px-[6px] py-[2px]"
           >
-            <span className="w-[22px] h-[22px] bg-fg text-bg rounded-full flex items-center justify-center text-[10px] font-semibold">
-              {getInitials(profile.name)}
-            </span>
-            <span className="truncate max-w-[140px]">{profile.name}</span>
+            Account
           </Link>
           <form action="/sign-out" method="post">
             <button
