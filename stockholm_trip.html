@@ -1,0 +1,1150 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0A0A0B;
+    --bg-2: #131315;
+    --bg-3: #1C1C1F;
+    --fg: #F0F0F0;
+    --fg-2: #A8A8AD;
+    --fg-3: #6B6B70;
+    --fg-4: #3E3E42;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-2: rgba(255, 255, 255, 0.14);
+    --accent: #FF4C15;
+    --accent-dim: rgba(255, 76, 21, 0.12);
+    --ok: #5FE388;
+    --warn: #F5C451;
+    --err: #FF5C5C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Inter Tight', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+
+  ::selection { background: var(--accent); color: var(--bg); }
+  button, input, textarea, select { font-family: inherit; color: inherit; }
+
+  /* Top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: 1280px; margin: 0 auto;
+    padding: 14px 28px;
+    display: flex; justify-content: space-between; align-items: center; gap: 20px;
+  }
+  .brand {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--fg); display: flex; align-items: center; gap: 10px;
+  }
+  .brand-dot {
+    width: 7px; height: 7px; background: var(--accent); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+
+  .me-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 6px 6px 12px;
+    border: 1px solid var(--line-2); border-radius: 100px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .me-chip-init {
+    width: 22px; height: 22px;
+    background: var(--fg); color: var(--bg); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600;
+  }
+  .me-chip-switch {
+    background: none; border: none; color: var(--fg-3);
+    cursor: pointer; font-size: 11px; padding: 2px 6px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .me-chip-switch:hover { color: var(--fg); }
+
+  /* Shell */
+  .shell { max-width: 1280px; margin: 0 auto; padding: 0 28px; }
+
+  /* Hero */
+  .hero { padding: 70px 0 60px; border-bottom: 1px solid var(--line); position: relative; }
+  .hero-meta {
+    display: flex; gap: 28px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--fg-3); margin-bottom: 40px; flex-wrap: wrap;
+  }
+  .hero-meta b { color: var(--fg); font-weight: 500; }
+
+  .hero-title {
+    font-size: clamp(64px, 13vw, 180px);
+    font-weight: 700; letter-spacing: -0.055em; line-height: 0.88;
+    color: var(--fg); margin-bottom: 28px;
+  }
+  .hero-title .slash { color: var(--accent); }
+
+  .hero-sub {
+    max-width: 620px; font-size: 18px; line-height: 1.5;
+    color: var(--fg-2); font-weight: 400;
+  }
+
+  .hero-grid {
+    margin-top: 56px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
+    border-top: 1px solid var(--line);
+  }
+  @media (max-width: 720px) { .hero-grid { grid-template-columns: repeat(2, 1fr); } }
+  .stat { padding: 24px 24px 24px 0; border-right: 1px solid var(--line); }
+  .stat:nth-child(4n) { border-right: none; }
+  @media (max-width: 720px) {
+    .stat:nth-child(2n) { border-right: none; }
+    .stat:nth-child(-n+2) { border-bottom: 1px solid var(--line); }
+  }
+  .stat-lbl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--fg-3); margin-bottom: 10px;
+  }
+  .stat-val { font-size: 48px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .stat-unit { color: var(--fg-3); font-size: 20px; font-weight: 400; margin-left: 2px; }
+  .stat-sub {
+    font-size: 12px; color: var(--fg-3); margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.05em;
+  }
+
+  /* Nav */
+  .nav {
+    display: flex; gap: 0; border-bottom: 1px solid var(--line);
+    position: sticky; top: 56px;
+    background: rgba(10, 10, 11, 0.85);
+    backdrop-filter: blur(14px);
+    z-index: 40; overflow-x: auto; scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn {
+    background: none; border: none;
+    padding: 16px 20px 16px 0; margin-right: 28px;
+    font-size: 13px; font-weight: 500; color: var(--fg-3); cursor: pointer;
+    white-space: nowrap; letter-spacing: -0.01em;
+    position: relative; transition: color 0.15s;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  .nav-btn:hover { color: var(--fg); }
+  .nav-btn.active { color: var(--fg); }
+  .nav-btn.active:after {
+    content: ""; position: absolute; bottom: -1px; left: 0; right: 20px;
+    height: 2px; background: var(--accent);
+  }
+  .nav-n {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--fg-4); letter-spacing: 0.1em;
+  }
+  .nav-btn.active .nav-n { color: var(--accent); }
+
+  /* Section */
+  .section { display: none; padding: 56px 0 96px; }
+  .section.active { display: block; animation: enter 0.25s ease; }
+  @keyframes enter {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .section-header {
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: end; gap: 24px;
+    margin-bottom: 40px; padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .section-title { font-size: 40px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
+  .section-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em; color: var(--fg-3); text-transform: uppercase;
+  }
+  .section-lead {
+    max-width: 600px; color: var(--fg-2); font-size: 15px; margin-top: 8px;
+  }
+
+  /* Overview */
+  .ov-spec {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--line); margin-bottom: 36px;
+  }
+  @media (max-width: 900px) { .ov-spec { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 520px) { .ov-spec { grid-template-columns: 1fr; } }
+  .ov-cell {
+    padding: 22px 24px;
+    border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+  }
+  .ov-cell:nth-child(4n) { border-right: none; }
+  .ov-cell:nth-last-child(-n+4) { border-bottom: none; }
+  @media (max-width: 900px) {
+    .ov-cell { border-right: none; border-bottom: 1px solid var(--line); }
+    .ov-cell:nth-child(2n-1) { border-right: 1px solid var(--line); }
+  }
+  .ov-k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--fg-3); margin-bottom: 12px;
+  }
+  .ov-v { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.15; }
+  .ov-vs { font-size: 13px; color: var(--fg-3); margin-top: 6px; }
+
+  .schedule { border: 1px solid var(--line); }
+  .sched-row {
+    display: grid; grid-template-columns: 140px 1fr;
+    border-bottom: 1px solid var(--line); padding: 22px 24px; gap: 20px;
+  }
+  .sched-row:last-child { border-bottom: none; }
+  .sched-day {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--accent); padding-top: 3px;
+  }
+  .sched-head { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .sched-body { color: var(--fg-2); font-size: 14px; line-height: 1.55; }
+
+  /* Crew */
+  .crew-header {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--fg-3);
+  }
+  .crew-count b {
+    color: var(--fg); font-size: 14px; font-weight: 500;
+    font-family: 'Inter Tight', sans-serif; letter-spacing: -0.01em;
+    text-transform: none; margin-right: 4px;
+  }
+  .crew-list { border: 1px solid var(--line); }
+  .crew-row {
+    display: grid; grid-template-columns: 80px 1fr auto;
+    align-items: center; padding: 18px 24px;
+    border-bottom: 1px solid var(--line); gap: 20px;
+  }
+  .crew-row:last-child { border-bottom: none; }
+  .crew-row.you { background: var(--accent-dim); }
+  .crew-idx {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--fg-4); letter-spacing: 0.1em;
+  }
+  .crew-name { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; }
+  .crew-you-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.15em; color: var(--accent);
+    text-transform: uppercase; margin-left: 8px;
+  }
+  .crew-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.1em; color: var(--fg-3); text-transform: uppercase;
+  }
+  .crew-empty {
+    display: grid; grid-template-columns: 80px 1fr auto;
+    align-items: center; padding: 18px 24px;
+    border-bottom: 1px solid var(--line); gap: 20px; color: var(--fg-4);
+  }
+  .crew-empty:last-child { border-bottom: none; }
+  .crew-empty-n { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; }
+  .crew-empty-txt { font-size: 15px; font-style: italic; }
+
+  /* Vote */
+  .vote-filters { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+  .vote-filter {
+    background: var(--bg-2); border: 1px solid var(--line); color: var(--fg-2);
+    padding: 7px 14px; font-size: 12px; font-weight: 500;
+    cursor: pointer; border-radius: 100px; letter-spacing: -0.005em; transition: all 0.15s;
+  }
+  .vote-filter:hover { border-color: var(--line-2); color: var(--fg); }
+  .vote-filter.active { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+  .vote-list { border: 1px solid var(--line); }
+  .vote-row {
+    display: grid; grid-template-columns: 1fr 220px 160px;
+    align-items: center; padding: 18px 24px;
+    border-bottom: 1px solid var(--line); gap: 20px;
+  }
+  .vote-row:last-child { border-bottom: none; }
+  @media (max-width: 780px) { .vote-row { grid-template-columns: 1fr; gap: 14px; } }
+
+  .vote-title { font-size: 17px; font-weight: 500; letter-spacing: -0.015em; margin-bottom: 4px; }
+  .vote-meta {
+    font-size: 12px; color: var(--fg-3);
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.02em;
+  }
+  .vote-bar {
+    display: flex; height: 4px; background: var(--bg-3);
+    border-radius: 100px; overflow: hidden;
+  }
+  .vote-bar-yes { background: var(--ok); }
+  .vote-bar-maybe { background: var(--warn); }
+  .vote-bar-no { background: var(--err); }
+  .vote-counts {
+    display: flex; gap: 12px; margin-top: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.08em; color: var(--fg-3);
+  }
+  .vote-counts span b { color: var(--fg); font-weight: 500; margin-right: 4px; }
+
+  .vote-btns { display: flex; gap: 4px; justify-self: end; }
+  @media (max-width: 780px) { .vote-btns { justify-self: start; } }
+  .vote-btn {
+    width: 48px; height: 40px;
+    background: var(--bg-2); border: 1px solid var(--line);
+    color: var(--fg-2); cursor: pointer;
+    font-size: 12px; font-weight: 600;
+    border-radius: 6px; transition: all 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .vote-btn:hover { border-color: var(--line-2); color: var(--fg); }
+  .vote-btn.on-yes { background: var(--ok); color: #0C3A1C; border-color: var(--ok); }
+  .vote-btn.on-maybe { background: var(--warn); color: #3A2A05; border-color: var(--warn); }
+  .vote-btn.on-no { background: var(--err); color: #3D0E0E; border-color: var(--err); }
+
+  /* Bookings */
+  .bk-add { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 20px; }
+  .bk-list { border: 1px solid var(--line); }
+  .bk-row {
+    display: grid; grid-template-columns: 28px 1fr 180px 36px;
+    align-items: center; padding: 16px 24px;
+    border-bottom: 1px solid var(--line); gap: 16px;
+  }
+  .bk-row:last-child { border-bottom: none; }
+  .bk-row.done { opacity: 0.5; }
+  .bk-row.done .bk-title { text-decoration: line-through; }
+
+  .bk-check {
+    width: 20px; height: 20px;
+    border: 1.5px solid var(--fg-3); border-radius: 4px;
+    cursor: pointer; background: transparent;
+    position: relative; transition: all 0.15s;
+  }
+  .bk-check:hover { border-color: var(--fg); }
+  .bk-check.on { background: var(--accent); border-color: var(--accent); }
+  .bk-check.on:after {
+    content: ""; position: absolute; left: 5px; top: 1px;
+    width: 6px; height: 11px;
+    border: solid var(--bg); border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .bk-title { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; }
+
+  .select-min {
+    background: var(--bg-2); border: 1px solid var(--line); color: var(--fg);
+    padding: 8px 12px; font-size: 11px; border-radius: 6px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em; text-transform: uppercase; width: 100%;
+  }
+  .select-min:hover { border-color: var(--line-2); }
+  .select-min:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
+
+  .icon-btn {
+    background: none; border: none; color: var(--fg-4); cursor: pointer;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; transition: all 0.15s; font-size: 14px;
+  }
+  .icon-btn:hover { color: var(--err); background: var(--bg-2); }
+
+  /* Ledger */
+  .led-stats {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line); margin-bottom: 28px;
+  }
+  @media (max-width: 640px) { .led-stats { grid-template-columns: 1fr; } }
+  .led-stat { padding: 22px 24px; border-right: 1px solid var(--line); }
+  .led-stat:last-child { border-right: none; }
+  @media (max-width: 640px) {
+    .led-stat { border-right: none; border-bottom: 1px solid var(--line); }
+    .led-stat:last-child { border-bottom: none; }
+  }
+  .led-k {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--fg-3); margin-bottom: 10px;
+  }
+  .led-v { font-size: 36px; font-weight: 500; letter-spacing: -0.03em; line-height: 1; }
+  .led-v .led-c { color: var(--fg-3); font-size: 18px; font-weight: 400; }
+
+  .led-add {
+    display: grid; grid-template-columns: 1fr 160px auto;
+    gap: 8px; margin-bottom: 20px;
+  }
+  @media (max-width: 640px) { .led-add { grid-template-columns: 1fr; } }
+
+  .led-list { border: 1px solid var(--line); margin-bottom: 32px; }
+  .led-row {
+    display: grid; grid-template-columns: 70px 1fr auto 36px;
+    align-items: center; padding: 14px 24px;
+    border-bottom: 1px solid var(--line); gap: 16px;
+  }
+  .led-row:last-child { border-bottom: none; }
+  .led-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--fg-3);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .led-desc { font-size: 14px; font-weight: 500; letter-spacing: -0.01em; }
+  .led-by {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: var(--fg-3);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px;
+  }
+  .led-amt {
+    font-size: 17px; font-weight: 500; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .balances { border: 1px solid var(--line); padding: 24px; }
+  .bal-h {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--fg-3); margin-bottom: 16px;
+  }
+  .bal-row {
+    display: grid; grid-template-columns: 1fr auto;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
+    font-size: 15px; align-items: baseline;
+  }
+  .bal-row:last-child { border-bottom: none; }
+  .bal-name { letter-spacing: -0.01em; font-weight: 500; }
+  .bal-amt {
+    font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; letter-spacing: 0.02em;
+  }
+  .bal-pos { color: var(--ok); }
+  .bal-neg { color: var(--err); }
+  .bal-zero { color: var(--fg-3); }
+  .bal-note {
+    font-size: 11px; color: var(--fg-3); margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+
+  /* Feed */
+  .feed-new {
+    border: 1px solid var(--line); padding: 18px 20px;
+    margin-bottom: 28px; display: grid; gap: 10px;
+  }
+  .feed-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .feed-post {
+    border: 1px solid var(--line); background: var(--bg-2);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .feed-img {
+    width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+    display: block; background: var(--bg-3);
+  }
+  .feed-body { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; }
+  .feed-caption { font-size: 14px; line-height: 1.5; color: var(--fg); flex: 1; margin-bottom: 12px; }
+  .feed-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--fg-3); display: flex; justify-content: space-between;
+  }
+
+  /* Forms */
+  .input, .textarea {
+    background: var(--bg-2); border: 1px solid var(--line);
+    padding: 11px 14px; font-size: 14px; color: var(--fg);
+    border-radius: 6px; outline: none;
+    transition: border-color 0.15s; width: 100%; font-family: inherit;
+  }
+  .input::placeholder, .textarea::placeholder { color: var(--fg-3); }
+  .input:focus, .textarea:focus { border-color: var(--line-2); }
+  .textarea { resize: vertical; min-height: 72px; line-height: 1.5; }
+
+  .btn {
+    background: var(--fg); color: var(--bg); border: none;
+    padding: 11px 22px; font-size: 13px; font-weight: 500;
+    letter-spacing: -0.005em; cursor: pointer;
+    border-radius: 6px; transition: all 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--accent); color: var(--bg); }
+  .btn:active { transform: scale(0.98); }
+
+  /* Gate */
+  .gate-wrap {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 28px;
+    background: radial-gradient(ellipse at top, rgba(255, 76, 21, 0.08), transparent 50%), var(--bg);
+  }
+  .gate { max-width: 460px; width: 100%; }
+  .gate-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .gate-tag:before { content: ""; width: 20px; height: 1px; background: var(--accent); }
+  .gate-title {
+    font-size: 56px; font-weight: 600; letter-spacing: -0.04em;
+    line-height: 0.95; margin-bottom: 18px;
+  }
+  .gate-title .slash { color: var(--accent); }
+  .gate-sub { color: var(--fg-2); font-size: 16px; line-height: 1.5; margin-bottom: 32px; }
+  .gate-form { display: grid; gap: 12px; }
+  .gate-input {
+    background: transparent; border: none;
+    border-bottom: 1.5px solid var(--fg-4);
+    padding: 14px 0; font-size: 22px; color: var(--fg);
+    outline: none; font-family: inherit;
+    font-weight: 500; letter-spacing: -0.02em;
+    transition: border-color 0.2s;
+  }
+  .gate-input::placeholder { color: var(--fg-4); }
+  .gate-input:focus { border-color: var(--accent); }
+  .gate-btn {
+    background: var(--fg); color: var(--bg); border: none;
+    padding: 16px 24px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border-radius: 8px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 20px; transition: all 0.2s;
+  }
+  .gate-btn:hover { background: var(--accent); }
+
+  .empty {
+    padding: 40px 20px; text-align: center;
+    color: var(--fg-3); font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+
+  .loading {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    color: var(--fg-3); font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  }
+</style>
+
+<div id="app"><div class="loading">Loading · · ·</div></div>
+
+<script>
+  const ACTIVITIES = [
+    { id: 'kayak', title: 'Archipelago kayak', meta: 'FRI AM · HALF DAY · £80', tag: 'day' },
+    { id: 'ribboat', title: 'Rib boat tour', meta: 'KAYAK ALT · FASTER · £90', tag: 'day' },
+    { id: 'vasa', title: 'Vasa Museum', meta: 'SAT · 90 MIN · £18', tag: 'day' },
+    { id: 'grona', title: 'Gröna Lund', meta: 'AMUSEMENT + CONCERTS', tag: 'day' },
+    { id: 'foto', title: 'Fotografiska', meta: 'PHOTO MUSEUM · 10AM–11PM', tag: 'day' },
+    { id: 'skinn', title: 'Skinnarviksberget', meta: 'CLIFF JUMPS · FREE', tag: 'day' },
+    { id: 'centralbad', title: 'Centralbadet', meta: 'SAUNA + COLD PLUNGE · £30', tag: 'day' },
+    { id: 'fjader', title: 'Fjäderholmarna ferry', meta: 'ISLAND + SEAFOOD LUNCH', tag: 'day' },
+    { id: 'tradgarden', title: 'Trädgården', meta: 'OPEN-AIR CLUB · UNDER BRIDGE', tag: 'night' },
+    { id: 'berns', title: 'Berns', meta: 'GRAND CLUB · SMART', tag: 'night' },
+    { id: 'spy', title: 'Spy Bar', meta: 'STUREPLAN · STRICT DOOR', tag: 'night' },
+    { id: 'slakt', title: 'Slakthuset', meta: 'TECHNO · LATE', tag: 'night' },
+    { id: 'mosebacke', title: 'Södra Teatern', meta: 'BEER TERRACE · 1000 CAP', tag: 'night' },
+    { id: 'haktet', title: 'Häktet', meta: 'PRISON BAR · COURTYARD', tag: 'night' },
+    { id: 'tjoget', title: 'Tjoget', meta: 'COCKTAILS · TOP 100', tag: 'night' },
+    { id: 'pharm', title: 'Pharmarium', meta: 'SPEAKEASY · GAMLA STAN', tag: 'night' },
+  ];
+
+  const SCHEDULE = [
+    { day: 'THU / 23', head: 'Land, settle, starters', body: 'Lunch at Urban Deli. Sunset at Monteliusvägen. Rooftop at Takparken. Meatballs for the People. Light first night at Häktet.' },
+    { day: 'FRI / 24', head: 'Water by day. Trädgården by night.', body: 'Kayak the inner archipelago. Swim off Skinnarviksberget. Pelikan for Swedish classics. Tjoget for cocktails. Trädgården until three.' },
+    { day: 'SAT / 25', head: 'Culture, dress code, big one.', body: 'Vasa Museum, then Gröna Lund for rides and a concert. Dinner at Kagges. Pharmarium in Gamla Stan. Berns late.' },
+    { day: 'SUN / 26', head: 'Recover, fly home.', body: 'Rooftop brunch at Fotografiska. Arlanda Express to the airport.' },
+  ];
+
+  const TARGET_CREW = 5;
+
+  let me = null;
+  let crew = [];
+  let votes = {};
+  let bookings = [];
+  let expenses = [];
+  let wall = [];
+  let currentTab = 'overview';
+  let voteFilter = 'all';
+
+  async function get(key, shared = true) {
+    try {
+      const r = await window.storage.get(key, shared);
+      return r ? JSON.parse(r.value) : null;
+    } catch { return null; }
+  }
+  async function set(key, value, shared = true) {
+    try { await window.storage.set(key, JSON.stringify(value), shared); } catch (e) { console.error(e); }
+  }
+
+  async function loadMe() { me = await get('trip:me', false); }
+  async function loadShared() {
+    crew = (await get('trip:crew')) || [];
+    votes = (await get('trip:votes')) || {};
+    bookings = (await get('trip:bookings')) || defaultBookings();
+    expenses = (await get('trip:expenses')) || [];
+    wall = (await get('trip:wall')) || [];
+  }
+  function defaultBookings() {
+    return [
+      { id: 'b1', title: 'Flights. LHR direct. SAS or BA.', assignee: '', done: false },
+      { id: 'b2', title: 'Airbnb. 3-bed, Södermalm.', assignee: '', done: false },
+      { id: 'b3', title: 'Kayak tour. stockholmadventures.com', assignee: '', done: false },
+      { id: 'b4', title: 'Meatballs for the People. Thu 20:30.', assignee: '', done: false },
+      { id: 'b5', title: 'Pelikan. Fri 19:30.', assignee: '', done: false },
+      { id: 'b6', title: 'Kagges. Sat 19:30.', assignee: '', done: false },
+      { id: 'b7', title: 'Vasa Museum. Sat 10:30.', assignee: '', done: false },
+      { id: 'b8', title: 'Fotografiska brunch. Sun 11:00.', assignee: '', done: false },
+      { id: 'b9', title: 'SL 72hr travel cards.', assignee: '', done: false },
+    ];
+  }
+
+  const app = document.getElementById('app');
+
+  function render() {
+    if (!me) { renderGate(); return; }
+    const daysLeft = calcDaysLeft();
+    const booked = bookings.filter(b => b.done).length;
+
+    app.innerHTML = `
+      <div class="topbar">
+        <div class="topbar-inner">
+          <div class="brand">
+            <span class="brand-dot"></span>
+            <span>Boys Trip · 001</span>
+          </div>
+          <div class="me-chip">
+            <span class="me-chip-init">${initials(me.name)}</span>
+            <span>${escapeHtml(me.name)}</span>
+            <button class="me-chip-switch" onclick="switchUser()">Switch</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="shell">
+        <section class="hero">
+          <div class="hero-meta">
+            <span>LOC / <b>Stockholm, SE</b></span>
+            <span>DATES / <b>23 – 26 Jul 26</b></span>
+            <span>CREW / <b>${crew.length} / ${TARGET_CREW}</b></span>
+            <span>STATUS / <b style="color: var(--accent);">ACTIVE</b></span>
+          </div>
+          <h1 class="hero-title">Stockholm<span class="slash">.</span></h1>
+          <p class="hero-sub">Three nights. Five of us. One city built on fourteen islands. Base camp on Södermalm, days on the water, nights that go somewhere. Book early, drink smarter, show up.</p>
+
+          <div class="hero-grid">
+            <div class="stat">
+              <div class="stat-lbl">T-Minus</div>
+              <div class="stat-val">${daysLeft}<span class="stat-unit">d</span></div>
+              <div class="stat-sub">Until wheels up</div>
+            </div>
+            <div class="stat">
+              <div class="stat-lbl">Target budget</div>
+              <div class="stat-val">£950<span class="stat-unit">pp</span></div>
+              <div class="stat-sub">Ex. flights</div>
+            </div>
+            <div class="stat">
+              <div class="stat-lbl">Bookings</div>
+              <div class="stat-val">${booked}<span class="stat-unit">/${bookings.length}</span></div>
+              <div class="stat-sub">Locked in</div>
+            </div>
+            <div class="stat">
+              <div class="stat-lbl">Kitty</div>
+              <div class="stat-val">£${totalSpent().toLocaleString()}</div>
+              <div class="stat-sub">Pooled to date</div>
+            </div>
+          </div>
+        </section>
+
+        <nav class="nav">
+          ${navBtn('overview', '01', 'Overview')}
+          ${navBtn('crew', '02', 'Crew')}
+          ${navBtn('vote', '03', 'Shortlist')}
+          ${navBtn('book', '04', 'Bookings')}
+          ${navBtn('kitty', '05', 'Ledger')}
+          ${navBtn('wall', '06', 'Feed')}
+        </nav>
+
+        <main>${renderSection()}</main>
+      </div>
+    `;
+    attachNav();
+  }
+
+  function navBtn(id, n, label) {
+    return `<button class="nav-btn ${currentTab === id ? 'active' : ''}" data-tab="${id}"><span class="nav-n">${n}</span>${label}</button>`;
+  }
+  function attachNav() {
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.onclick = () => { currentTab = b.dataset.tab; render(); };
+    });
+  }
+
+  function renderSection() {
+    switch (currentTab) {
+      case 'overview': return renderOverview();
+      case 'crew': return renderCrew();
+      case 'vote': return renderVote();
+      case 'book': return renderBook();
+      case 'kitty': return renderKitty();
+      case 'wall': return renderWall();
+    }
+  }
+
+  function renderOverview() {
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">The brief.</h2>
+            <p class="section-lead">Södermalm apartment. Archipelago days. Trädgården nights. Low-key Thursday, water Friday, dressed-up Saturday, brunch Sunday.</p>
+          </div>
+          <div class="section-code">§ 01</div>
+        </header>
+
+        <div class="ov-spec">
+          <div class="ov-cell">
+            <div class="ov-k">Base</div>
+            <div class="ov-v">3-bed Airbnb</div>
+            <div class="ov-vs">Södermalm, SoFo area</div>
+          </div>
+          <div class="ov-cell">
+            <div class="ov-k">Flights</div>
+            <div class="ov-v">LHR → ARN</div>
+            <div class="ov-vs">SAS or BA direct · 2h 20m</div>
+          </div>
+          <div class="ov-cell">
+            <div class="ov-k">Per head</div>
+            <div class="ov-v">£950</div>
+            <div class="ov-vs">Everything in, ex. flights</div>
+          </div>
+          <div class="ov-cell">
+            <div class="ov-k">The rule</div>
+            <div class="ov-v">Systembolaget by Fri 3pm</div>
+            <div class="ov-vs">State off-licence, closes early</div>
+          </div>
+        </div>
+
+        <div class="schedule">
+          ${SCHEDULE.map(s => `
+            <div class="sched-row">
+              <div class="sched-day">${s.day}</div>
+              <div>
+                <div class="sched-head">${s.head}</div>
+                <div class="sched-body">${s.body}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderCrew() {
+    const sorted = [...crew].sort((a, b) => a.joined - b.joined);
+    const empty = Math.max(0, TARGET_CREW - crew.length);
+
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Crew.</h2>
+            <p class="section-lead">${crew.length === TARGET_CREW ? 'Roster locked.' : crew.length === 0 ? 'Nobody in yet. Share the link.' : `${crew.length} in, ${empty} to go.`}</p>
+          </div>
+          <div class="section-code">§ 02</div>
+        </header>
+
+        <div class="crew-header">
+          <div class="crew-count"><b>${crew.length}</b>/ ${TARGET_CREW} CONFIRMED</div>
+          <div>AUTO-ADDED ON SIGN-IN</div>
+        </div>
+
+        <div class="crew-list">
+          ${sorted.map((p, i) => `
+            <div class="crew-row ${p.name === me.name ? 'you' : ''}">
+              <div class="crew-idx">${String(i + 1).padStart(2, '0')}</div>
+              <div>
+                <span class="crew-name">${escapeHtml(p.name)}</span>
+                ${p.name === me.name ? '<span class="crew-you-tag">You</span>' : ''}
+              </div>
+              <div class="crew-date">${formatDate(p.joined)}</div>
+            </div>
+          `).join('')}
+          ${Array.from({length: empty}).map((_, i) => `
+            <div class="crew-empty">
+              <div class="crew-empty-n">${String(crew.length + i + 1).padStart(2, '0')}</div>
+              <div class="crew-empty-txt">Open slot</div>
+              <div class="crew-date">—</div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderVote() {
+    const filtered = voteFilter === 'all' ? ACTIVITIES : ACTIVITIES.filter(a => a.tag === voteFilter);
+    const ranked = filtered.map(a => {
+      const v = votes[a.id] || {};
+      const counts = { yes: 0, maybe: 0, no: 0 };
+      Object.values(v).forEach(vote => counts[vote]++);
+      return { ...a, counts, score: counts.yes * 2 + counts.maybe };
+    }).sort((a, b) => b.score - a.score);
+
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Shortlist.</h2>
+            <p class="section-lead">Vote yes, meh, or no. Ranked by consensus. Stuff the crew wants floats up. Tap twice to clear.</p>
+          </div>
+          <div class="section-code">§ 03</div>
+        </header>
+
+        <div class="vote-filters">
+          <button class="vote-filter ${voteFilter === 'all' ? 'active' : ''}" onclick="setFilter('all')">All ${ACTIVITIES.length}</button>
+          <button class="vote-filter ${voteFilter === 'day' ? 'active' : ''}" onclick="setFilter('day')">Day ${ACTIVITIES.filter(a => a.tag === 'day').length}</button>
+          <button class="vote-filter ${voteFilter === 'night' ? 'active' : ''}" onclick="setFilter('night')">Night ${ACTIVITIES.filter(a => a.tag === 'night').length}</button>
+        </div>
+
+        <div class="vote-list">
+          ${ranked.map(a => renderVoteRow(a)).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderVoteRow(a) {
+    const v = votes[a.id] || {};
+    const myVote = v[me.name] || null;
+    const total = a.counts.yes + a.counts.maybe + a.counts.no;
+    const pct = total > 0 ? {
+      yes: (a.counts.yes / total) * 100,
+      maybe: (a.counts.maybe / total) * 100,
+      no: (a.counts.no / total) * 100
+    } : null;
+
+    return `
+      <div class="vote-row">
+        <div>
+          <div class="vote-title">${a.title}</div>
+          <div class="vote-meta">${a.meta}</div>
+        </div>
+        <div>
+          ${pct ? `
+            <div class="vote-bar">
+              <div class="vote-bar-yes" style="width: ${pct.yes}%"></div>
+              <div class="vote-bar-maybe" style="width: ${pct.maybe}%"></div>
+              <div class="vote-bar-no" style="width: ${pct.no}%"></div>
+            </div>
+            <div class="vote-counts">
+              <span><b>${a.counts.yes}</b>YES</span>
+              <span><b>${a.counts.maybe}</b>MEH</span>
+              <span><b>${a.counts.no}</b>NO</span>
+            </div>
+          ` : '<div class="vote-counts"><span>NO VOTES YET</span></div>'}
+        </div>
+        <div class="vote-btns">
+          <button class="vote-btn ${myVote === 'yes' ? 'on-yes' : ''}" onclick="castVote('${a.id}', 'yes')">YES</button>
+          <button class="vote-btn ${myVote === 'maybe' ? 'on-maybe' : ''}" onclick="castVote('${a.id}', 'maybe')">MEH</button>
+          <button class="vote-btn ${myVote === 'no' ? 'on-no' : ''}" onclick="castVote('${a.id}', 'no')">NO</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBook() {
+    const done = bookings.filter(b => b.done).length;
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Bookings.</h2>
+            <p class="section-lead">The checklist. Claim one, book it, tick it. Simple accountability.</p>
+          </div>
+          <div class="section-code">§ 04 · ${done}/${bookings.length}</div>
+        </header>
+
+        <div class="bk-add">
+          <input id="bk-title" class="input" type="text" placeholder="Add a booking..." onkeydown="if(event.key==='Enter')addBooking()" />
+          <button class="btn" onclick="addBooking()">Add</button>
+        </div>
+
+        <div class="bk-list">
+          ${bookings.map(b => `
+            <div class="bk-row ${b.done ? 'done' : ''}">
+              <div class="bk-check ${b.done ? 'on' : ''}" onclick="toggleBooking('${b.id}')"></div>
+              <div class="bk-title">${escapeHtml(b.title)}</div>
+              <select class="select-min" onchange="assignBooking('${b.id}', this.value)">
+                <option value="">Unassigned</option>
+                ${crew.map(p => `<option value="${escapeHtml(p.name)}" ${b.assignee === p.name ? 'selected' : ''}>${escapeHtml(p.name)}</option>`).join('')}
+              </select>
+              <button class="icon-btn" onclick="deleteBooking('${b.id}')">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderKitty() {
+    const total = totalSpent();
+    const perPerson = crew.length > 0 ? total / crew.length : 0;
+    const myTotal = expenses.filter(e => e.paidBy === me.name).reduce((s, e) => s + e.amount, 0);
+    const balances = calcBalances();
+
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Ledger.</h2>
+            <p class="section-lead">Pool everything, split even. Log what you pay, balances update. Settle on the flight home.</p>
+          </div>
+          <div class="section-code">§ 05</div>
+        </header>
+
+        <div class="led-stats">
+          <div class="led-stat">
+            <div class="led-k">Total pooled</div>
+            <div class="led-v"><span class="led-c">£</span>${total.toLocaleString()}</div>
+          </div>
+          <div class="led-stat">
+            <div class="led-k">Even split</div>
+            <div class="led-v"><span class="led-c">£</span>${Math.round(perPerson).toLocaleString()}</div>
+          </div>
+          <div class="led-stat">
+            <div class="led-k">You've covered</div>
+            <div class="led-v"><span class="led-c">£</span>${Math.round(myTotal).toLocaleString()}</div>
+          </div>
+        </div>
+
+        <div class="led-add">
+          <input id="exp-desc" class="input" type="text" placeholder="What was it for..." />
+          <input id="exp-amt" class="input" type="number" placeholder="Amount (£)" step="0.01" onkeydown="if(event.key==='Enter')addExpense()" />
+          <button class="btn" onclick="addExpense()">Log</button>
+        </div>
+
+        ${expenses.length === 0 ? '<div class="empty">No expenses logged</div>' : `
+          <div class="led-list">
+            ${expenses.slice().reverse().map(e => `
+              <div class="led-row">
+                <div class="led-date">${formatDate(e.date)}</div>
+                <div>
+                  <div class="led-desc">${escapeHtml(e.description)}</div>
+                  <div class="led-by">By ${escapeHtml(e.paidBy)}</div>
+                </div>
+                <div class="led-amt">£${e.amount.toLocaleString()}</div>
+                ${e.paidBy === me.name ? `<button class="icon-btn" onclick="deleteExpense('${e.id}')">✕</button>` : '<div></div>'}
+              </div>
+            `).join('')}
+          </div>
+        `}
+
+        ${crew.length >= 2 && expenses.length > 0 ? `
+          <div class="balances">
+            <div class="bal-h">Settlement · positive = owed back</div>
+            ${balances.map(b => `
+              <div class="bal-row">
+                <div class="bal-name">${escapeHtml(b.name)}</div>
+                <div class="bal-amt ${b.net > 0 ? 'bal-pos' : b.net < 0 ? 'bal-neg' : 'bal-zero'}">
+                  ${b.net > 0 ? '+' : ''}£${Math.round(Math.abs(b.net)).toLocaleString()}${b.net < 0 ? ' owed' : b.net > 0 ? ' back' : ' even'}
+                </div>
+              </div>
+            `).join('')}
+            <div class="bal-note">Maths runs on current crew size. Settle on Sun.</div>
+          </div>
+        ` : ''}
+      </section>
+    `;
+  }
+
+  function calcBalances() {
+    const total = totalSpent();
+    const share = crew.length > 0 ? total / crew.length : 0;
+    return crew.map(p => {
+      const paid = expenses.filter(e => e.paidBy === p.name).reduce((s, e) => s + e.amount, 0);
+      return { name: p.name, paid, net: paid - share };
+    });
+  }
+
+  function renderWall() {
+    return `
+      <section class="section active">
+        <header class="section-header">
+          <div>
+            <h2 class="section-title">Feed.</h2>
+            <p class="section-lead">Photos and dispatches from the trip. Paste an image URL, add a line, post. Build the record as you go.</p>
+          </div>
+          <div class="section-code">§ 06 · ${wall.length} POSTS</div>
+        </header>
+
+        <div class="feed-new">
+          <input id="wall-url" class="input" type="url" placeholder="Image URL (optional)" />
+          <textarea id="wall-caption" class="textarea" placeholder="Caption, update, one-liner..."></textarea>
+          <div style="display: flex; justify-content: flex-end;"><button class="btn" onclick="addPost()">Post</button></div>
+        </div>
+
+        ${wall.length === 0 ? '<div class="empty">Feed empty · first to post wins</div>' : `
+          <div class="feed-grid">
+            ${wall.slice().reverse().map(p => `
+              <div class="feed-post">
+                ${p.url ? `<img class="feed-img" src="${escapeAttr(p.url)}" alt="" onerror="this.style.display='none'"/>` : ''}
+                <div class="feed-body">
+                  ${p.caption ? `<div class="feed-caption">${escapeHtml(p.caption)}</div>` : ''}
+                  <div class="feed-meta">
+                    <span>${escapeHtml(p.author)}</span>
+                    <span>${formatDate(p.date)}</span>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </section>
+    `;
+  }
+
+  function renderGate() {
+    app.innerHTML = `
+      <div class="gate-wrap">
+        <div class="gate">
+          <div class="gate-tag">Boys Trip · 001 · Stockholm</div>
+          <h1 class="gate-title">Three nights<span class="slash">.</span><br/>Five of us<span class="slash">.</span></h1>
+          <p class="gate-sub">Stockholm, 23 – 26 July 2026. Sign in with your name to join the crew, vote on the plan, track the ledger, and post to the feed.</p>
+          <div class="gate-form">
+            <input id="name-input" class="gate-input" type="text" placeholder="Your name" autofocus />
+            <button class="gate-btn" onclick="signIn()">Enter →</button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
+  }
+
+  window.signIn = async function() {
+    const input = document.getElementById('name-input');
+    const name = input.value.trim();
+    if (!name) return;
+    me = { name, joined: Date.now() };
+    await set('trip:me', me, false);
+    await loadShared();
+    const exists = crew.find(p => p.name.toLowerCase() === name.toLowerCase());
+    if (!exists) {
+      crew.push({ name, joined: Date.now() });
+      await set('trip:crew', crew);
+    }
+    render();
+  };
+
+  window.switchUser = async function() {
+    if (!confirm('Switch user?')) return;
+    await window.storage.delete('trip:me', false);
+    me = null;
+    renderGate();
+  };
+
+  window.setFilter = function(f) { voteFilter = f; render(); };
+
+  window.castVote = async function(id, vote) {
+    if (!votes[id]) votes[id] = {};
+    if (votes[id][me.name] === vote) delete votes[id][me.name];
+    else votes[id][me.name] = vote;
+    await set('trip:votes', votes);
+    render();
+  };
+
+  window.addBooking = async function() {
+    const input = document.getElementById('bk-title');
+    const title = input.value.trim();
+    if (!title) return;
+    bookings.push({ id: 'b' + Date.now(), title, assignee: '', done: false });
+    await set('trip:bookings', bookings);
+    render();
+  };
+
+  window.toggleBooking = async function(id) {
+    const b = bookings.find(x => x.id === id);
+    if (b) { b.done = !b.done; await set('trip:bookings', bookings); render(); }
+  };
+
+  window.assignBooking = async function(id, name) {
+    const b = bookings.find(x => x.id === id);
+    if (b) { b.assignee = name; await set('trip:bookings', bookings); render(); }
+  };
+
+  window.deleteBooking = async function(id) {
+    if (!confirm('Delete?')) return;
+    bookings = bookings.filter(b => b.id !== id);
+    await set('trip:bookings', bookings);
+    render();
+  };
+
+  window.addExpense = async function() {
+    const desc = document.getElementById('exp-desc').value.trim();
+    const amt = parseFloat(document.getElementById('exp-amt').value);
+    if (!desc || isNaN(amt) || amt <= 0) return;
+    expenses.push({
+      id: 'e' + Date.now(),
+      description: desc,
+      amount: Math.round(amt * 100) / 100,
+      paidBy: me.name,
+      date: Date.now(),
+    });
+    await set('trip:expenses', expenses);
+    render();
+  };
+
+  window.deleteExpense = async function(id) {
+    if (!confirm('Delete?')) return;
+    expenses = expenses.filter(e => e.id !== id);
+    await set('trip:expenses', expenses);
+    render();
+  };
+
+  window.addPost = async function() {
+    const url = document.getElementById('wall-url').value.trim();
+    const caption = document.getElementById('wall-caption').value.trim();
+    if (!url && !caption) return;
+    wall.push({ id: 'w' + Date.now(), url, caption, author: me.name, date: Date.now() });
+    await set('trip:wall', wall);
+    render();
+  };
+
+  function initials(name) {
+    return name.split(/\s+/).map(p => p[0]).join('').slice(0, 2).toUpperCase();
+  }
+  function formatDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }).toUpperCase();
+  }
+  function calcDaysLeft() {
+    const trip = new Date('2026-07-23T12:00:00');
+    const diff = trip - new Date();
+    return Math.max(0, Math.floor(diff / 86400000));
+  }
+  function totalSpent() {
+    return Math.round(expenses.reduce((s, e) => s + e.amount, 0));
+  }
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function escapeAttr(s) { return escapeHtml(s); }
+
+  (async () => {
+    await loadMe();
+    await loadShared();
+    render();
+  })();
+</script>
