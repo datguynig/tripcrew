@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/hooks/useToast";
 
 type Props = {
   tripId: string;
@@ -55,6 +56,7 @@ export function Destinations({
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
+  const toast = useToast();
 
   useEffect(() => setCandidates(initialCandidates), [initialCandidates]);
   useEffect(() => setVotes(initialVotes), [initialVotes]);
@@ -201,9 +203,20 @@ export function Destinations({
   };
 
   const handleRemove = (id: string) => {
+    const removed = candidates.find((c) => c.id === id);
+    if (!removed) return;
     setCandidates((prev) => prev.filter((c) => c.id !== id));
-    startTransition(async () => {
-      await removeCandidate(id);
+    toast.undo({
+      message: `Removed "${removed.title}"`,
+      duration: 5000,
+      onUndo: () =>
+        setCandidates((prev) =>
+          [...prev, removed].sort((a, b) => a.position - b.position),
+        ),
+      onCommit: () =>
+        startTransition(async () => {
+          await removeCandidate(id);
+        }),
     });
   };
 

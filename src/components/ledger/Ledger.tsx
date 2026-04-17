@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { addExpense, deleteExpense } from "@/lib/actions/ledger";
 import type { Expense } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/hooks/useToast";
 
 type CrewOption = { id: string; name: string };
 
@@ -27,6 +28,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
   const [desc, setDesc] = useState("");
   const [amt, setAmt] = useState("");
   const [, startTransition] = useTransition();
+  const toast = useToast();
 
   useEffect(() => setExpenses(initial), [initial]);
 
@@ -114,9 +116,24 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
   };
 
   const handleDelete = (id: string) => {
+    const removed = expenses.find((e) => e.id === id);
+    if (!removed) return;
     setExpenses((prev) => prev.filter((e) => e.id !== id));
-    startTransition(async () => {
-      await deleteExpense(id);
+    toast.undo({
+      message: `Deleted "${removed.description}"`,
+      duration: 5000,
+      onUndo: () =>
+        setExpenses((prev) =>
+          [...prev, removed].sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
+          ),
+        ),
+      onCommit: () =>
+        startTransition(async () => {
+          await deleteExpense(id);
+        }),
     });
   };
 
