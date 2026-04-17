@@ -3,6 +3,7 @@ import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { AdminCard, AdminPlaceholder } from "@/components/admin/AdminCard";
 import { IdentitySection } from "@/components/admin/IdentitySection";
+import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
 
 export const revalidate = 0;
 
@@ -47,7 +48,14 @@ export default async function AdminPage({
           title="Dates & budget"
           description="Start/end dates, vote deadline, target budget per head."
         >
-          <AdminPlaceholder />
+          <DatesBudgetSection
+            tripId={trip.id}
+            startDate={trip.start_date}
+            endDate={trip.end_date}
+            voteDeadline={trip.vote_deadline}
+            targetBudgetPp={trip.target_budget_pp}
+            targetCrewSize={trip.target_crew_size}
+          />
         </AdminCard>
 
         <AdminCard
