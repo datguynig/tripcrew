@@ -1,6 +1,9 @@
 import { notFound, redirect } from "next/navigation";
-import { getCurrentUser, getTrip } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
+import { Destinations } from "@/components/destinations/Destinations";
+import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 
 export const revalidate = 0;
 
@@ -15,16 +18,44 @@ export default async function DestinationsPage({
   if (!user) redirect("/sign-in");
   if (!trip) notFound();
 
+  const member = await getTripMember(trip.id, user.id);
+  const isAdmin = member?.role === "admin";
+
+  const supabase = await createClient();
+  const { data: candidates } = await supabase
+    .from("destination_candidates")
+    .select("id, trip_id, title, note, proposed_by, position, created_at")
+    .eq("trip_id", trip.id)
+    .order("position", { ascending: true })
+    .returns<DestinationCandidate[]>();
+
+  const candidateIds = (candidates ?? []).map((c) => c.id);
+  const { data: votes } = candidateIds.length
+    ? await supabase
+        .from("destination_votes")
+        .select("candidate_id, user_id, vote, updated_at")
+        .in("candidate_id", candidateIds)
+        .returns<DestinationVote[]>()
+    : { data: [] as DestinationVote[] };
+
+  const lead =
+    trip.status === "locked"
+      ? "Decision locked. History below."
+      : "Propose candidates. Vote yes, meh, or no. Admin locks the winner.";
+
   return (
     <section className="py-14 pb-24 section-enter">
-      <SectionHeader
-        code="§ 00"
-        title="Where to."
-        lead="Propose candidates, vote, lock it in."
+      <SectionHeader code="§ 00" title="Where to." lead={lead} />
+      <Destinations
+        tripId={trip.id}
+        initialCandidates={candidates ?? []}
+        initialVotes={votes ?? []}
+        currentUserId={user.id}
+        isAdmin={isAdmin}
+        voteDeadline={trip.vote_deadline}
+        locked={trip.status === "locked"}
+        lockedDestination={trip.destination}
       />
-      <div className="border border-line py-20 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
-        Destination voting · coming in Phase E
-      </div>
     </section>
   );
 }

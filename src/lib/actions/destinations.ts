@@ -1,0 +1,189 @@
+"use server";
+
+import { z } from "zod";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+
+async function revalidateTrip(tripId: string) {
+  const service = createServiceClient();
+  const { data } = await service
+    .from("trips")
+    .select("slug")
+    .eq("id", tripId)
+    .maybeSingle<{ slug: string }>();
+  if (data?.slug) {
+    revalidatePath(`/trips/${data.slug}/destinations`);
+    revalidatePath(`/trips/${data.slug}`);
+  }
+}
+
+const proposeSchema = z.object({
+  tripId: z.string().uuid(),
+  title: z.string().trim().min(1).max(120),
+  note: z.string().trim().max(280).optional().nullable(),
+});
+
+export async function proposeCandidate(input: {
+  tripId: string;
+  title: string;
+  note?: string | null;
+}) {
+  const parsed = proposeSchema.safeParse(input);
+  if (!parsed.success) return { error: "Title required (≤120 chars)" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const { data: last } = await supabase
+    .from("destination_candidates")
+    .select("position")
+    .eq("trip_id", parsed.data.tripId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ position: number }>();
+
+  const position = (last?.position ?? 0) + 1;
+
+  const { error } = await supabase.from("destination_candidates").insert({
+    trip_id: parsed.data.tripId,
+    title: parsed.data.title,
+    note: parsed.data.note || null,
+    proposed_by: user.id,
+    position,
+  });
+  if (error) return { error: error.message };
+
+  await revalidateTrip(parsed.data.tripId);
+  return { ok: true };
+}
+
+export async function removeCandidate(id: string) {
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return { error: "Invalid id" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("destination_candidates")
+    .delete()
+    .eq("id", parsed.data)
+    .select("trip_id")
+    .maybeSingle<{ trip_id: string }>();
+  if (error) return { error: error.message };
+  if (data) await revalidateTrip(data.trip_id);
+  return { ok: true };
+}
+
+const voteSchema = z.object({
+  candidateId: z.string().uuid(),
+  vote: z.enum(["yes", "maybe", "no"]).nullable(),
+});
+
+export async function castDestinationVote(input: {
+  candidateId: string;
+  vote: "yes" | "maybe" | "no" | null;
+}) {
+  const parsed = voteSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid vote" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  if (parsed.data.vote === null) {
+    const { error } = await supabase
+      .from("destination_votes")
+      .delete()
+      .eq("candidate_id", parsed.data.candidateId)
+      .eq("user_id", user.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase.from("destination_votes").upsert(
+      {
+        candidate_id: parsed.data.candidateId,
+        user_id: user.id,
+        vote: parsed.data.vote,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "candidate_id,user_id" },
+    );
+    if (error) return { error: error.message };
+  }
+
+  const { data: cand } = await supabase
+    .from("destination_candidates")
+    .select("trip_id")
+    .eq("id", parsed.data.candidateId)
+    .maybeSingle<{ trip_id: string }>();
+  if (cand) await revalidateTrip(cand.trip_id);
+  return { ok: true };
+}
+
+export async function lockDestination(tripId: string) {
+  const parsed = z.string().uuid().safeParse(tripId);
+  if (!parsed.success) return { error: "Invalid trip" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const { data: member } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", parsed.data)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: "admin" | "member" }>();
+  if (member?.role !== "admin") return { error: "Admin only" };
+
+  const service = createServiceClient();
+  const { data: candidates } = await service
+    .from("destination_candidates")
+    .select("id, title, position")
+    .eq("trip_id", parsed.data)
+    .order("position", { ascending: true });
+
+  if (!candidates || candidates.length === 0) {
+    return { error: "Add at least one candidate before locking" };
+  }
+
+  const { data: votes } = await service
+    .from("destination_votes")
+    .select("candidate_id, vote")
+    .in(
+      "candidate_id",
+      candidates.map((c) => c.id),
+    );
+
+  const scored = candidates
+    .map((c) => {
+      const vs = votes?.filter((v) => v.candidate_id === c.id) ?? [];
+      const yes = vs.filter((v) => v.vote === "yes").length;
+      const maybe = vs.filter((v) => v.vote === "maybe").length;
+      return { ...c, score: yes * 2 + maybe };
+    })
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return a.position - b.position;
+    });
+
+  const winner = scored[0];
+
+  const { data: trip, error: updErr } = await service
+    .from("trips")
+    .update({ status: "locked", destination: winner.title })
+    .eq("id", parsed.data)
+    .select("slug")
+    .maybeSingle<{ slug: string }>();
+  if (updErr || !trip) return { error: updErr?.message ?? "Could not lock" };
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/destinations`);
+  redirect(`/trips/${trip.slug}`);
+}
