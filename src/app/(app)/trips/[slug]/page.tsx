@@ -8,6 +8,20 @@ import { Schedule } from "@/components/overview/Schedule";
 
 export const revalidate = 0;
 
+function formatDateRange(start: string | null, end: string | null) {
+  if (!start && !end) return "Dates TBD";
+  const fmt = (iso: string) =>
+    new Date(`${iso}T00:00:00Z`)
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "2-digit",
+      })
+      .toUpperCase();
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  return fmt((start ?? end) as string);
+}
+
 export default async function TripOverview({
   params,
 }: {
@@ -37,35 +51,36 @@ export default async function TripOverview({
   const kittyTotal =
     expenses?.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
 
-  const headline = trip.destination ?? trip.name;
-  const heroSub = trip.meta?.hero_sub ?? null;
-  const specCells = trip.meta?.spec_grid ?? [];
+  const heroTitle = trip.hero_title ?? trip.destination ?? trip.name;
+  const heroSubtitle = trip.hero_subtitle;
+  const cityLabel = trip.city_label ?? trip.destination ?? "TBD";
+  const datesLabel =
+    trip.dates_label ?? formatDateRange(trip.start_date, trip.end_date);
+  const specCells = trip.meta?.spec ?? [];
   const scheduleRows = trip.meta?.schedule ?? [];
-  const targetBudgetPp = trip.meta?.target_budget_pp ?? null;
+  const overviewLead =
+    trip.meta?.section_leads?.overview ??
+    "Spec grid and schedule for the trip. Admin can edit in settings.";
 
   return (
     <>
       <Hero
-        headline={headline}
-        heroSub={heroSub}
-        destination={trip.destination}
+        heroTitle={heroTitle}
+        heroSubtitle={heroSubtitle}
+        cityLabel={cityLabel}
+        datesLabel={datesLabel}
         startDate={trip.start_date}
-        endDate={trip.end_date}
         status={trip.status}
         crewCount={crewCount ?? 0}
         targetCrew={trip.target_crew_size}
         bookingsDone={bookingsDone}
         bookingsTotal={bookingsTotal}
         kittyTotal={kittyTotal}
-        targetBudgetPp={targetBudgetPp}
+        targetBudgetPp={trip.target_budget_pp}
       />
 
       <section className="py-14 pb-24 section-enter">
-        <SectionHeader
-          code="§ 01"
-          title="The brief."
-          lead="Spec grid and schedule for the trip. Admin can edit in settings."
-        />
+        <SectionHeader code="§ 01" title="The brief." lead={overviewLead} />
         <SpecGrid cells={specCells} />
         <Schedule rows={scheduleRows} />
       </section>

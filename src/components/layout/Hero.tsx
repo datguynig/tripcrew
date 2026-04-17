@@ -8,26 +8,12 @@ function daysUntil(iso: string) {
   return Math.max(0, Math.ceil((target - now) / 86400000));
 }
 
-function formatRange(start: string | null, end: string | null) {
-  if (!start && !end) return "Dates TBD";
-  const fmt = (iso: string) =>
-    new Date(`${iso}T00:00:00Z`)
-      .toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "2-digit",
-      })
-      .toUpperCase();
-  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
-  return fmt((start ?? end) as string);
-}
-
 type Props = {
-  headline: string;
-  heroSub: string | null;
-  destination: string | null;
+  heroTitle: string;
+  heroSubtitle: string | null;
+  cityLabel: string;
+  datesLabel: string;
   startDate: string | null;
-  endDate: string | null;
   status: "planning" | "locked";
   crewCount: number;
   targetCrew: number | null;
@@ -38,11 +24,11 @@ type Props = {
 };
 
 export function Hero({
-  headline,
-  heroSub,
-  destination,
+  heroTitle,
+  heroSubtitle,
+  cityLabel,
+  datesLabel,
   startDate,
-  endDate,
   status,
   crewCount,
   targetCrew,
@@ -65,12 +51,10 @@ export function Hero({
     <div className="pt-[70px] pb-[60px] border-b border-line relative">
       <div className="flex flex-wrap gap-7 mb-10 font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
         <span>
-          LOC /{" "}
-          <b className="text-fg font-medium">{destination ?? "TBD"}</b>
+          LOC / <b className="text-fg font-medium">{cityLabel}</b>
         </span>
         <span>
-          DATES /{" "}
-          <b className="text-fg font-medium">{formatRange(startDate, endDate)}</b>
+          DATES / <b className="text-fg font-medium">{datesLabel}</b>
         </span>
         <span>
           CREW /{" "}
@@ -94,13 +78,13 @@ export function Hero({
           letterSpacing: "-0.055em",
         }}
       >
-        {headline}
+        {heroTitle}
         <span className="text-accent">.</span>
       </h1>
 
-      {heroSub && (
+      {heroSubtitle && (
         <p className="max-w-[620px] text-[18px] leading-[1.5] text-fg-2">
-          {heroSub}
+          {heroSubtitle}
         </p>
       )}
 
