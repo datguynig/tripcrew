@@ -19,18 +19,21 @@ export default async function ShortlistPage({
   if (!trip) notFound();
 
   const supabase = await createClient();
-  const [{ data: activities }, { data: votes }] = await Promise.all([
-    supabase
-      .from("activities")
-      .select("id, trip_id, title, meta, category, position, created_at")
-      .eq("trip_id", trip.id)
-      .order("position", { ascending: true })
-      .returns<Activity[]>(),
-    supabase
-      .from("votes")
-      .select("activity_id, user_id, vote, updated_at")
-      .returns<Vote[]>(),
-  ]);
+  const { data: activities } = await supabase
+    .from("activities")
+    .select("id, trip_id, title, meta, category, position, created_at")
+    .eq("trip_id", trip.id)
+    .order("position", { ascending: true })
+    .returns<Activity[]>();
+
+  const activityIds = (activities ?? []).map((a) => a.id);
+  const { data: votes } = activityIds.length
+    ? await supabase
+        .from("votes")
+        .select("activity_id, user_id, vote, updated_at")
+        .in("activity_id", activityIds)
+        .returns<Vote[]>()
+    : { data: [] as Vote[] };
 
   const lead =
     trip.meta?.section_leads?.shortlist ??

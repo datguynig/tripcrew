@@ -73,7 +73,8 @@ export async function removeCandidate(id: string) {
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (data) await revalidateTrip(data.trip_id);
+  if (!data) return { error: "Could not remove — not found or not permitted" };
+  await revalidateTrip(data.trip_id);
   return { ok: true };
 }
 
@@ -179,9 +180,11 @@ export async function lockDestination(tripId: string) {
     .from("trips")
     .update({ status: "locked", destination: winner.title })
     .eq("id", parsed.data)
+    .eq("status", "planning")
     .select("slug")
     .maybeSingle<{ slug: string }>();
-  if (updErr || !trip) return { error: updErr?.message ?? "Could not lock" };
+  if (updErr) return { error: updErr.message };
+  if (!trip) return { error: "Destination already locked" };
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/destinations`);

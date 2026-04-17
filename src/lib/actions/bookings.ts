@@ -65,7 +65,8 @@ export async function toggleBookingDone(id: string, done: boolean) {
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (data) await revalidateTrip(data.trip_id);
+  if (!data) return { error: "Not permitted" };
+  await revalidateTrip(data.trip_id);
   return { ok: true };
 }
 
@@ -86,7 +87,8 @@ export async function setBookingAssignee(
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (data) await revalidateTrip(data.trip_id);
+  if (!data) return { error: "Not permitted" };
+  await revalidateTrip(data.trip_id);
   return { ok: true };
 }
 
@@ -102,6 +104,7 @@ export async function deleteBooking(id: string) {
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (data) await revalidateTrip(data.trip_id);
+  if (!data) return { error: "Not permitted" };
+  await revalidateTrip(data.trip_id);
   return { ok: true };
 }

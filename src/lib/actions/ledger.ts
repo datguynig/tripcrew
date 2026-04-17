@@ -67,6 +67,7 @@ export async function deleteExpense(id: string) {
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (data) await revalidateTrip(data.trip_id);
+  if (!data) return { error: "Only the payer can delete this" };
+  await revalidateTrip(data.trip_id);
   return { ok: true };
 }
