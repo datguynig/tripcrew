@@ -21,6 +21,14 @@ const nextConfig: NextConfig = {
     serverActions: {
       allowedOrigins: devOrigins,
     },
+    // Disable the client-side Router Cache so HMR-updated server
+    // components show on soft navigation. Without this Next caches
+    // RSC payloads (dynamic 30s, static 5m) and the browser serves
+    // the stale payload until a hard reload.
+    staleTimes: {
+      dynamic: 0,
+      static: 30,
+    },
   },
 };
 
