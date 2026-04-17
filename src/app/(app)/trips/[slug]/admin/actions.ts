@@ -409,6 +409,10 @@ export async function updateSectionLeads(
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/admin`);
+  revalidatePath(`/trips/${trip.slug}/shortlist`);
+  revalidatePath(`/trips/${trip.slug}/bookings`);
+  revalidatePath(`/trips/${trip.slug}/ledger`);
+  revalidatePath(`/trips/${trip.slug}/feed`);
   return { ok: true };
 }
 
@@ -444,6 +448,7 @@ export async function promoteMember(
 
   const slug = await resolveTripSlug(supabase, parsed.data.tripId);
   if (slug) {
+    revalidatePath(`/trips/${slug}`);
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }
@@ -492,6 +497,7 @@ export async function demoteMember(
 
   const slug = await resolveTripSlug(supabase, parsed.data.tripId);
   if (slug) {
+    revalidatePath(`/trips/${slug}`);
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }
@@ -544,6 +550,7 @@ export async function removeMember(
 
   const slug = await resolveTripSlug(supabase, parsed.data.tripId);
   if (slug) {
+    revalidatePath(`/trips/${slug}`);
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }

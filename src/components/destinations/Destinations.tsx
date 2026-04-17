@@ -59,7 +59,7 @@ export function Destinations({
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
   const toast = useToast();
 
@@ -382,8 +382,12 @@ export function Destinations({
               {error}
             </span>
           )}
-          <Button onClick={handlePropose} className="ml-auto">
-            Propose
+          <Button
+            onClick={handlePropose}
+            disabled={pending || !title.trim()}
+            className="ml-auto"
+          >
+            {pending ? "Proposing…" : "Propose"}
           </Button>
         </div>
       </div>
