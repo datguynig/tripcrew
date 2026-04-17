@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { Suspense, useActionState, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   sendMagicLink,
@@ -20,6 +20,14 @@ function safeNext(value: string | null): string | null {
 }
 
 export default function SignInPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignInInner />
+    </Suspense>
+  );
+}
+
+function SignInInner() {
   const [mode, setMode] = useState<Mode>("signin");
   const params = useSearchParams();
   const next = safeNext(params.get("next"));

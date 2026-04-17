@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createProfile, type ProfileState } from "./actions";
 import { Button } from "@/components/ui/Button";
@@ -13,6 +13,14 @@ function safeNext(value: string | null): string | null {
 }
 
 export default function ProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <ProfileForm />
+    </Suspense>
+  );
+}
+
+function ProfileForm() {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
     createProfile,
     undefined,
