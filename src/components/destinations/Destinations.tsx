@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import {
   castDestinationVote,
@@ -14,10 +15,12 @@ import { useToast } from "@/hooks/useToast";
 
 type Props = {
   tripId: string;
+  tripSlug: string;
   initialCandidates: DestinationCandidate[];
   initialVotes: DestinationVote[];
   currentUserId: string;
   isAdmin: boolean;
+  crewCount: number;
   voteDeadline: string | null;
   locked: boolean;
   lockedDestination: string | null;
@@ -40,10 +43,12 @@ function formatDeadline(iso: string) {
 
 export function Destinations({
   tripId,
+  tripSlug,
   initialCandidates,
   initialVotes,
   currentUserId,
   isAdmin,
+  crewCount,
   voteDeadline,
   locked,
   lockedDestination,
@@ -276,6 +281,8 @@ export function Destinations({
     );
   }
 
+  const soloAdmin = isAdmin && crewCount <= 1;
+
   return (
     <>
       {deadlineText && (
@@ -290,6 +297,26 @@ export function Destinations({
             className={`w-[6px] h-[6px] rounded-full ${deadlinePassed ? "bg-err" : "bg-warn"}`}
           />
           {deadlinePassed ? "Deadline passed" : `Closes in ${deadlineText}`}
+        </div>
+      )}
+
+      {soloAdmin && (
+        <div className="border border-accent/40 bg-accent/[0.06] p-5 mb-7 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-accent mb-1">
+              Crew of one
+            </div>
+            <p className="text-[14px] text-fg-2 max-w-[520px]">
+              Invite the crew so they can propose and vote. A solo vote
+              isn&apos;t much of a vote.
+            </p>
+          </div>
+          <Link
+            href={`/trips/${tripSlug}/crew`}
+            className="font-mono text-[11px] tracking-[0.1em] uppercase text-accent hover:text-fg transition-colors"
+          >
+            Invite crew →
+          </Link>
         </div>
       )}
 

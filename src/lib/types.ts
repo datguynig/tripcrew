@@ -117,7 +117,7 @@ export type DestinationVote = {
 export type TripInvite = {
   id: string;
   trip_id: string;
-  email: string;
+  email: string | null;
   invited_by: string | null;
   invited_at: string;
   accepted_at: string | null;

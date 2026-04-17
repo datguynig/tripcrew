@@ -22,6 +22,11 @@ export default async function DestinationsPage({
   const isAdmin = member?.role === "admin";
 
   const supabase = await createClient();
+  const { count: crewCount } = await supabase
+    .from("trip_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("trip_id", trip.id);
+
   const { data: candidates } = await supabase
     .from("destination_candidates")
     .select("id, trip_id, title, note, proposed_by, position, created_at")
@@ -48,10 +53,12 @@ export default async function DestinationsPage({
       <SectionHeader code="§ 00" title="Where to." lead={lead} />
       <Destinations
         tripId={trip.id}
+        tripSlug={trip.slug}
         initialCandidates={candidates ?? []}
         initialVotes={votes ?? []}
         currentUserId={user.id}
         isAdmin={isAdmin}
+        crewCount={crewCount ?? 0}
         voteDeadline={trip.vote_deadline}
         locked={trip.status === "locked"}
         lockedDestination={trip.destination}

@@ -1,8 +1,11 @@
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser, getTrip } from "@/lib/auth";
+import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { CrewList, type CrewRow } from "@/components/crew/CrewList";
+import { InvitePanel } from "@/components/invites/InvitePanel";
+import type { TripInvite } from "@/lib/types";
 
 export const revalidate = 0;
 
@@ -16,6 +19,9 @@ export default async function CrewPage({
   const trip = await getTrip(slug);
   if (!user) redirect("/sign-in");
   if (!trip) notFound();
+
+  const member = await getTripMember(trip.id, user.id);
+  const isAdmin = member?.role === "admin";
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -71,6 +77,32 @@ export default async function CrewPage({
         targetCrew={target}
         currentUserId={user.id}
       />
+
+      {isAdmin && <AdminInvites tripId={trip.id} />}
     </section>
+  );
+}
+
+async function AdminInvites({ tripId }: { tripId: string }) {
+  const supabase = await createClient();
+  const { data: invites } = await supabase
+    .from("trip_invites")
+    .select(
+      "id, trip_id, email, invited_by, invited_at, accepted_at, token, expires_at, accepted_by",
+    )
+    .eq("trip_id", tripId)
+    .is("accepted_at", null)
+    .order("invited_at", { ascending: false })
+    .returns<TripInvite[]>();
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto =
+    h.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "development" ? "http" : "https");
+  const origin = `${proto}://${host}`;
+
+  return (
+    <InvitePanel tripId={tripId} origin={origin} initial={invites ?? []} />
   );
 }
