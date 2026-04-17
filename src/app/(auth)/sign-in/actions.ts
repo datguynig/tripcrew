@@ -18,9 +18,11 @@ export async function sendMagicLink(
   if (!parsed.success) return { error: "Valid email required." };
 
   const supabase = await createClient();
-  const host = (await headers()).get("host");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
   const proto =
-    process.env.NODE_ENV === "development" ? "http" : "https";
+    h.get("x-forwarded-proto") ??
+    (process.env.NODE_ENV === "development" ? "http" : "https");
   const redirectTo = `${proto}://${host}/callback`;
 
   const { error } = await supabase.auth.signInWithOtp({
