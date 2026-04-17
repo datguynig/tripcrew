@@ -76,17 +76,20 @@ export function DatesBudgetSection({
         </Field>
       </div>
 
-      <Field
-        label="Vote deadline"
-        name="voteDeadline"
-        helper="Soft deadline shown on the Where to? tab. Not enforced."
-      >
-        <input
-          type="datetime-local"
-          defaultValue={isoToLocalInput(voteDeadline)}
-          className={INPUT_CLASS}
-        />
-      </Field>
+      <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
+        <Field
+          label="Vote deadline"
+          name="voteDeadline"
+          helper="Soft deadline shown on the Where to? tab. Not enforced."
+        >
+          <input
+            type="datetime-local"
+            defaultValue={isoToLocalInput(voteDeadline)}
+            className={INPUT_CLASS}
+          />
+        </Field>
+        <div aria-hidden />
+      </div>
 
       <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
         <Field
