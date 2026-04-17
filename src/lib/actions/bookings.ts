@@ -3,12 +3,27 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { TRIP_SLUG } from "@/lib/types";
 
-export async function addBooking(formData: FormData) {
+async function revalidateTrip(tripId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("trips")
+    .select("slug")
+    .eq("id", tripId)
+    .maybeSingle<{ slug: string }>();
+  if (data?.slug) {
+    revalidatePath(`/trips/${data.slug}/bookings`);
+    revalidatePath(`/trips/${data.slug}`);
+  }
+}
+
+export async function addBooking(tripId: string, formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
   const parsed = z.string().min(1).max(200).safeParse(title);
   if (!parsed.success) return { error: "Enter a title" };
+
+  const tripIdParsed = z.string().uuid().safeParse(tripId);
+  if (!tripIdParsed.success) return { error: "Invalid trip" };
 
   const supabase = await createClient();
   const {
@@ -16,17 +31,10 @@ export async function addBooking(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
-  const { data: trip } = await supabase
-    .from("trips")
-    .select("id")
-    .eq("slug", TRIP_SLUG)
-    .single();
-  if (!trip) return { error: "Trip missing" };
-
   const { data: last } = await supabase
     .from("bookings")
     .select("position")
-    .eq("trip_id", trip.id)
+    .eq("trip_id", tripIdParsed.data)
     .order("position", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -34,14 +42,14 @@ export async function addBooking(formData: FormData) {
   const position = (last?.position ?? 0) + 1;
 
   const { error } = await supabase.from("bookings").insert({
-    trip_id: trip.id,
+    trip_id: tripIdParsed.data,
     title: parsed.data,
     position,
     created_by: user.id,
   });
   if (error) return { error: error.message };
 
-  revalidatePath("/bookings");
+  await revalidateTrip(tripIdParsed.data);
   return { ok: true };
 }
 
@@ -50,12 +58,14 @@ export async function toggleBookingDone(id: string, done: boolean) {
   if (!parsed.success) return { error: "Invalid id" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bookings")
     .update({ done })
-    .eq("id", parsed.data);
+    .eq("id", parsed.data)
+    .select("trip_id")
+    .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  revalidatePath("/bookings");
+  if (data) await revalidateTrip(data.trip_id);
   return { ok: true };
 }
 
@@ -65,20 +75,18 @@ export async function setBookingAssignee(
 ) {
   const parsed = z.string().uuid().safeParse(id);
   if (!parsed.success) return { error: "Invalid id" };
-  const assigneeParsed = z
-    .string()
-    .uuid()
-    .nullable()
-    .safeParse(assigneeId);
+  const assigneeParsed = z.string().uuid().nullable().safeParse(assigneeId);
   if (!assigneeParsed.success) return { error: "Invalid assignee" };
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bookings")
     .update({ assignee_id: assigneeParsed.data })
-    .eq("id", parsed.data);
+    .eq("id", parsed.data)
+    .select("trip_id")
+    .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  revalidatePath("/bookings");
+  if (data) await revalidateTrip(data.trip_id);
   return { ok: true };
 }
 
@@ -87,8 +95,13 @@ export async function deleteBooking(id: string) {
   if (!parsed.success) return { error: "Invalid id" };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("bookings").delete().eq("id", parsed.data);
+  const { data, error } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", parsed.data)
+    .select("trip_id")
+    .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  revalidatePath("/bookings");
+  if (data) await revalidateTrip(data.trip_id);
   return { ok: true };
 }

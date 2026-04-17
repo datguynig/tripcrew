@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { addExpense, deleteExpense } from "@/app/(app)/ledger/actions";
+import { addExpense, deleteExpense } from "@/lib/actions/ledger";
 import type { Expense } from "@/lib/types";
 
 type CrewOption = { id: string; name: string };
@@ -108,7 +108,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
     setDesc("");
     setAmt("");
     startTransition(async () => {
-      await addExpense({ description, amount: rounded });
+      await addExpense({ tripId, description, amount: rounded });
     });
   };
 

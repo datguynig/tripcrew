@@ -1,18 +1,22 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Ledger } from "@/components/ledger/Ledger";
-import { SECTION_LEADS } from "@/constants/trip";
 import type { Expense } from "@/lib/types";
 
 export const revalidate = 0;
 
-export default async function LedgerPage() {
+export default async function LedgerPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const user = await getCurrentUser();
-  const trip = await getTrip();
+  const trip = await getTrip(slug);
   if (!user) redirect("/sign-in");
-  if (!trip) throw new Error("Trip not found");
+  if (!trip) notFound();
 
   const supabase = await createClient();
   const [{ data: expenses }, { data: members }] = await Promise.all([
@@ -43,7 +47,7 @@ export default async function LedgerPage() {
       <SectionHeader
         code="§ 05"
         title="Ledger."
-        lead={SECTION_LEADS.ledger}
+        lead="Pool everything, split even. Log what you pay, balances update."
       />
       <Ledger
         initial={expenses ?? []}

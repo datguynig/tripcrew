@@ -1,16 +1,21 @@
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { CrewList, type CrewRow } from "@/components/crew/CrewList";
-import { redirect } from "next/navigation";
 
 export const revalidate = 0;
 
-export default async function CrewPage() {
+export default async function CrewPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const user = await getCurrentUser();
-  const trip = await getTrip();
+  const trip = await getTrip(slug);
   if (!user) redirect("/sign-in");
-  if (!trip) throw new Error("Trip not found");
+  if (!trip) notFound();
 
   const supabase = await createClient();
   const { data } = await supabase
@@ -35,13 +40,16 @@ export default async function CrewPage() {
     }) ?? [];
 
   const count = rows.length;
-  const remaining = trip.target_crew_size - count;
+  const target = trip.target_crew_size;
+  const remaining = target ? target - count : null;
   const lead =
     count === 0
-      ? "Nobody in yet. Share the link."
-      : remaining <= 0
-        ? "Roster locked."
-        : `${count} in, ${remaining} to go.`;
+      ? "Nobody in yet. Invite the crew."
+      : remaining !== null
+        ? remaining <= 0
+          ? "Roster full."
+          : `${count} in, ${remaining} to go.`
+        : `${count} in.`;
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -52,15 +60,15 @@ export default async function CrewPage() {
           <b className="text-fg text-[14px] font-medium font-sans tracking-[-0.01em] normal-case mr-1">
             {count}
           </b>
-          / {trip.target_crew_size} confirmed
+          {target ? `/ ${target} confirmed` : "confirmed"}
         </span>
-        <span>Auto-added on sign-in</span>
+        <span>Invite-only</span>
       </div>
 
       <CrewList
         initial={rows}
         tripId={trip.id}
-        targetCrew={trip.target_crew_size}
+        targetCrew={target}
         currentUserId={user.id}
       />
     </section>

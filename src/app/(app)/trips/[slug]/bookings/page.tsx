@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
@@ -7,17 +7,24 @@ import type { Booking } from "@/lib/types";
 
 export const revalidate = 0;
 
-export default async function BookingsPage() {
+export default async function BookingsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const user = await getCurrentUser();
-  const trip = await getTrip();
+  const trip = await getTrip(slug);
   if (!user) redirect("/sign-in");
-  if (!trip) throw new Error("Trip not found");
+  if (!trip) notFound();
 
   const supabase = await createClient();
   const [{ data: bookings }, { data: members }] = await Promise.all([
     supabase
       .from("bookings")
-      .select("id, trip_id, title, assignee_id, done, position, created_at, created_by")
+      .select(
+        "id, trip_id, title, assignee_id, done, position, created_at, created_by",
+      )
       .eq("trip_id", trip.id)
       .order("position", { ascending: true })
       .returns<Booking[]>(),

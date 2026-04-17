@@ -42,6 +42,13 @@ export async function castVote(input: {
     if (error) return { error: error.message };
   }
 
-  revalidatePath("/shortlist");
+  const { data: activity } = await supabase
+    .from("activities")
+    .select("trip_id, trips(slug)")
+    .eq("id", parsed.data.activityId)
+    .maybeSingle<{ trip_id: string; trips: { slug: string } | { slug: string }[] | null }>();
+  const trip = Array.isArray(activity?.trips) ? activity?.trips[0] : activity?.trips;
+  if (trip?.slug) revalidatePath(`/trips/${trip.slug}/shortlist`);
+
   return { ok: true };
 }

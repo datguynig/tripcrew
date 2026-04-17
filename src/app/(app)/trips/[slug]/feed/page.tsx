@@ -1,18 +1,22 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Feed } from "@/components/feed/Feed";
-import { SECTION_LEADS } from "@/constants/trip";
 import type { Post } from "@/lib/types";
 
 export const revalidate = 0;
 
-export default async function FeedPage() {
+export default async function FeedPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
   const user = await getCurrentUser();
-  const trip = await getTrip();
+  const trip = await getTrip(slug);
   if (!user) redirect("/sign-in");
-  if (!trip) throw new Error("Trip not found");
+  if (!trip) notFound();
 
   const supabase = await createClient();
   const [{ data: posts }, { data: members }] = await Promise.all([
@@ -43,7 +47,7 @@ export default async function FeedPage() {
       <SectionHeader
         code={`§ 06 · ${count} POSTS`}
         title="Feed."
-        lead={SECTION_LEADS.feed}
+        lead="Photos and dispatches from the trip. Paste an image URL, add a line, post."
       />
       <Feed initial={posts ?? []} authorsById={authorsById} tripId={trip.id} />
     </section>

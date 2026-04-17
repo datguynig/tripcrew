@@ -1,7 +1,9 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Trip } from "@/lib/types";
-import { TRIP_SLUG } from "@/lib/types";
+import type { Profile, Trip, TripRole } from "@/lib/types";
+
+const TRIP_COLUMNS =
+  "id, slug, name, status, destination, vote_deadline, created_by, meta, start_date, end_date, target_crew_size, created_at";
 
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
@@ -19,15 +21,50 @@ export const getCurrentUser = cache(async () => {
   return profile ? { id: user.id, email: user.email, profile } : null;
 });
 
-export const getTrip = cache(async () => {
+export const getTrip = cache(async (slug: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("trips")
-    .select("id, slug, name, start_date, end_date, target_crew_size, created_at")
-    .eq("slug", TRIP_SLUG)
-    .single<Trip>();
+    .select(TRIP_COLUMNS)
+    .eq("slug", slug)
+    .maybeSingle<Trip>();
   return data;
 });
+
+export const getUserTrips = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data } = await supabase
+    .from("trip_members")
+    .select(`role, joined_at, trips!inner(${TRIP_COLUMNS})`)
+    .eq("user_id", user.id)
+    .order("joined_at", { ascending: false });
+
+  return (data ?? []).flatMap((row) => {
+    const trip = Array.isArray(row.trips)
+      ? row.trips[0]
+      : (row.trips as Trip | null);
+    if (!trip) return [];
+    return [{ ...trip, role: row.role as TripRole }];
+  });
+});
+
+export const getTripMember = cache(
+  async (tripId: string, userId: string): Promise<{ role: TripRole } | null> => {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", tripId)
+      .eq("user_id", userId)
+      .maybeSingle<{ role: TripRole }>();
+    return data;
+  },
+);
 
 export function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);

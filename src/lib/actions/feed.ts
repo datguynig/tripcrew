@@ -3,10 +3,10 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { TRIP_SLUG } from "@/lib/types";
 
 const postSchema = z
   .object({
+    tripId: z.string().uuid(),
     imageUrl: z.string().url().max(2000).nullable(),
     caption: z.string().max(1000).nullable(),
   })
@@ -14,12 +14,25 @@ const postSchema = z
     message: "Add an image or a caption",
   });
 
+async function revalidateTrip(tripId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("trips")
+    .select("slug")
+    .eq("id", tripId)
+    .maybeSingle<{ slug: string }>();
+  if (data?.slug) revalidatePath(`/trips/${data.slug}/feed`);
+}
+
 export async function addPost(input: {
+  tripId: string;
   imageUrl: string | null;
   caption: string | null;
 }) {
   const cleaned = {
-    imageUrl: input.imageUrl && input.imageUrl.trim() ? input.imageUrl.trim() : null,
+    tripId: input.tripId,
+    imageUrl:
+      input.imageUrl && input.imageUrl.trim() ? input.imageUrl.trim() : null,
     caption: input.caption && input.caption.trim() ? input.caption.trim() : null,
   };
   const parsed = postSchema.safeParse(cleaned);
@@ -31,21 +44,14 @@ export async function addPost(input: {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
-  const { data: trip } = await supabase
-    .from("trips")
-    .select("id")
-    .eq("slug", TRIP_SLUG)
-    .single();
-  if (!trip) return { error: "Trip missing" };
-
   const { error } = await supabase.from("posts").insert({
-    trip_id: trip.id,
+    trip_id: parsed.data.tripId,
     image_url: parsed.data.imageUrl,
     caption: parsed.data.caption,
     author_id: user.id,
   });
   if (error) return { error: error.message };
 
-  revalidatePath("/feed");
+  await revalidateTrip(parsed.data.tripId);
   return { ok: true };
 }

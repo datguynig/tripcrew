@@ -7,7 +7,7 @@ import {
   deleteBooking,
   setBookingAssignee,
   toggleBookingDone,
-} from "@/app/(app)/bookings/actions";
+} from "@/lib/actions/bookings";
 import type { Booking } from "@/lib/types";
 
 type CrewOption = { id: string; name: string };
@@ -72,7 +72,7 @@ export function BookingsList({ initial, crew, tripId }: Props) {
     fd.set("title", trimmed);
     setTitle("");
     startTransition(async () => {
-      await addBooking(fd);
+      await addBooking(tripId, fd);
     });
   };
 

@@ -1,14 +1,21 @@
-import { SPEC } from "@/constants/trip";
+type Cell = { label: string; value: string; sub: string };
 
-export function SpecGrid() {
+export function SpecGrid({ cells }: { cells: Cell[] }) {
+  if (cells.length === 0) {
+    return (
+      <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 mb-9">
+        Spec grid empty · admin can set it in settings
+      </div>
+    );
+  }
   return (
     <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line mb-9">
-      {SPEC.map((cell, i) => (
+      {cells.map((cell, i) => (
         <div
-          key={cell.label}
+          key={`${cell.label}-${i}`}
           className={`py-[22px] px-6 border-r border-b border-line ${
             i % 4 === 3 ? "border-r-0" : ""
-          } ${i >= SPEC.length - (SPEC.length % 4 || 4) ? "last:border-b-0" : ""} max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0`}
+          } ${i >= cells.length - (cells.length % 4 || 4) ? "last:border-b-0" : ""} max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0`}
         >
           <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-3">
             {cell.label}

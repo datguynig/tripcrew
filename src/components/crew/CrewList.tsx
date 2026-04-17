@@ -13,7 +13,7 @@ export type CrewRow = {
 type Props = {
   initial: CrewRow[];
   tripId: string;
-  targetCrew: number;
+  targetCrew: number | null;
   currentUserId: string;
 };
 
@@ -77,7 +77,7 @@ export function CrewList({
     };
   }, [tripId]);
 
-  const fill = Math.max(0, targetCrew - rows.length);
+  const fill = targetCrew ? Math.max(0, targetCrew - rows.length) : 0;
 
   return (
     <div className="border border-line">

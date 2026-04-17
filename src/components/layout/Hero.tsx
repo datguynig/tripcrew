@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TRIP_START, HERO_SUB } from "@/constants/trip";
 
 function daysUntil(iso: string) {
   const target = new Date(`${iso}T00:00:00Z`).getTime();
@@ -9,16 +8,42 @@ function daysUntil(iso: string) {
   return Math.max(0, Math.ceil((target - now) / 86400000));
 }
 
+function formatRange(start: string | null, end: string | null) {
+  if (!start && !end) return "Dates TBD";
+  const fmt = (iso: string) =>
+    new Date(`${iso}T00:00:00Z`)
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "2-digit",
+      })
+      .toUpperCase();
+  if (start && end) return `${fmt(start)} – ${fmt(end)}`;
+  return fmt((start ?? end) as string);
+}
+
 type Props = {
+  headline: string;
+  heroSub: string | null;
+  destination: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  status: "planning" | "locked";
   crewCount: number;
-  targetCrew: number;
+  targetCrew: number | null;
   bookingsDone: number;
   bookingsTotal: number;
   kittyTotal: number;
-  targetBudgetPp: number;
+  targetBudgetPp: number | null;
 };
 
 export function Hero({
+  headline,
+  heroSub,
+  destination,
+  startDate,
+  endDate,
+  status,
   crewCount,
   targetCrew,
   bookingsDone,
@@ -26,30 +51,39 @@ export function Hero({
   kittyTotal,
   targetBudgetPp,
 }: Props) {
-  const [days, setDays] = useState(() => daysUntil(TRIP_START));
+  const [days, setDays] = useState(() =>
+    startDate ? daysUntil(startDate) : null,
+  );
 
   useEffect(() => {
-    const id = setInterval(() => setDays(daysUntil(TRIP_START)), 60_000);
+    if (!startDate) return;
+    const id = setInterval(() => setDays(daysUntil(startDate)), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [startDate]);
 
   return (
     <div className="pt-[70px] pb-[60px] border-b border-line relative">
       <div className="flex flex-wrap gap-7 mb-10 font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
         <span>
-          LOC / <b className="text-fg font-medium">Stockholm, SE</b>
+          LOC /{" "}
+          <b className="text-fg font-medium">{destination ?? "TBD"}</b>
         </span>
         <span>
-          DATES / <b className="text-fg font-medium">23 – 26 Jul 26</b>
+          DATES /{" "}
+          <b className="text-fg font-medium">{formatRange(startDate, endDate)}</b>
         </span>
         <span>
           CREW /{" "}
           <b className="text-fg font-medium">
-            {crewCount} / {targetCrew}
+            {crewCount}
+            {targetCrew ? ` / ${targetCrew}` : ""}
           </b>
         </span>
         <span>
-          STATUS / <b className="text-fg font-medium">ACTIVE</b>
+          STATUS /{" "}
+          <b className="text-fg font-medium">
+            {status === "locked" ? "LOCKED" : "PLANNING"}
+          </b>
         </span>
       </div>
 
@@ -60,25 +94,28 @@ export function Hero({
           letterSpacing: "-0.055em",
         }}
       >
-        Stockholm<span className="text-accent">.</span>
+        {headline}
+        <span className="text-accent">.</span>
       </h1>
 
-      <p className="max-w-[620px] text-[18px] leading-[1.5] text-fg-2">
-        {HERO_SUB}
-      </p>
+      {heroSub && (
+        <p className="max-w-[620px] text-[18px] leading-[1.5] text-fg-2">
+          {heroSub}
+        </p>
+      )}
 
       <div className="mt-14 grid grid-cols-4 max-[720px]:grid-cols-2 border-t border-line">
         <StatCell
           label="T-Minus"
-          value={days.toString()}
-          unit="d"
-          sub="Until wheels up"
+          value={days !== null ? days.toString() : "—"}
+          unit={days !== null ? "d" : undefined}
+          sub={days !== null ? "Until wheels up" : "Set dates in settings"}
         />
         <StatCell
           label="Target budget"
-          value={`£${targetBudgetPp}`}
-          unit="pp"
-          sub="Ex. flights"
+          value={targetBudgetPp !== null ? `£${targetBudgetPp}` : "—"}
+          unit={targetBudgetPp !== null ? "pp" : undefined}
+          sub={targetBudgetPp !== null ? "Ex. flights" : "Not set"}
         />
         <StatCell
           label="Bookings"

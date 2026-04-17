@@ -4,28 +4,30 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { code: "01", label: "Overview", href: "/" },
-  { code: "02", label: "Crew", href: "/crew" },
-  { code: "03", label: "Shortlist", href: "/shortlist" },
-  { code: "04", label: "Bookings", href: "/bookings" },
-  { code: "05", label: "Ledger", href: "/ledger" },
-  { code: "06", label: "Feed", href: "/feed" },
+  { code: "01", label: "Overview", path: "" },
+  { code: "02", label: "Crew", path: "/crew" },
+  { code: "03", label: "Shortlist", path: "/shortlist" },
+  { code: "04", label: "Bookings", path: "/bookings" },
+  { code: "05", label: "Ledger", path: "/ledger" },
+  { code: "06", label: "Feed", path: "/feed" },
 ] as const;
 
-export function Nav() {
+export function Nav({ slug }: { slug: string }) {
   const pathname = usePathname();
+  const base = `/trips/${slug}`;
 
   return (
     <div className="sticky top-[49px] z-40 bg-bg/85 backdrop-blur-md border-b border-line">
       <div className="max-w-[1280px] mx-auto px-7">
         <nav className="nav-scroll flex gap-0 overflow-x-auto">
           {TABS.map((tab) => {
+            const href = `${base}${tab.path}`;
             const active =
-              tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
+              tab.path === "" ? pathname === href : pathname.startsWith(href);
             return (
               <Link
-                key={tab.href}
-                href={tab.href}
+                key={tab.path}
+                href={href}
                 className={`relative py-4 mr-7 pr-5 flex items-baseline gap-[10px] text-[13px] font-medium whitespace-nowrap tracking-[-0.01em] transition-colors ${
                   active ? "text-fg" : "text-fg-3 hover:text-fg"
                 }`}

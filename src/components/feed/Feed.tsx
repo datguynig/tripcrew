@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { addPost } from "@/app/(app)/feed/actions";
+import { addPost } from "@/lib/actions/feed";
+
 import type { Post } from "@/lib/types";
 
 type CrewMap = Record<string, string>;
@@ -75,6 +76,7 @@ export function Feed({ initial, authorsById, tripId }: Props) {
     setCaption("");
     startTransition(async () => {
       await addPost({
+        tripId,
         imageUrl: trimmedUrl || null,
         caption: trimmedCap || null,
       });

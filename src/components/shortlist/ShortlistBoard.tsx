@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { castVote } from "@/app/(app)/shortlist/actions";
+import { castVote } from "@/lib/actions/shortlist";
 import type { Activity, Vote } from "@/lib/types";
 
 type Props = {

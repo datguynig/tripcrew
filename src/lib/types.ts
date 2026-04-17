@@ -4,19 +4,36 @@ export type Profile = {
   joined_at: string;
 };
 
+export type TripStatus = "planning" | "locked";
+export type TripRole = "admin" | "member";
+
+export type TripMeta = {
+  hero_sub?: string;
+  spec_grid?: { label: string; value: string; sub: string }[];
+  schedule?: { day_label: string; heading: string; body: string }[];
+  target_budget_pp?: number;
+};
+
 export type Trip = {
   id: string;
   slug: string;
   name: string;
+  status: TripStatus;
+  destination: string | null;
+  vote_deadline: string | null;
+  created_by: string | null;
+  meta: TripMeta;
   start_date: string | null;
   end_date: string | null;
-  target_crew_size: number;
+  target_crew_size: number | null;
   created_at: string;
 };
 
 export type TripMember = {
   trip_id: string;
   user_id: string;
+  role: TripRole;
+  invited_by: string | null;
   joined_at: string;
 };
 
@@ -66,8 +83,35 @@ export type Post = {
   created_at: string;
 };
 
+export type DestinationCandidate = {
+  id: string;
+  trip_id: string;
+  title: string;
+  note: string | null;
+  proposed_by: string | null;
+  position: number;
+  created_at: string;
+};
+
+export type DestinationVote = {
+  candidate_id: string;
+  user_id: string;
+  vote: "yes" | "maybe" | "no";
+  updated_at: string;
+};
+
+export type TripInvite = {
+  id: string;
+  trip_id: string;
+  email: string;
+  invited_by: string | null;
+  invited_at: string;
+  accepted_at: string | null;
+};
+
 export type CrewMember = Profile & {
   member_joined_at: string;
+  role: TripRole;
 };
 
 export type ExpenseWithPayer = Expense & {
@@ -77,5 +121,3 @@ export type ExpenseWithPayer = Expense & {
 export type PostWithAuthor = Post & {
   author_name: string;
 };
-
-export const TRIP_SLUG = "stockholm-2026";
