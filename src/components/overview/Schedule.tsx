@@ -1,10 +1,28 @@
 type Row = { day_label: string; heading: string; body: string };
 
-export function Schedule({ rows }: { rows: Row[] }) {
+export function Schedule({
+  rows,
+  isAdmin,
+  tripSlug,
+}: {
+  rows: Row[];
+  isAdmin?: boolean;
+  tripSlug?: string;
+}) {
   if (rows.length === 0) {
     return (
-      <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
-        Schedule empty · admin can set it in settings
+      <div className="border border-line py-14 text-center">
+        <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+          {isAdmin ? "Schedule empty" : "Schedule · details coming soon"}
+        </div>
+        {isAdmin && tripSlug && (
+          <a
+            href={`/trips/${tripSlug}/admin`}
+            className="inline-block mt-3 font-mono text-[11px] tracking-[0.1em] uppercase text-accent hover:text-fg transition-colors"
+          >
+            Set it in admin →
+          </a>
+        )}
       </div>
     );
   }

@@ -1,10 +1,30 @@
 type Cell = { label: string; value: string; sub: string };
 
-export function SpecGrid({ cells }: { cells: Cell[] }) {
+export function SpecGrid({
+  cells,
+  isAdmin,
+  tripSlug,
+}: {
+  cells: Cell[];
+  isAdmin?: boolean;
+  tripSlug?: string;
+}) {
   if (cells.length === 0) {
     return (
-      <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 mb-9">
-        Spec grid empty · admin can set it in settings
+      <div className="border border-line py-14 text-center mb-9">
+        <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+          {isAdmin
+            ? "Spec grid empty"
+            : "Spec grid · details coming soon"}
+        </div>
+        {isAdmin && tripSlug && (
+          <a
+            href={`/trips/${tripSlug}/admin`}
+            className="inline-block mt-3 font-mono text-[11px] tracking-[0.1em] uppercase text-accent hover:text-fg transition-colors"
+          >
+            Set it in admin →
+          </a>
+        )}
       </div>
     );
   }

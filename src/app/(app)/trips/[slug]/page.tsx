@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getTrip } from "@/lib/auth";
+import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { Hero } from "@/components/layout/Hero";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
@@ -28,6 +28,7 @@ export default async function TripOverview({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const user = await getCurrentUser();
   const trip = await getTrip(slug);
   if (!trip) notFound();
 
@@ -35,6 +36,8 @@ export default async function TripOverview({
     redirect(`/trips/${trip.slug}/destinations`);
   }
 
+  const member = user ? await getTripMember(trip.id, user.id) : null;
+  const isAdmin = member?.role === "admin";
   const supabase = await createClient();
   const [{ data: bookings }, { data: expenses }, { count: crewCount }] =
     await Promise.all([
@@ -81,8 +84,8 @@ export default async function TripOverview({
 
       <section className="py-14 pb-24 section-enter">
         <SectionHeader code="§ 01" title="The brief." lead={overviewLead} />
-        <SpecGrid cells={specCells} />
-        <Schedule rows={scheduleRows} />
+        <SpecGrid cells={specCells} isAdmin={isAdmin} tripSlug={trip.slug} />
+        <Schedule rows={scheduleRows} isAdmin={isAdmin} tripSlug={trip.slug} />
       </section>
     </>
   );
