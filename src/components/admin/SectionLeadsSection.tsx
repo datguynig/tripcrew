@@ -9,9 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
 import type { SectionLeads } from "@/lib/types";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
+import { INPUT } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -82,7 +80,7 @@ export function SectionLeadsSection({ tripId, leads }: Props) {
             maxLength={300}
             rows={2}
             placeholder={f.placeholder}
-            className={INPUT_CLASS}
+            className={INPUT}
           />
         </Field>
       ))}

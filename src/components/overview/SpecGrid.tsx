@@ -43,7 +43,7 @@ export function SpecGrid({
           <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.15]">
             {cell.value}
           </div>
-          <div className="text-[13px] text-fg-3 mt-[6px]">{cell.sub}</div>
+          <div className="text-[13px] text-fg-2 mt-1.5">{cell.sub}</div>
         </div>
       ))}
     </div>

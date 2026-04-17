@@ -9,11 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
 import type { SpecItem } from "@/lib/types";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
-const MONO_INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[13px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full font-mono tracking-[0.05em] uppercase";
+import { INPUT, INPUT_MONO } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -82,7 +78,7 @@ export function HeroSpecSection({
           defaultValue={heroTitle ?? ""}
           maxLength={80}
           placeholder="Lisbon"
-          className={INPUT_CLASS}
+          className={INPUT}
         />
       </Field>
 
@@ -96,7 +92,7 @@ export function HeroSpecSection({
           maxLength={300}
           rows={2}
           placeholder="Four days · six of us · one rule: no dramas."
-          className={INPUT_CLASS}
+          className={INPUT}
         />
       </Field>
 
@@ -110,7 +106,7 @@ export function HeroSpecSection({
             defaultValue={cityLabel ?? ""}
             maxLength={40}
             placeholder="LISBON, PT"
-            className={MONO_INPUT_CLASS}
+            className={INPUT_MONO}
           />
         </Field>
         <Field
@@ -122,7 +118,7 @@ export function HeroSpecSection({
             defaultValue={datesLabel ?? ""}
             maxLength={40}
             placeholder="04 JUL – 08 JUL '26"
-            className={MONO_INPUT_CLASS}
+            className={INPUT_MONO}
           />
         </Field>
       </div>
@@ -133,7 +129,7 @@ export function HeroSpecSection({
             <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-1">
               Spec grid
             </div>
-            <p className="text-[13px] text-fg-3">
+            <p className="text-[13px] text-fg-2">
               Up to 4 cells. Label is mono caps, value is the headline, sub is
               the small print.
             </p>
@@ -157,7 +153,7 @@ export function HeroSpecSection({
                 maxLength={30}
                 placeholder="BASE"
                 aria-label={`Spec row ${i + 1} label`}
-                className={MONO_INPUT_CLASS}
+                className={INPUT_MONO}
               />
               <input
                 value={row.value}
@@ -165,7 +161,7 @@ export function HeroSpecSection({
                 maxLength={80}
                 placeholder="London → Lisbon"
                 aria-label={`Spec row ${i + 1} value`}
-                className={INPUT_CLASS}
+                className={INPUT}
               />
               <input
                 value={row.sub}
@@ -173,7 +169,7 @@ export function HeroSpecSection({
                 maxLength={60}
                 placeholder="4 DAYS · PEAK SUMMER"
                 aria-label={`Spec row ${i + 1} sub`}
-                className={INPUT_CLASS}
+                className={INPUT}
               />
               <Button
                 type="button"

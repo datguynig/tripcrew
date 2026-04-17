@@ -8,11 +8,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import type { ScheduleItem } from "@/lib/types";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
-const MONO_INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[13px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full font-mono tracking-[0.05em] uppercase";
+import { INPUT, INPUT_MONO } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -78,7 +74,7 @@ export function ScheduleSection({ tripId, schedule }: Props) {
       />
 
       <div className="flex items-baseline justify-between gap-4">
-        <p className="text-[13px] text-fg-3 max-w-[520px]">
+        <p className="text-[13px] text-fg-2 max-w-[520px]">
           Day-by-day plan. Day label is mono caps. Add, remove, or reorder rows.
         </p>
         <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 shrink-0">
@@ -101,7 +97,7 @@ export function ScheduleSection({ tripId, schedule }: Props) {
                 maxLength={30}
                 placeholder="THU 23 JUL"
                 aria-label={`Day label for row ${i + 1}`}
-                className={MONO_INPUT_CLASS}
+                className={INPUT_MONO}
               />
               <input
                 value={row.heading}
@@ -109,7 +105,7 @@ export function ScheduleSection({ tripId, schedule }: Props) {
                 maxLength={120}
                 placeholder="Arrivals & anchor dinner"
                 aria-label={`Heading for row ${i + 1}`}
-                className={INPUT_CLASS}
+                className={INPUT}
               />
               <div className="flex gap-1 max-[520px]:justify-self-start">
                 <Button
@@ -151,7 +147,7 @@ export function ScheduleSection({ tripId, schedule }: Props) {
               rows={2}
               placeholder="Everyone lands before 18:00. Drop bags, walk to Cervejaria Ramiro, leave space for prego."
               aria-label={`Body for row ${i + 1}`}
-              className={INPUT_CLASS}
+              className={INPUT}
             />
           </div>
         ))}

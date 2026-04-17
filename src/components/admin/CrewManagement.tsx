@@ -59,7 +59,7 @@ export function CrewManagement({ tripId, currentUserId, members }: Props) {
 
   if (members.length === 0) {
     return (
-      <p className="text-fg-3 text-[14px]">
+      <p className="text-fg-2 text-[14px]">
         No members yet. Invites pending above.
       </p>
     );

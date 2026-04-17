@@ -8,9 +8,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
+import { INPUT } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -45,7 +43,7 @@ export function IdentitySection({ tripId, name, destination }: Props) {
         <input
           defaultValue={name}
           maxLength={80}
-          className={INPUT_CLASS}
+          className={INPUT}
         />
       </Field>
       <Field
@@ -61,7 +59,7 @@ export function IdentitySection({ tripId, name, destination }: Props) {
           defaultValue={destination ?? ""}
           maxLength={80}
           placeholder="Lisbon"
-          className={INPUT_CLASS}
+          className={INPUT}
         />
       </Field>
       {state?.error && (

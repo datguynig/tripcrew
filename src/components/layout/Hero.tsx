@@ -136,8 +136,8 @@ function StatCell({
   sub: string;
 }) {
   return (
-    <div className="py-6 pr-6 border-r border-line last:border-r-0 max-[720px]:[&:nth-child(2n)]:border-r-0 max-[720px]:[&:nth-child(-n+2)]:border-b max-[720px]:[&:nth-child(-n+2)]:border-line">
-      <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-[10px]">
+    <div className="p-6 border-r border-line last:border-r-0 max-[720px]:[&:nth-child(2n)]:border-r-0 max-[720px]:[&:nth-child(-n+2)]:border-b max-[720px]:[&:nth-child(-n+2)]:border-line">
+      <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-2.5">
         {label}
       </div>
       <div className="flex items-baseline">
@@ -145,12 +145,12 @@ function StatCell({
           {value}
         </span>
         {unit && (
-          <span className="text-fg-3 text-[20px] font-normal ml-[2px]">
+          <span className="text-fg-3 text-[20px] font-normal ml-0.5">
             {unit}
           </span>
         )}
       </div>
-      <div className="text-xs text-fg-3 mt-[6px] font-mono tracking-[0.05em]">
+      <div className="text-[13px] text-fg-2 mt-1.5 font-mono tracking-[0.05em]">
         {sub}
       </div>
     </div>

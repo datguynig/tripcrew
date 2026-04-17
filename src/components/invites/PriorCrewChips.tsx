@@ -55,7 +55,7 @@ export function PriorCrewChips({ tripId, people }: Props) {
       <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-1">
         Previously traveled with
       </div>
-      <p className="text-[13px] text-fg-3 mb-4 max-w-[520px]">
+      <p className="text-[13px] text-fg-2 mb-4 max-w-[520px]">
         Click to generate an invite link and copy it. Paste it to them however
         you like.
       </p>

@@ -8,9 +8,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
+import { INPUT } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -54,7 +52,7 @@ export function DangerZone({ tripId, tripName }: Props) {
             value={confirmName}
             onChange={(e) => setConfirmName(e.target.value)}
             placeholder={tripName}
-            className={INPUT_CLASS}
+            className={INPUT}
             autoComplete="off"
           />
         </Field>

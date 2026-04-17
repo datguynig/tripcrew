@@ -120,7 +120,7 @@ export function InvitePanel({ tripId, origin, initial }: Props) {
           <h3 className="text-[20px] font-medium tracking-[-0.02em]">
             Share a link to join
           </h3>
-          <p className="text-fg-3 text-[13px] mt-1 max-w-[520px]">
+          <p className="text-fg-2 text-[13px] mt-1 max-w-[520px]">
             Anyone with the link can join this trip for {7} days. Revoke any
             time.
           </p>

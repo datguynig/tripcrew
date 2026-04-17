@@ -11,9 +11,7 @@ import { DatePicker } from "@/components/ui/DatePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useToast } from "@/hooks/useToast";
-
-const INPUT_CLASS =
-  "bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full";
+import { INPUT } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -108,7 +106,7 @@ export function DatesBudgetSection({
           max={100}
           step={1}
           defaultValue={targetCrewSize ?? ""}
-          className={INPUT_CLASS}
+          className={INPUT}
         />
       </Field>
 
