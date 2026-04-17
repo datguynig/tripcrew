@@ -55,74 +55,69 @@ export function DatesBudgetSection({
     <form action={action} className="grid gap-5 max-w-[560px]">
       <input type="hidden" name="tripId" value={tripId} />
 
-      <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
-        <Field
-          label="Start date"
-          name="startDate"
-          helper="Drives the T-minus counter."
-        >
-          <input
-            type="date"
-            defaultValue={startDate ?? ""}
-            className={INPUT_CLASS}
-          />
-        </Field>
-        <Field label="End date" name="endDate">
-          <input
-            type="date"
-            defaultValue={endDate ?? ""}
-            className={INPUT_CLASS}
-          />
-        </Field>
-      </div>
+      <Field
+        label="Start date"
+        name="startDate"
+        helper="Drives the T-minus counter."
+      >
+        <input
+          type="date"
+          defaultValue={startDate ?? ""}
+          className={INPUT_CLASS}
+        />
+      </Field>
 
-      <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
-        <Field
-          label="Vote deadline"
-          name="voteDeadline"
-          helper="Soft deadline shown on the Where to? tab. Not enforced."
-        >
-          <input
-            type="datetime-local"
-            defaultValue={isoToLocalInput(voteDeadline)}
-            className={INPUT_CLASS}
-          />
-        </Field>
-        <div aria-hidden />
-      </div>
+      <Field label="End date" name="endDate">
+        <input
+          type="date"
+          defaultValue={endDate ?? ""}
+          className={INPUT_CLASS}
+        />
+      </Field>
 
-      <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
-        <Field
-          label="Target budget / head"
-          name="targetBudgetPp"
-          helper="In your kitty's currency. Blank to hide."
-        >
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={1_000_000}
-            step={1}
-            defaultValue={targetBudgetPp ?? ""}
-            className={INPUT_CLASS}
-          />
-        </Field>
-        <Field
-          label="Target crew size"
-          name="targetCrewSize"
-          helper="Soft target, used on the Crew tab placeholders."
-        >
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={100}
-            step={1}
-            defaultValue={targetCrewSize ?? ""}
-            className={INPUT_CLASS}
-          />
-        </Field>
-      </div>
+      <Field
+        label="Vote deadline"
+        name="voteDeadline"
+        helper="Soft deadline shown on the Where to? tab. Not enforced."
+      >
+        <input
+          type="datetime-local"
+          defaultValue={isoToLocalInput(voteDeadline)}
+          className={INPUT_CLASS}
+        />
+      </Field>
+
+      <Field
+        label="Target budget / head"
+        name="targetBudgetPp"
+        helper="In your kitty's currency. Blank to hide."
+      >
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={1_000_000}
+          step={1}
+          defaultValue={targetBudgetPp ?? ""}
+          className={INPUT_CLASS}
+        />
+      </Field>
+
+      <Field
+        label="Target crew size"
+        name="targetCrewSize"
+        helper="Soft target, used on the Crew tab placeholders."
+      >
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={100}
+          step={1}
+          defaultValue={targetCrewSize ?? ""}
+          className={INPUT_CLASS}
+        />
+      </Field>
 
       {state?.error && (
         <div className="text-err font-mono text-[11px] uppercase tracking-[0.1em]">
