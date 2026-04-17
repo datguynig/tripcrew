@@ -27,33 +27,25 @@ async function main() {
       supabase.from("profiles").select("id", { count: "exact", head: true }),
     ]);
 
-  console.log("Trips:");
+  console.log(`Trips:       ${trips?.length ?? 0}`);
   for (const t of trips ?? []) {
     console.log(
       `  ${t.slug} — ${t.name} (${t.start_date} → ${t.end_date}, crew ${t.target_crew_size})`,
     );
   }
-  console.log(`Activities: ${activities}`);
-  console.log(`Bookings:   ${bookings}`);
-  console.log(`Profiles:   ${profiles}`);
-
-  const stockholm = (trips ?? []).find((t) => t.slug === "stockholm-2026");
-  if (!stockholm) {
-    console.error(
-      "Trip stockholm-2026 not found. Run supabase/migrations/*_init.sql in the SQL editor.",
-    );
-    process.exit(1);
-  }
+  console.log(`Activities:  ${activities}`);
+  console.log(`Bookings:    ${bookings}`);
+  console.log(`Profiles:    ${profiles}`);
 
   const schemaPath = join(process.cwd(), "schema.sql");
   try {
     readFileSync(schemaPath);
     console.log(`\nSchema source: ${schemaPath}`);
   } catch {
-    console.warn("schema.sql not found at repo root (informational only)");
+    // schema.sql is informational only; migrations live in supabase/migrations.
   }
 
-  console.log("\nSeed verified.");
+  console.log("\nDB probe complete.");
 }
 
 main().catch((err) => {
