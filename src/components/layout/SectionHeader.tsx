@@ -1,0 +1,25 @@
+export function SectionHeader({
+  code,
+  title,
+  lead,
+}: {
+  code: string;
+  title: string;
+  lead?: string;
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-end gap-6 mb-10 pb-5 border-b border-line">
+      <div>
+        <h2 className="text-[40px] font-medium tracking-[-0.035em] leading-none">
+          {title}
+        </h2>
+        {lead && (
+          <p className="max-w-[600px] text-fg-2 text-[15px] mt-2">{lead}</p>
+        )}
+      </div>
+      <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 pb-1">
+        {code}
+      </div>
+    </div>
+  );
+}
