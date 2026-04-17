@@ -5,6 +5,7 @@ import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { CrewList, type CrewRow } from "@/components/crew/CrewList";
 import { InvitePanel } from "@/components/invites/InvitePanel";
+import { PriorCrewChips } from "@/components/invites/PriorCrewChips";
 import type { TripInvite } from "@/lib/types";
 
 export const revalidate = 0;
@@ -78,22 +79,80 @@ export default async function CrewPage({
         currentUserId={user.id}
       />
 
-      {isAdmin && <AdminInvites tripId={trip.id} />}
+      {isAdmin && (
+        <AdminInvites tripId={trip.id} currentUserId={user.id} />
+      )}
     </section>
   );
 }
 
-async function AdminInvites({ tripId }: { tripId: string }) {
+async function getPriorCrew(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  currentUserId: string,
+  currentTripId: string,
+): Promise<Array<{ id: string; name: string }>> {
+  const { data: myMemberships } = await supabase
+    .from("trip_members")
+    .select("trip_id")
+    .eq("user_id", currentUserId);
+
+  const otherTripIds =
+    myMemberships
+      ?.map((m) => m.trip_id as string)
+      .filter((id) => id !== currentTripId) ?? [];
+  if (otherTripIds.length === 0) return [];
+
+  const { data: peers } = await supabase
+    .from("trip_members")
+    .select("user_id")
+    .in("trip_id", otherTripIds)
+    .neq("user_id", currentUserId);
+
+  const { data: currentMembers } = await supabase
+    .from("trip_members")
+    .select("user_id")
+    .eq("trip_id", currentTripId);
+
+  const currentIds = new Set(
+    (currentMembers ?? []).map((m) => m.user_id as string),
+  );
+  const candidateIds = Array.from(
+    new Set((peers ?? []).map((m) => m.user_id as string)),
+  ).filter((id) => !currentIds.has(id));
+  if (candidateIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .in("id", candidateIds)
+    .order("name", { ascending: true });
+
+  return (profiles ?? []).filter(
+    (p): p is { id: string; name: string } =>
+      typeof p.id === "string" && typeof p.name === "string",
+  );
+}
+
+async function AdminInvites({
+  tripId,
+  currentUserId,
+}: {
+  tripId: string;
+  currentUserId: string;
+}) {
   const supabase = await createClient();
-  const { data: invites } = await supabase
-    .from("trip_invites")
-    .select(
-      "id, trip_id, email, invited_by, invited_at, accepted_at, token, expires_at, accepted_by",
-    )
-    .eq("trip_id", tripId)
-    .is("accepted_at", null)
-    .order("invited_at", { ascending: false })
-    .returns<TripInvite[]>();
+  const [{ data: invites }, priors] = await Promise.all([
+    supabase
+      .from("trip_invites")
+      .select(
+        "id, trip_id, email, invited_by, invited_at, accepted_at, token, expires_at, accepted_by",
+      )
+      .eq("trip_id", tripId)
+      .is("accepted_at", null)
+      .order("invited_at", { ascending: false })
+      .returns<TripInvite[]>(),
+    getPriorCrew(supabase, currentUserId, tripId),
+  ]);
 
   const h = await headers();
   const host = h.get("x-forwarded-host") ?? h.get("host");
@@ -103,6 +162,9 @@ async function AdminInvites({ tripId }: { tripId: string }) {
   const origin = `${proto}://${host}`;
 
   return (
-    <InvitePanel tripId={tripId} origin={origin} initial={invites ?? []} />
+    <>
+      <PriorCrewChips tripId={tripId} people={priors} />
+      <InvitePanel tripId={tripId} origin={origin} initial={invites ?? []} />
+    </>
   );
 }
