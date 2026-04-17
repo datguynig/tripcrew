@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   sendMagicLink,
   signInWithPassword,
@@ -12,8 +13,16 @@ import { Field } from "@/components/ui/Field";
 
 type Mode = "signin" | "signup" | "magic";
 
+function safeNext(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
+
 export default function SignInPage() {
   const [mode, setMode] = useState<Mode>("signin");
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
 
   return (
     <div className="hero-radial min-h-screen flex items-center justify-center px-7">
@@ -32,9 +41,9 @@ export default function SignInPage() {
           One app for the crew — dates, votes, bookings, money, photos.
         </p>
 
-        {mode === "signin" && <PasswordForm mode="signin" />}
-        {mode === "signup" && <PasswordForm mode="signup" />}
-        {mode === "magic" && <MagicLinkForm />}
+        {mode === "signin" && <PasswordForm mode="signin" next={next} />}
+        {mode === "signup" && <PasswordForm mode="signup" next={next} />}
+        {mode === "magic" && <MagicLinkForm next={next} />}
 
         <ModeSwitcher mode={mode} onChange={setMode} />
       </div>
@@ -42,7 +51,13 @@ export default function SignInPage() {
   );
 }
 
-function PasswordForm({ mode }: { mode: "signin" | "signup" }) {
+function PasswordForm({
+  mode,
+  next,
+}: {
+  mode: "signin" | "signup";
+  next: string | null;
+}) {
   const action = mode === "signin" ? signInWithPassword : signUpWithPassword;
   const [state, formAction, pending] = useActionState<SignInState, FormData>(
     action,
@@ -51,6 +66,7 @@ function PasswordForm({ mode }: { mode: "signin" | "signup" }) {
 
   return (
     <form action={formAction} className="grid gap-4">
+      {next && <input type="hidden" name="next" value={next} />}
       <Field label="Email" name="email" hideLabel required>
         <input
           type="email"
@@ -92,7 +108,7 @@ function PasswordForm({ mode }: { mode: "signin" | "signup" }) {
   );
 }
 
-function MagicLinkForm() {
+function MagicLinkForm({ next }: { next: string | null }) {
   const [state, formAction, pending] = useActionState<SignInState, FormData>(
     sendMagicLink,
     undefined,
@@ -108,6 +124,7 @@ function MagicLinkForm() {
 
   return (
     <form action={formAction} className="grid gap-3">
+      {next && <input type="hidden" name="next" value={next} />}
       <Field label="Email" name="email" hideLabel error={state?.error} required>
         <input
           type="email"

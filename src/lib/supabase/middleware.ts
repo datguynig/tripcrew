@@ -34,7 +34,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute =
     pathname.startsWith("/sign-in") ||
     pathname.startsWith("/callback") ||
-    pathname.startsWith("/profile");
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/join");
 
   // Server Actions are POSTed with internal Next.js headers. Redirecting them
   // from middleware turns them into an invalid action response on the client.

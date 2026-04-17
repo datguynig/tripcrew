@@ -25,6 +25,12 @@ async function getRedirectOrigin() {
   return `${proto}://${host}`;
 }
 
+function safeNext(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
+
 export async function sendMagicLink(
   _prev: SignInState,
   formData: FormData,
@@ -32,8 +38,12 @@ export async function sendMagicLink(
   const parsed = magicSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { error: "Valid email required." };
 
+  const next = safeNext(formData.get("next"));
   const supabase = await createClient();
-  const redirectTo = `${await getRedirectOrigin()}/callback`;
+  const origin = await getRedirectOrigin();
+  const redirectTo = next
+    ? `${origin}/callback?next=${encodeURIComponent(next)}`
+    : `${origin}/callback`;
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
@@ -57,6 +67,7 @@ export async function signInWithPassword(
   });
   if (!parsed.success) return { error: "Email and password required." };
 
+  const next = safeNext(formData.get("next"));
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
@@ -65,7 +76,7 @@ export async function signInWithPassword(
     return { error: "Wrong email or password." };
   }
 
-  redirect("/");
+  redirect(next ?? "/");
 }
 
 export async function signUpWithPassword(
@@ -80,6 +91,7 @@ export async function signUpWithPassword(
     return { error: "Email and a password of 8+ characters required." };
   }
 
+  const next = safeNext(formData.get("next"));
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp(parsed.data);
 
@@ -92,5 +104,5 @@ export async function signUpWithPassword(
     return { error: "Signed up but no session. Try signing in." };
   }
 
-  redirect("/profile");
+  redirect(next ? `/profile?next=${encodeURIComponent(next)}` : "/profile");
 }
