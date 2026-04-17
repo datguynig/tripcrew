@@ -4,7 +4,22 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, getTripMember } from "@/lib/auth";
+
+async function requireAdmin(
+  tripId: string,
+): Promise<
+  | { ok: true; userId: string }
+  | { ok: false; error: string }
+> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Not signed in." };
+  const member = await getTripMember(tripId, user.id);
+  if (!member || member.role !== "admin") {
+    return { ok: false, error: "Admin only." };
+  }
+  return { ok: true, userId: user.id };
+}
 
 async function resolveTripSlug(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -198,8 +213,8 @@ export async function promoteMember(
   });
   if (!parsed.success) return { error: "Invalid input." };
 
-  const user = await getCurrentUser();
-  if (!user) return { error: "Not signed in." };
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -231,8 +246,8 @@ export async function demoteMember(
   });
   if (!parsed.success) return { error: "Invalid input." };
 
-  const user = await getCurrentUser();
-  if (!user) return { error: "Not signed in." };
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
 
   const supabase = await createClient();
 
@@ -279,11 +294,11 @@ export async function removeMember(
   });
   if (!parsed.success) return { error: "Invalid input." };
 
-  const user = await getCurrentUser();
-  if (!user) return { error: "Not signed in." };
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
 
-  if (user.id === parsed.data.userId) {
-    return { error: "Use Leave trip to remove yourself." };
+  if (gate.userId === parsed.data.userId) {
+    return { error: "Can't remove yourself." };
   }
 
   const supabase = await createClient();
@@ -336,8 +351,8 @@ export async function deleteTrip(
   });
   if (!parsed.success) return { error: "Type the trip name to confirm." };
 
-  const user = await getCurrentUser();
-  if (!user) return { error: "Not signed in." };
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
 
   const supabase = await createClient();
 
