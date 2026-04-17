@@ -7,11 +7,20 @@ export type Profile = {
 export type TripStatus = "planning" | "locked";
 export type TripRole = "admin" | "member";
 
+export type SpecItem = { label: string; value: string; sub: string };
+export type ScheduleItem = { day: string; head: string; body: string };
+export type SectionLeadKey =
+  | "overview"
+  | "shortlist"
+  | "bookings"
+  | "ledger"
+  | "feed";
+export type SectionLeads = Partial<Record<SectionLeadKey, string>>;
+
 export type TripMeta = {
-  hero_sub?: string;
-  spec_grid?: { label: string; value: string; sub: string }[];
-  schedule?: { day_label: string; heading: string; body: string }[];
-  target_budget_pp?: number;
+  spec?: SpecItem[];
+  schedule?: ScheduleItem[];
+  section_leads?: SectionLeads;
 };
 
 export type Trip = {
@@ -26,6 +35,11 @@ export type Trip = {
   start_date: string | null;
   end_date: string | null;
   target_crew_size: number | null;
+  hero_title: string | null;
+  hero_subtitle: string | null;
+  city_label: string | null;
+  dates_label: string | null;
+  target_budget_pp: number | null;
   created_at: string;
 };
 
