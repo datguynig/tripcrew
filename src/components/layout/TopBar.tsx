@@ -33,7 +33,7 @@ export function TopBar({
               type="submit"
               className="bg-transparent border-0 text-fg-3 hover:text-fg cursor-pointer text-[11px] tracking-[0.08em] uppercase px-[6px] py-[2px]"
             >
-              Switch
+              Sign out
             </button>
           </form>
         </div>
