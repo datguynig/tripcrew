@@ -15,8 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Boys Trip · 001 · Stockholm",
-  description: "Three nights. Five of us. Stockholm, 23–26 July 2026.",
+  title: "TripCrew",
+  description: "Plan trips with your crew — dates, votes, bookings, money, photos.",
 };
 
 export default function RootLayout({
@@ -27,6 +27,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-bg text-fg font-sans">{children}</body>
