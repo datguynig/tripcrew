@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { castVote } from "@/lib/actions/shortlist";
+import { useToast } from "@/hooks/useToast";
 import type { Activity, Vote } from "@/lib/types";
 
 type Props = {
@@ -21,6 +22,7 @@ export function ShortlistBoard({
   const [votes, setVotes] = useState<Vote[]>(initialVotes);
   const [filter, setFilter] = useState<Filter>("all");
   const [, startTransition] = useTransition();
+  const toast = useToast();
 
   useEffect(() => setVotes(initialVotes), [initialVotes]);
 
@@ -107,8 +109,42 @@ export function ShortlistBoard({
   const handleVote = (activityId: string, next: "yes" | "maybe" | "no") => {
     const current = myVote.get(activityId);
     const vote = current === next ? null : next;
+    setVotes((prev) => {
+      const without = prev.filter(
+        (v) => !(v.activity_id === activityId && v.user_id === currentUserId),
+      );
+      if (vote === null) return without;
+      return [
+        ...without,
+        {
+          activity_id: activityId,
+          user_id: currentUserId,
+          vote,
+          updated_at: new Date().toISOString(),
+        },
+      ];
+    });
     startTransition(async () => {
-      await castVote({ activityId, vote });
+      const res = await castVote({ activityId, vote });
+      if (res?.error) {
+        toast.error(res.error);
+        setVotes((prev) => {
+          const without = prev.filter(
+            (v) =>
+              !(v.activity_id === activityId && v.user_id === currentUserId),
+          );
+          if (!current) return without;
+          return [
+            ...without,
+            {
+              activity_id: activityId,
+              user_id: currentUserId,
+              vote: current,
+              updated_at: new Date().toISOString(),
+            },
+          ];
+        });
+      }
     });
   };
 

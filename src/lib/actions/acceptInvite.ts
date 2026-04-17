@@ -100,6 +100,8 @@ export async function acceptInvite(token: string): Promise<AcceptResult> {
 
   revalidatePath("/");
   revalidatePath(`/trips/${lookup.tripSlug}`);
+  revalidatePath(`/trips/${lookup.tripSlug}/crew`);
+  revalidatePath(`/trips/${lookup.tripSlug}/admin`);
   return { kind: "ok", slug: lookup.tripSlug };
 }
 

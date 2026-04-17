@@ -202,8 +202,42 @@ export function Destinations({
   const handleVote = (candidateId: string, next: VoteChoice) => {
     const current = myVote.get(candidateId);
     const vote = current === next ? null : next;
+    setVotes((prev) => {
+      const without = prev.filter(
+        (v) => !(v.candidate_id === candidateId && v.user_id === currentUserId),
+      );
+      if (vote === null) return without;
+      return [
+        ...without,
+        {
+          candidate_id: candidateId,
+          user_id: currentUserId,
+          vote,
+          updated_at: new Date().toISOString(),
+        },
+      ];
+    });
     startTransition(async () => {
-      await castDestinationVote({ candidateId, vote });
+      const res = await castDestinationVote({ candidateId, vote });
+      if (res?.error) {
+        toast.error(res.error);
+        setVotes((prev) => {
+          const without = prev.filter(
+            (v) =>
+              !(v.candidate_id === candidateId && v.user_id === currentUserId),
+          );
+          if (!current) return without;
+          return [
+            ...without,
+            {
+              candidate_id: candidateId,
+              user_id: currentUserId,
+              vote: current,
+              updated_at: new Date().toISOString(),
+            },
+          ];
+        });
+      }
     });
   };
 
