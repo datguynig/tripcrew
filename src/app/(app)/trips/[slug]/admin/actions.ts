@@ -198,6 +198,220 @@ export async function updateTripIdentity(
   return { ok: true };
 }
 
+const specItemSchema = z.object({
+  label: z.string().trim().max(30),
+  value: z.string().trim().max(80),
+  sub: z.string().trim().max(60),
+});
+
+const heroSpecSchema = z.object({
+  tripId: z.string().uuid(),
+  heroTitle: z
+    .string()
+    .trim()
+    .max(80)
+    .transform((v) => v || null)
+    .nullable(),
+  heroSubtitle: z
+    .string()
+    .trim()
+    .max(300)
+    .transform((v) => v || null)
+    .nullable(),
+  cityLabel: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((v) => v || null)
+    .nullable(),
+  datesLabel: z
+    .string()
+    .trim()
+    .max(40)
+    .transform((v) => v || null)
+    .nullable(),
+  specGrid: z.array(specItemSchema).max(4),
+});
+
+const scheduleItemSchema = z.object({
+  day_label: z.string().trim().max(30),
+  heading: z.string().trim().max(120),
+  body: z.string().trim().max(500),
+});
+
+const scheduleSchema = z.object({
+  tripId: z.string().uuid(),
+  schedule: z.array(scheduleItemSchema).max(20),
+});
+
+const sectionLeadsSchema = z.object({
+  tripId: z.string().uuid(),
+  leads: z.object({
+    overview: z.string().trim().max(300),
+    shortlist: z.string().trim().max(300),
+    bookings: z.string().trim().max(300),
+    ledger: z.string().trim().max(300),
+    feed: z.string().trim().max(300),
+  }),
+});
+
+function parseJson<T>(raw: FormDataEntryValue | null, fallback: T): T {
+  if (typeof raw !== "string" || raw.length === 0) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+async function getTripMeta(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tripId: string,
+): Promise<Record<string, unknown>> {
+  const { data } = await supabase
+    .from("trips")
+    .select("meta")
+    .eq("id", tripId)
+    .maybeSingle<{ meta: Record<string, unknown> | null }>();
+  return data?.meta ?? {};
+}
+
+export async function updateHeroSpec(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = heroSpecSchema.safeParse({
+    tripId: formData.get("tripId"),
+    heroTitle: formData.get("heroTitle") ?? "",
+    heroSubtitle: formData.get("heroSubtitle") ?? "",
+    cityLabel: formData.get("cityLabel") ?? "",
+    datesLabel: formData.get("datesLabel") ?? "",
+    specGrid: parseJson(formData.get("specGrid"), []),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
+
+  const supabase = await createClient();
+  const existing = await getTripMeta(supabase, parsed.data.tripId);
+  const cleanedSpec = parsed.data.specGrid.filter(
+    (row) => row.label || row.value || row.sub,
+  );
+  const meta = { ...existing, spec_grid: cleanedSpec };
+
+  const { data: trip, error } = await supabase
+    .from("trips")
+    .update({
+      hero_title: parsed.data.heroTitle,
+      hero_subtitle: parsed.data.heroSubtitle,
+      city_label: parsed.data.cityLabel,
+      dates_label: parsed.data.datesLabel,
+      meta,
+    })
+    .eq("id", parsed.data.tripId)
+    .select("slug")
+    .maybeSingle<{ slug: string }>();
+
+  if (error) {
+    console.error("update hero+spec", error);
+    return { error: "Could not save. Admin only." };
+  }
+  if (!trip) return { error: "Trip not found or not permitted." };
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/admin`);
+  return { ok: true };
+}
+
+export async function updateSchedule(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = scheduleSchema.safeParse({
+    tripId: formData.get("tripId"),
+    schedule: parseJson(formData.get("schedule"), []),
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
+
+  const supabase = await createClient();
+  const existing = await getTripMeta(supabase, parsed.data.tripId);
+  const cleaned = parsed.data.schedule.filter(
+    (row) => row.day_label || row.heading || row.body,
+  );
+  const meta = { ...existing, schedule: cleaned };
+
+  const { data: trip, error } = await supabase
+    .from("trips")
+    .update({ meta })
+    .eq("id", parsed.data.tripId)
+    .select("slug")
+    .maybeSingle<{ slug: string }>();
+
+  if (error) {
+    console.error("update schedule", error);
+    return { error: "Could not save. Admin only." };
+  }
+  if (!trip) return { error: "Trip not found or not permitted." };
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/admin`);
+  return { ok: true };
+}
+
+export async function updateSectionLeads(
+  _prev: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const parsed = sectionLeadsSchema.safeParse({
+    tripId: formData.get("tripId"),
+    leads: {
+      overview: formData.get("overview") ?? "",
+      shortlist: formData.get("shortlist") ?? "",
+      bookings: formData.get("bookings") ?? "",
+      ledger: formData.get("ledger") ?? "",
+      feed: formData.get("feed") ?? "",
+    },
+  });
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const gate = await requireAdmin(parsed.data.tripId);
+  if (!gate.ok) return { error: gate.error };
+
+  const supabase = await createClient();
+  const existing = await getTripMeta(supabase, parsed.data.tripId);
+  const section_leads = Object.fromEntries(
+    Object.entries(parsed.data.leads).filter(([, v]) => v.length > 0),
+  );
+  const meta = { ...existing, section_leads };
+
+  const { data: trip, error } = await supabase
+    .from("trips")
+    .update({ meta })
+    .eq("id", parsed.data.tripId)
+    .select("slug")
+    .maybeSingle<{ slug: string }>();
+
+  if (error) {
+    console.error("update section leads", error);
+    return { error: "Could not save. Admin only." };
+  }
+  if (!trip) return { error: "Trip not found or not permitted." };
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/admin`);
+  return { ok: true };
+}
+
 const memberMutationSchema = z.object({
   tripId: z.string().uuid(),
   userId: z.string().uuid(),

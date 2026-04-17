@@ -2,9 +2,12 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
-import { AdminCard, AdminPlaceholder } from "@/components/admin/AdminCard";
+import { AdminCard } from "@/components/admin/AdminCard";
 import { IdentitySection } from "@/components/admin/IdentitySection";
 import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
+import { HeroSpecSection } from "@/components/admin/HeroSpecSection";
+import { ScheduleSection } from "@/components/admin/ScheduleSection";
+import { SectionLeadsSection } from "@/components/admin/SectionLeadsSection";
 import {
   CrewManagement,
   type AdminCrewMember,
@@ -93,7 +96,14 @@ export default async function AdminPage({
           title="Hero & spec grid"
           description="The overview headline, subtitle, and the 4-cell spec grid."
         >
-          <AdminPlaceholder />
+          <HeroSpecSection
+            tripId={trip.id}
+            heroTitle={trip.hero_title}
+            heroSubtitle={trip.hero_subtitle}
+            cityLabel={trip.city_label}
+            datesLabel={trip.dates_label}
+            specGrid={trip.meta?.spec_grid ?? []}
+          />
         </AdminCard>
 
         <AdminCard
@@ -101,7 +111,10 @@ export default async function AdminPage({
           title="Schedule"
           description="Day-by-day plan. Add, remove, reorder rows."
         >
-          <AdminPlaceholder />
+          <ScheduleSection
+            tripId={trip.id}
+            schedule={trip.meta?.schedule ?? []}
+          />
         </AdminCard>
 
         <AdminCard
@@ -109,7 +122,10 @@ export default async function AdminPage({
           title="Section leads"
           description="Short intro under the title on Overview, Shortlist, Bookings, Ledger, Feed."
         >
-          <AdminPlaceholder />
+          <SectionLeadsSection
+            tripId={trip.id}
+            leads={trip.meta?.section_leads ?? {}}
+          />
         </AdminCard>
 
         <AdminCard
