@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createProfile, type ProfileState } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
 
 export default function ProfilePage() {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
@@ -28,20 +29,15 @@ export default function ProfilePage() {
         </p>
 
         <form action={action} className="grid gap-3">
-          <input
-            type="text"
-            name="name"
-            required
-            autoFocus
-            maxLength={60}
-            placeholder="Your name"
-            className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-4 focus:border-accent transition-colors"
-          />
-          {state?.error && (
-            <div className="text-err font-mono text-[11px] uppercase tracking-[0.1em]">
-              {state.error}
-            </div>
-          )}
+          <Field label="Name" name="name" hideLabel error={state?.error} required>
+            <input
+              type="text"
+              autoFocus
+              maxLength={60}
+              placeholder="Your name"
+              className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-4 focus:border-accent transition-colors"
+            />
+          </Field>
           <Button
             type="submit"
             disabled={pending}

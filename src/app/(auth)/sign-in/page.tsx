@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { sendMagicLink, type SignInState } from "./actions";
 import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
 
 export default function SignInPage() {
   const [state, action, pending] = useActionState<SignInState, FormData>(
@@ -34,19 +35,14 @@ export default function SignInPage() {
           </div>
         ) : (
           <form action={action} className="grid gap-3">
-            <input
-              type="email"
-              name="email"
-              required
-              autoFocus
-              placeholder="you@domain.com"
-              className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-4 focus:border-accent transition-colors"
-            />
-            {state?.error && (
-              <div className="text-err font-mono text-[11px] uppercase tracking-[0.1em]">
-                {state.error}
-              </div>
-            )}
+            <Field label="Email" name="email" hideLabel error={state?.error} required>
+              <input
+                type="email"
+                autoFocus
+                placeholder="you@domain.com"
+                className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-4 focus:border-accent transition-colors"
+              />
+            </Field>
             <Button
               type="submit"
               disabled={pending}

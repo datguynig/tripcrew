@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { createTrip, type CreateTripState } from "@/lib/actions/trips";
 import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -12,10 +13,13 @@ export function NewTripForm() {
 
   return (
     <form action={action} className="grid gap-6 max-w-[560px]">
-      <Field label="Trip name" required hint="E.g. 'Summer 2026 crew'">
+      <Field
+        label="Trip name"
+        name="name"
+        required
+        helper="E.g. 'Summer 2026 crew'"
+      >
         <input
-          name="name"
-          required
           autoFocus
           maxLength={80}
           placeholder="What are you calling it?"
@@ -24,16 +28,18 @@ export function NewTripForm() {
       </Field>
 
       <div className="grid grid-cols-2 max-[520px]:grid-cols-1 gap-4">
-        <Field label="Start date" hint="Optional, set later if unknown">
+        <Field
+          label="Start date"
+          name="startDate"
+          helper="Optional, set later if unknown"
+        >
           <input
-            name="startDate"
             type="date"
             className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
           />
         </Field>
-        <Field label="End date">
+        <Field label="End date" name="endDate">
           <input
-            name="endDate"
             type="date"
             className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
           />
@@ -42,10 +48,10 @@ export function NewTripForm() {
 
       <Field
         label="Destination candidates"
-        hint="One per line. Skip if unsure — crew can propose later."
+        name="candidates"
+        helper="One per line. Skip if unsure — crew can propose later."
       >
         <textarea
-          name="candidates"
           rows={5}
           placeholder={"Lisbon\nBudapest\nMedellín"}
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 min-h-[120px] leading-[1.5] resize-y w-full"
@@ -54,10 +60,10 @@ export function NewTripForm() {
 
       <Field
         label="Vote deadline"
-        hint="Optional soft deadline — shown to the crew, not enforced"
+        name="voteDeadline"
+        helper="Optional soft deadline — shown to the crew, not enforced"
       >
         <input
-          name="voteDeadline"
           type="datetime-local"
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors w-full"
         />
@@ -75,28 +81,5 @@ export function NewTripForm() {
         </Button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  hint,
-  required,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="grid gap-2">
-      <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
-        {label}
-        {required && <span className="text-accent ml-1">*</span>}
-      </span>
-      {children}
-      {hint && <span className="text-[12px] text-fg-3">{hint}</span>}
-    </label>
   );
 }
