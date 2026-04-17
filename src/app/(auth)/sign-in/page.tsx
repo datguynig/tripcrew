@@ -14,18 +14,17 @@ export default function SignInPage() {
       <div className="w-full max-w-[460px]">
         <div className="flex items-center gap-[10px] mb-5 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
           <span className="w-5 h-px bg-accent" />
-          Boys Trip · 001 · Stockholm
+          TripCrew
         </div>
 
         <h1 className="text-[56px] font-semibold leading-[0.95] tracking-[-0.04em] mb-[18px]">
-          Three nights<span className="text-accent">.</span>
-          <br />
-          Five of us<span className="text-accent">.</span>
+          Plan it<br />
+          together<span className="text-accent">.</span>
         </h1>
 
         <p className="text-fg-2 text-base leading-[1.5] mb-8">
-          Stockholm, 23 – 26 July 2026. Sign in with your email to join the
-          crew, vote on the plan, track the ledger, and post to the feed.
+          One app for the crew — dates, votes, bookings, money, photos. Sign in
+          with your email to start or join a trip.
         </p>
 
         {state?.ok ? (
