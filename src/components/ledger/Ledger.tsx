@@ -6,6 +6,7 @@ import { addExpense, deleteExpense } from "@/lib/actions/ledger";
 import type { Expense } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
+import { currencySymbol } from "@/lib/currency";
 
 type CrewOption = { id: string; name: string };
 
@@ -14,6 +15,7 @@ type Props = {
   crew: CrewOption[];
   tripId: string;
   currentUserId: string;
+  currency: string | null;
 };
 
 function formatDate(iso: string) {
@@ -23,7 +25,14 @@ function formatDate(iso: string) {
     .toUpperCase();
 }
 
-export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
+export function Ledger({
+  initial,
+  crew,
+  tripId,
+  currentUserId,
+  currency,
+}: Props) {
+  const symbol = currencySymbol(currency);
   const [expenses, setExpenses] = useState<Expense[]>(initial);
   const [desc, setDesc] = useState("");
   const [amt, setAmt] = useState("");
@@ -145,7 +154,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
             Total pooled
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">£</span>
+            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(total).toLocaleString()}
           </div>
         </div>
@@ -154,7 +163,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
             Even split
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">£</span>
+            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(perPerson).toLocaleString()}
           </div>
         </div>
@@ -163,7 +172,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
             You&apos;ve covered
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">£</span>
+            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(myTotal).toLocaleString()}
           </div>
         </div>
@@ -189,7 +198,7 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
               handleAdd();
             }
           }}
-          placeholder="Amount (£)"
+          placeholder={`Amount (${symbol})`}
           className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
         />
         <Button onClick={handleAdd}>Log</Button>
@@ -220,7 +229,8 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
                   </div>
                 </div>
                 <div className="text-[17px] font-medium tracking-[-0.02em] tabular-nums">
-                  £{Math.round(Number(e.amount)).toLocaleString()}
+                  {symbol}
+                  {Math.round(Number(e.amount)).toLocaleString()}
                 </div>
                 {mine ? (
                   <Button
@@ -251,10 +261,10 @@ export function Ledger({ initial, crew, tripId, currentUserId }: Props) {
               b.net > 0 ? "text-ok" : b.net < 0 ? "text-err" : "text-fg-3";
             const label =
               b.net > 0
-                ? `+£${rounded.toLocaleString()} back`
+                ? `+${symbol}${rounded.toLocaleString()} back`
                 : b.net < 0
-                  ? `£${rounded.toLocaleString()} owed`
-                  : `£0 even`;
+                  ? `${symbol}${rounded.toLocaleString()} owed`
+                  : `${symbol}0 even`;
             return (
               <div
                 key={b.id}

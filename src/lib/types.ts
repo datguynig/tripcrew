@@ -40,6 +40,7 @@ export type Trip = {
   city_label: string | null;
   dates_label: string | null;
   target_budget_pp: number | null;
+  currency: string;
   created_at: string;
 };
 

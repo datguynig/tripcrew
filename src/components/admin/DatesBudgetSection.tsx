@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useToast } from "@/hooks/useToast";
 
 const INPUT_CLASS =
@@ -21,6 +22,7 @@ type Props = {
   voteDeadline: string | null;
   targetBudgetPp: number | null;
   targetCrewSize: number | null;
+  currency: string | null;
 };
 
 function isoToLocalInput(iso: string | null): string {
@@ -38,6 +40,7 @@ export function DatesBudgetSection({
   voteDeadline,
   targetBudgetPp,
   targetCrewSize,
+  currency,
 }: Props) {
   const [state, action, pending] = useActionState<ActionState, FormData>(
     updateTripDatesBudget,
@@ -83,16 +86,13 @@ export function DatesBudgetSection({
       <Field
         label="Target budget / head"
         name="targetBudgetPp"
-        helper="In your kitty's currency. Blank to hide."
+        helper="Drives the kitty math. Blank to hide the stat."
       >
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          max={1_000_000}
-          step={1}
-          defaultValue={targetBudgetPp ?? ""}
-          className={INPUT_CLASS}
+        <MoneyInput
+          amountName="targetBudgetPp"
+          currencyName="currency"
+          defaultAmount={targetBudgetPp}
+          defaultCurrency={currency}
         />
       </Field>
 

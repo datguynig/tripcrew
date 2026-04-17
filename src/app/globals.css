@@ -58,6 +58,19 @@ body {
     font-family: inherit;
     color: inherit;
   }
+
+  /* Hide the native number input spinner arrows — they look jarring
+     against the dark theme and we rely on inputMode="numeric" + Zod
+     validation for the constraint. */
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
 }
 
 .tabular {

@@ -88,6 +88,7 @@ export default async function AdminPage({
             voteDeadline={trip.vote_deadline}
             targetBudgetPp={trip.target_budget_pp}
             targetCrewSize={trip.target_crew_size}
+            currency={trip.currency}
           />
         </AdminCard>
 

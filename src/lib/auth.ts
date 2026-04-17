@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Profile, Trip, TripRole } from "@/lib/types";
 
 const TRIP_COLUMNS =
-  "id, slug, name, status, destination, vote_deadline, created_by, meta, start_date, end_date, target_crew_size, hero_title, hero_subtitle, city_label, dates_label, target_budget_pp, created_at";
+  "id, slug, name, status, destination, vote_deadline, created_by, meta, start_date, end_date, target_crew_size, hero_title, hero_subtitle, city_label, dates_label, target_budget_pp, currency, created_at";
 
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient();

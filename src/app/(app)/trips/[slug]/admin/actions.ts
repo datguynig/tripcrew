@@ -101,6 +101,20 @@ const datesBudgetSchema = z
           v === null || (Number.isInteger(v) && v >= 1 && v <= 100),
         "Crew size 1–100",
       ),
+    currency: z
+      .enum([
+        "GBP",
+        "USD",
+        "EUR",
+        "SEK",
+        "NOK",
+        "DKK",
+        "CHF",
+        "JPY",
+        "AUD",
+        "CAD",
+      ])
+      .default("GBP"),
   })
   .refine(
     (d) =>
@@ -119,6 +133,7 @@ export async function updateTripDatesBudget(
     voteDeadline: formData.get("voteDeadline") ?? "",
     targetBudgetPp: formData.get("targetBudgetPp") ?? "",
     targetCrewSize: formData.get("targetCrewSize") ?? "",
+    currency: formData.get("currency") ?? "GBP",
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
@@ -144,6 +159,7 @@ export async function updateTripDatesBudget(
       vote_deadline: voteDeadline,
       target_budget_pp: parsed.data.targetBudgetPp,
       target_crew_size: parsed.data.targetCrewSize,
+      currency: parsed.data.currency,
     })
     .eq("id", parsed.data.tripId)
     .select("slug")

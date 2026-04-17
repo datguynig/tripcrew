@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { currencySymbol } from "@/lib/currency";
 
 function daysUntil(iso: string) {
   const target = new Date(`${iso}T00:00:00Z`).getTime();
@@ -21,6 +22,7 @@ type Props = {
   bookingsTotal: number;
   kittyTotal: number;
   targetBudgetPp: number | null;
+  currency: string | null;
 };
 
 export function Hero({
@@ -36,7 +38,9 @@ export function Hero({
   bookingsTotal,
   kittyTotal,
   targetBudgetPp,
+  currency,
 }: Props) {
+  const symbol = currencySymbol(currency);
   const [days, setDays] = useState(() =>
     startDate ? daysUntil(startDate) : null,
   );
@@ -97,7 +101,11 @@ export function Hero({
         />
         <StatCell
           label="Target budget"
-          value={targetBudgetPp !== null ? `£${targetBudgetPp}` : "—"}
+          value={
+            targetBudgetPp !== null
+              ? `${symbol}${targetBudgetPp.toLocaleString("en-US")}`
+              : "—"
+          }
           unit={targetBudgetPp !== null ? "pp" : undefined}
           sub={targetBudgetPp !== null ? "Ex. flights" : "Not set"}
         />
@@ -108,7 +116,7 @@ export function Hero({
         />
         <StatCell
           label="Kitty"
-          value={`£${kittyTotal.toFixed(0)}`}
+          value={`${symbol}${Math.round(kittyTotal).toLocaleString("en-US")}`}
           sub="Pooled to date"
         />
       </div>

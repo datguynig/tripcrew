@@ -80,6 +80,7 @@ export default async function TripOverview({
         bookingsTotal={bookingsTotal}
         kittyTotal={kittyTotal}
         targetBudgetPp={trip.target_budget_pp}
+        currency={trip.currency}
       />
 
       <section className="py-14 pb-24 section-enter">
