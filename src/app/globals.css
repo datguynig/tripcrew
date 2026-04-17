@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0b;
+  --color-bg-2: #131315;
+  --color-bg-3: #1c1c1f;
+  --color-fg: #f0f0f0;
+  --color-fg-2: #a8a8ad;
+  --color-fg-3: #6b6b70;
+  --color-fg-4: #3e3e42;
+  --color-accent: #ff4c15;
+  --color-accent-dim: rgba(255, 76, 21, 0.12);
+  --color-ok: #5fe388;
+  --color-warn: #f5c451;
+  --color-err: #ff5c5c;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-2: rgba(255, 255, 255, 0.14);
+
+  --font-sans: var(--font-sans), "Inter Tight", sans-serif;
+  --font-mono: var(--font-mono), "JetBrains Mono", monospace;
+
+  --tracking-tightest: -0.055em;
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.02em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes brand-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+.brand-dot {
+  animation: brand-pulse 2s infinite;
+}
+
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-enter {
+  animation: section-enter 0.25s ease;
+}
+
+.hero-radial {
+  background:
+    radial-gradient(ellipse at top, rgba(255, 76, 21, 0.08), transparent 50%),
+    var(--color-bg);
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.nav-scroll {
+  scrollbar-width: none;
+}
