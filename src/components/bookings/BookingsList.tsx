@@ -10,6 +10,7 @@ import {
 } from "@/lib/actions/bookings";
 import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/hooks/useToast";
 
 type CrewOption = { id: string; name: string };
 
@@ -23,6 +24,7 @@ export function BookingsList({ initial, crew, tripId }: Props) {
   const [bookings, setBookings] = useState<Booking[]>(initial);
   const [title, setTitle] = useState("");
   const [, startTransition] = useTransition();
+  const toast = useToast();
 
   useEffect(() => setBookings(initial), [initial]);
 
@@ -96,9 +98,22 @@ export function BookingsList({ initial, crew, tripId }: Props) {
   };
 
   const handleDelete = (id: string) => {
+    const removed = bookings.find((b) => b.id === id);
+    if (!removed) return;
     setBookings((prev) => prev.filter((b) => b.id !== id));
-    startTransition(async () => {
-      await deleteBooking(id);
+    toast.undo({
+      message: `Deleted "${removed.title}"`,
+      duration: 5000,
+      onUndo: () => {
+        setBookings((prev) =>
+          [...prev, removed].sort((a, b) => a.position - b.position),
+        );
+      },
+      onCommit: () => {
+        startTransition(async () => {
+          await deleteBooking(id);
+        });
+      },
     });
   };
 
