@@ -83,12 +83,20 @@ export function TripSwitcher({ trips }: Props) {
       >
         <span className="w-[7px] h-[7px] bg-accent rounded-full brand-dot" />
         <span className="truncate max-w-[280px]">{label}</span>
-        <span
+        <svg
           aria-hidden
-          className={`text-fg-3 transition-transform text-[9px] ${open ? "rotate-180" : ""}`}
+          viewBox="0 0 10 10"
+          className={`w-[10px] h-[10px] text-fg-2 transition-transform ${open ? "rotate-180" : ""}`}
         >
-          ▾
-        </span>
+          <path
+            d="M2 3.5 L5 6.5 L8 3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
 
       {open && (
