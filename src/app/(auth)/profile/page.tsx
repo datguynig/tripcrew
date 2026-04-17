@@ -1,15 +1,24 @@
 "use client";
 
 import { useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createProfile, type ProfileState } from "./actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+
+function safeNext(value: string | null): string | null {
+  if (!value) return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
 
 export default function ProfilePage() {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
     createProfile,
     undefined,
   );
+  const params = useSearchParams();
+  const next = safeNext(params.get("next"));
 
   return (
     <div className="hero-radial min-h-screen flex items-center justify-center px-7">
@@ -29,6 +38,7 @@ export default function ProfilePage() {
         </p>
 
         <form action={action} className="grid gap-3">
+          {next && <input type="hidden" name="next" value={next} />}
           <Field label="Name" name="name" hideLabel error={state?.error} required>
             <input
               type="text"

@@ -10,12 +10,20 @@ const schema = z.object({
 
 export type ProfileState = { error?: string } | undefined;
 
+function safeNext(value: FormDataEntryValue | null): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
+
 export async function createProfile(
   _prev: ProfileState,
   formData: FormData,
 ): Promise<ProfileState> {
   const parsed = schema.safeParse({ name: formData.get("name") });
   if (!parsed.success) return { error: "Name required (1–60 chars)." };
+
+  const next = safeNext(formData.get("next"));
 
   const supabase = await createClient();
   const {
@@ -32,5 +40,5 @@ export async function createProfile(
     return { error: "Could not save profile." };
   }
 
-  redirect("/");
+  redirect(next ?? "/");
 }

@@ -12,10 +12,16 @@ async function getPublicOrigin(request: Request) {
   return new URL(request.url).origin;
 }
 
+function safeNext(raw: string | null): string {
+  if (!raw) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//")) return "/";
+  return raw;
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
+  const next = safeNext(searchParams.get("next"));
   const origin = await getPublicOrigin(request);
 
   if (code) {
@@ -34,7 +40,11 @@ export async function GET(request: Request) {
           .maybeSingle();
 
         if (!profile) {
-          return NextResponse.redirect(`${origin}/profile`);
+          const target =
+            next === "/"
+              ? `${origin}/profile`
+              : `${origin}/profile?next=${encodeURIComponent(next)}`;
+          return NextResponse.redirect(target);
         }
       }
 
