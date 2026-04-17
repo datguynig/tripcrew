@@ -40,7 +40,9 @@ export type Trip = {
   city_label: string | null;
   dates_label: string | null;
   target_budget_pp: number | null;
-  currency: string;
+  // Nullable to tolerate a period where the `currency` column has not
+  // yet been migrated in. Display helpers default to GBP when absent.
+  currency: string | null;
   created_at: string;
 };
 

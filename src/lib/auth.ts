@@ -2,8 +2,11 @@ import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Trip, TripRole } from "@/lib/types";
 
-const TRIP_COLUMNS =
-  "id, slug, name, status, destination, vote_deadline, created_by, meta, start_date, end_date, target_crew_size, hero_title, hero_subtitle, city_label, dates_label, target_budget_pp, currency, created_at";
+// `*` instead of an explicit column list so newly-added columns (e.g. a
+// future `currency` that arrives via migration) don't break the SELECT
+// when the app ships before the migration is applied. Consumers of
+// optional-new fields should default gracefully (see currencySymbol).
+const TRIP_SELECT = "*";
 
 export const getCurrentUser = cache(async () => {
   const supabase = await createClient();
@@ -25,7 +28,7 @@ export const getTrip = cache(async (slug: string) => {
   const supabase = await createClient();
   const { data } = await supabase
     .from("trips")
-    .select(TRIP_COLUMNS)
+    .select(TRIP_SELECT)
     .eq("slug", slug)
     .maybeSingle<Trip>();
   return data;
@@ -40,7 +43,7 @@ export const getUserTrips = cache(async () => {
 
   const { data } = await supabase
     .from("trip_members")
-    .select(`role, joined_at, trips!inner(${TRIP_COLUMNS})`)
+    .select(`role, joined_at, trips!inner(${TRIP_SELECT})`)
     .eq("user_id", user.id)
     .order("joined_at", { ascending: false });
 
