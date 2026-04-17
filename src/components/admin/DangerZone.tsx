@@ -5,6 +5,7 @@ import {
   deleteTrip,
   type ActionState,
 } from "@/app/(app)/trips/[slug]/admin/actions";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
@@ -35,9 +36,9 @@ export function DangerZone({ tripId, tripName }: Props) {
 
   return (
     <div className="border border-err/30 bg-err/5 rounded-md p-5">
-      <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-err mb-2">
+      <Badge tone="err" size="lg" className="block mb-2">
         Danger zone
-      </div>
+      </Badge>
       <p className="text-fg-2 text-[14px] mb-4 max-w-[560px]">
         Delete this trip permanently. All members lose access; activities,
         votes, bookings, expenses, and posts are wiped. This cannot be undone.

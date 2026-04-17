@@ -6,6 +6,7 @@ import {
   demoteMember,
   removeMember,
 } from "@/app/(app)/trips/[slug]/admin/actions";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import type { TripRole } from "@/lib/types";
@@ -81,21 +82,15 @@ export function CrewManagement({ tripId, currentUserId, members }: Props) {
             <div className="min-w-0">
               <div className="text-[15px] font-medium flex items-center gap-2">
                 <span className="truncate">{m.name}</span>
-                {isSelf && (
-                  <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-accent">
-                    You
-                  </span>
-                )}
+                {isSelf && <Badge tone="accent">You</Badge>}
               </div>
-              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 mt-0.5">
+              <Badge tone="muted" className="block mt-0.5">
                 {isAdmin ? "Admin" : "Member"}
-              </div>
+              </Badge>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               {isSelf ? (
-                <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
-                  No self-actions
-                </span>
+                <Badge tone="muted">No self-actions</Badge>
               ) : (
                 <>
                   {isAdmin ? (

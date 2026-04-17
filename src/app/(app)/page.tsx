@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getUserTrips } from "@/lib/auth";
+import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
 
 export const revalidate = 0;
@@ -51,10 +52,7 @@ export default async function Dashboard() {
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(320px,1fr))] gap-3">
           {trips.map((t) => {
-            const statusLabel =
-              t.status === "locked" ? "LOCKED" : "PLANNING";
-            const statusTone =
-              t.status === "locked" ? "text-ok" : "text-warn";
+            const isLocked = t.status === "locked";
             const headline = t.destination ?? t.name;
             return (
               <Link
@@ -62,9 +60,13 @@ export default async function Dashboard() {
                 href={`/trips/${t.slug}`}
                 className="border border-line bg-bg-2 p-6 flex flex-col gap-4 hover:border-line-2 transition-colors"
               >
-                <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
-                  <span className={statusTone}>{statusLabel}</span>
-                  <span>{t.role === "admin" ? "ADMIN" : "MEMBER"}</span>
+                <div className="flex items-center justify-between">
+                  <Badge tone={isLocked ? "ok" : "warn"}>
+                    {isLocked ? "Locked" : "Planning"}
+                  </Badge>
+                  <Badge tone="muted">
+                    {t.role === "admin" ? "Admin" : "Member"}
+                  </Badge>
                 </div>
                 <div>
                   <div className="text-[24px] font-medium tracking-[-0.02em] leading-[1.1] mb-1">

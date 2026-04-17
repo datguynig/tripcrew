@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { createClient } from "@/lib/supabase/client";
+import { Badge } from "@/components/ui/Badge";
 
 export type CrewRow = {
   user_id: string;
@@ -94,9 +95,7 @@ export function CrewList({
           <span className="text-[17px] font-medium tracking-[-0.015em]">
             {row.name}
             {row.user_id === currentUserId && (
-              <span className="font-mono text-[10px] tracking-[0.15em] text-accent uppercase ml-2">
-                You
-              </span>
+              <Badge tone="accent" className="ml-2">You</Badge>
             )}
           </span>
           <span className="font-mono text-[11px] tracking-[0.1em] text-fg-3 uppercase">

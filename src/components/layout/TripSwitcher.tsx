@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Badge } from "@/components/ui/Badge";
 import type { Trip, TripRole } from "@/lib/types";
 
 type SwitcherTrip = Trip & { role: TripRole };
@@ -155,9 +156,9 @@ function GroupList({
   if (rows.length === 0) return null;
   return (
     <div className="pb-1 last:pb-0">
-      <div className="px-4 pt-2 pb-1 font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3">
+      <Badge tone="muted" size="sm" className="block px-4 pt-2 pb-1">
         {label}
-      </div>
+      </Badge>
       {rows.map((trip) => {
         const isCurrent = trip.slug === currentSlug;
         const subtitle =
@@ -186,9 +187,9 @@ function GroupList({
               </span>
             </span>
             {trip.role === "admin" && (
-              <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-fg-3 shrink-0">
+              <Badge tone="muted" size="sm" className="shrink-0">
                 Admin
-              </span>
+              </Badge>
             )}
           </Link>
         );

@@ -10,6 +10,7 @@ import {
   removeCandidate,
 } from "@/lib/actions/destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 
@@ -272,23 +273,21 @@ export function Destinations({
       <>
         <div className="border border-line p-6 mb-8 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-2">
+            <Badge tone="muted" className="block mb-2 tracking-[0.18em]">
               Locked
-            </div>
+            </Badge>
             <div className="text-[28px] font-medium tracking-[-0.02em]">
               {lockedDestination ?? "—"}
             </div>
           </div>
-          <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-ok">
-            Decision made
-          </div>
+          <Badge tone="ok">Decision made</Badge>
         </div>
 
         {ranked.length > 0 && (
           <>
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-3">
+            <Badge tone="muted" className="block mb-3 tracking-[0.18em]">
               Vote history
-            </div>
+            </Badge>
             <div className="border border-line">
               {ranked.map((c) => {
                 const cc = counts.get(c.id) ?? { yes: 0, maybe: 0, no: 0 };
@@ -412,9 +411,7 @@ export function Destinations({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     {leader && total > 0 && (
-                      <span className="font-mono text-[9px] tracking-[0.18em] uppercase text-accent">
-                        Leading
-                      </span>
+                      <Badge tone="accent" size="sm">Leading</Badge>
                     )}
                     <div className="text-[17px] font-medium tracking-[-0.015em]">
                       {c.title}
@@ -504,9 +501,9 @@ export function Destinations({
       {isAdmin && (
         <div className="mt-8 border border-line p-5 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-1">
+            <Badge tone="muted" className="block mb-1 tracking-[0.18em]">
               Admin
-            </div>
+            </Badge>
             <div className="text-sm text-fg-2">
               Lock the top candidate to kick off planning. This can&apos;t be
               undone from here.
