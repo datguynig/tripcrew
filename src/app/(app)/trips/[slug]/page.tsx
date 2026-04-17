@@ -56,7 +56,7 @@ export default async function TripOverview({
   const cityLabel = trip.city_label ?? trip.destination ?? "TBD";
   const datesLabel =
     trip.dates_label ?? formatDateRange(trip.start_date, trip.end_date);
-  const specCells = trip.meta?.spec ?? [];
+  const specCells = trip.meta?.spec_grid ?? [];
   const scheduleRows = trip.meta?.schedule ?? [];
   const overviewLead =
     trip.meta?.section_leads?.overview ??

@@ -8,7 +8,7 @@ export type TripStatus = "planning" | "locked";
 export type TripRole = "admin" | "member";
 
 export type SpecItem = { label: string; value: string; sub: string };
-export type ScheduleItem = { day: string; head: string; body: string };
+export type ScheduleItem = { day_label: string; heading: string; body: string };
 export type SectionLeadKey =
   | "overview"
   | "shortlist"
@@ -18,7 +18,7 @@ export type SectionLeadKey =
 export type SectionLeads = Partial<Record<SectionLeadKey, string>>;
 
 export type TripMeta = {
-  spec?: SpecItem[];
+  spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
   section_leads?: SectionLeads;
 };
