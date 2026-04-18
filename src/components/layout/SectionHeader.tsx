@@ -17,9 +17,7 @@ export function SectionHeader({
           <p className="max-w-[600px] text-fg-2 text-[15px] mt-2">{lead}</p>
         )}
       </div>
-      <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 pb-1">
-        {code}
-      </div>
+      <div className="label text-fg-3 pb-1">{code}</div>
     </div>
   );
 }

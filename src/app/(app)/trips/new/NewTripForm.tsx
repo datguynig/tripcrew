@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { INPUT, INPUT_SM } from "@/lib/styles";
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -25,7 +26,7 @@ export function NewTripForm() {
           autoFocus
           maxLength={80}
           placeholder="What are you calling it?"
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full"
+          className={INPUT}
         />
       </Field>
 
@@ -48,7 +49,7 @@ export function NewTripForm() {
         <textarea
           rows={5}
           placeholder={"Lisbon\nBudapest\nMedellín"}
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 min-h-[120px] leading-[1.5] resize-y w-full"
+          className={`${INPUT_SM} min-h-[120px] leading-[1.5] resize-y`}
         />
       </Field>
 

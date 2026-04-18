@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { useToast } from "@/hooks/useToast";
 import { createInvite, revokeInvite } from "@/lib/actions/invites";
 import type { TripInvite } from "@/lib/types";
@@ -111,7 +112,7 @@ export function InvitePanel({ tripId, origin, initial }: Props) {
   };
 
   return (
-    <div className="border border-line p-7 mt-8">
+    <Card padding={7} tone="flat" className="mt-8">
       <div className="flex items-baseline justify-between gap-4 mb-4">
         <div>
           <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent mb-1">
@@ -177,6 +178,6 @@ export function InvitePanel({ tripId, origin, initial }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </Card>
   );
 }

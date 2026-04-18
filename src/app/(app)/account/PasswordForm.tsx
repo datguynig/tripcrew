@@ -5,6 +5,7 @@ import { updatePassword, type UpdatePasswordState } from "./actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useToast } from "@/hooks/useToast";
+import { INPUT_SM } from "@/lib/styles";
 
 export function PasswordForm() {
   const [state, formAction, pending] = useActionState<
@@ -30,7 +31,7 @@ export function PasswordForm() {
           type="password"
           minLength={8}
           autoComplete="new-password"
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 w-full"
+          className={INPUT_SM}
         />
       </Field>
       <div>

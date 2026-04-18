@@ -84,23 +84,26 @@ Two fonts, loaded in [app/layout.tsx](src/app/layout.tsx):
 
 **Pick a font first, pick a weight second, pick a size last.** `sans` is the default; `mono` is only for metadata / labels / tabular numbers / codes (`§ 01`, `LOCKED`, `23 JUL 26`).
 
-#### Type scale (named)
+#### Type scale
+
+All roles below exist as **real CSS utility classes** in [globals.css](src/app/globals.css) under `@layer components`. Prefer them over raw arbitrary values so the scale stays consistent.
 
 | Role | Class | Size | Weight | Tracking | Usage |
 |---|---|---|---|---|---|
-| `display-xl` | custom | clamp(64px, 13vw, 180px) | 700 | -0.055em | Hero trip title ("Stockholm.") |
-| `display-lg` | `text-[56px]` | 56 | 600 | -0.04em | Sign-in hero, dashboard H1 |
-| `display-md` | `text-[48px]` | 48 | 500 | -0.03em | Stat card value |
-| `display-sm` | `text-[28px]` / `text-[24px]` | 24–28 | 500 | -0.02em | Card titles, locked destination |
-| `title` | `text-[22px]` | 22 | 500 | -0.02em | Admin section title, spec cell value |
-| `heading` | `text-[20px]` | 20 | 500 | -0.02em | Schedule day heading |
-| `subheading` | `text-[17px]` | 17 | 500 | -0.015em | Vote row title, crew name |
+| `display-xl` | inline clamp | clamp(64px, 13vw, 180px) | 700 | -0.055em | Hero trip title ("Stockholm.") |
+| `display-lg` | `.display-lg` | 56 | 600 | -0.04em | Sign-in hero, dashboard H1 |
+| `display-md` | `.display-md` | 48 | 500 | -0.03em | Stat card value |
+| `display-sm` | `.display-sm` | 28 | 500 | -0.02em | Card titles, locked destination |
+| `title` | `.title` | 22 | 500 | -0.02em | Admin section title, spec cell value |
+| `heading` | `.heading` | 20 | 500 | -0.02em | Schedule day heading |
+| `subheading` | `.subheading` | 17 | 500 | -0.015em | Vote row title, crew name |
 | `body` | default | 14 | 400 | -0.01em | Paragraphs, form inputs |
-| `body-sm` | `text-[13px]` | 13 | 400 | 0 | Helper text, meta |
-| `body-xs` | `text-[12px]` | 12 | 400 | 0 | Calendar cells, footnotes |
-| `label` | `font-mono text-[11px]` | 11 | 400 mono | 0.15em uppercase | Section labels, STATUS, TARGET BUDGET |
-| `label-sm` | `font-mono text-[10px]` | 10 | 400 mono | 0.15–0.18em uppercase | Tab codes, chip badges |
-| `label-xs` | `font-mono text-[9px]` | 9 | 400 mono | 0.15–0.18em uppercase | Dense meta (calendar weekday) |
+| `body-sm` | `.body-sm` | 13 | 400 | 0 | Helper text, meta |
+| `body-xs` | `.body-xs` | 12 | 400 | 0 | Calendar cells, footnotes |
+| `label` | `.label` | 11 mono | — | 0.15em uppercase | Section labels, STATUS, TARGET BUDGET |
+| `label-sm` | `.label-sm` | 10 mono | — | 0.15em uppercase | Most chip badges (default of `<Badge>`) |
+| `label-sm-wide` | `.label-sm-wide` | 10 mono | — | 0.18em uppercase | Labels above display values (stat cells, section codes) |
+| `label-xs` | `.label-xs` | 9 mono | — | 0.18em uppercase | Dense meta (calendar weekday, `<Badge size="sm">`) |
 
 **Tracking rules:**
 
@@ -147,8 +150,12 @@ border + line-2   1px solid var(--color-line-2)   hover, focus, highlighted
 ```
 
 - **All hairlines are `line` at 1px.** No 2px, no double borders.
-- **Radii**: `rounded` (4px) for small elements (calendar cells), `rounded-md` (6px) default for inputs/cards/buttons, `rounded-full` only for circular dots, pills, and avatars.
-- **No shadows**, ever. If an element needs to feel "above" another, use `bg-2` or `bg-3` (elevation via tone, not blur).
+- **Radii**:
+  - `rounded` (4px) on small elements (calendar cells, focus ring).
+  - `rounded-md` (6px) on inputs, buttons, popovers.
+  - `rounded-full` only on circular dots, pills, and avatars.
+  - **Cards are sharp** — no radius. The editorial, magazine-y aesthetic depends on it. If an element feels like a "card", use the [Card](src/components/ui/Card.tsx) component which encodes this.
+- **No shadows**, ever — except popovers (DatePicker, TripSwitcher, MoneyInput currency menu) which need `shadow-lg` to read as floating.
 
 ### 2.5 Motion
 
@@ -379,17 +386,16 @@ Non-negotiables:
 - Every interactive element is reachable by keyboard.
 - Every icon-only button has an `aria-label`.
 - Form inputs have associated `<label>` (via Field component).
-- Focus is **always** visible. Current approach: `focus:border-line-2` change. A dedicated focus ring is planned in Phase K-a11y.
+- Focus is **always** visible — a 2px `accent` outline with 2–3px offset, scoped to `:focus-visible` (keyboard focus only). Defined globally in [globals.css](src/app/globals.css). Never add `outline: none` without a replacement.
 - Colour is never the only signal. Status chips also carry text. Vote counts don't rely on colour alone.
 - Error messages are associated to the field via `aria-describedby`.
 - Modal dialogs trap focus.
 
-**Known gaps** (tracked for Phase K-a11y):
+**Known gaps**:
 
-- No dedicated focus ring — currently border-colour only, which is subtle on dark.
-- `fg-3` is used for too much informational text (needs contrast audit).
 - Popovers lack `role="dialog"` in some cases (DatePicker does, currency picker is a `role="listbox"`).
 - No skip-to-content link yet.
+- Axe audit not yet run.
 
 ---
 
@@ -443,13 +449,9 @@ Before merging a new component, confirm every row:
 
 Tracked gaps between this doc and the current codebase. Not blockers, but address when touching the area:
 
-- **Hero stat cells**: `py-6 pr-6` asymmetry — fix to `p-6`.
-- **Sub-labels** (`Until wheels up`, `Ex. flights`, `Locked in`, `Pooled to date`) use `fg-3` at 13px — needs to move up to `fg-2` or bump the fg-3 brightness.
-- **Arbitrary sizes** `mb-[10px]`, `mt-[6px]`, `gap-[10px]` scattered — consolidate onto the 4-based scale.
-- **Badge primitive** not yet built (Phase L) — existing status tags are inlined.
-- **Dedicated focus ring** not yet implemented (Phase K-a11y).
-- **Type scale** is implicit in arbitrary classes — planned consolidation into named utility classes (`.label`, `.display-md` etc.) in a future pass, so that Section 2.2 maps to real classes.
-- **Input padding** `px-[14px] py-[11px]` is canonical but not tokenised — should live as a single reusable class.
+- **Mixed arbitrary typography**: some existing components still use `font-mono text-[10px] tracking-[0.15em] uppercase` inline instead of the `.label-sm` utility. Migrate as you touch each file.
+- **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
+- **AdminPlaceholder** is about to be deleted once the last admin section editor ships.
 
 ---
 

@@ -13,6 +13,7 @@ import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
+import { INPUT_SM } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -366,14 +367,14 @@ export function Destinations({
           }}
           placeholder="Propose a destination (e.g. Lisbon)"
           maxLength={120}
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
+          className={INPUT_SM}
         />
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           placeholder="Pitch it (optional, ≤280 chars)"
           maxLength={280}
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 min-h-[56px] leading-[1.5] resize-y"
+          className={`${INPUT_SM} min-h-[56px] leading-[1.5] resize-y`}
         />
         <div className="flex justify-between items-center gap-3">
           {error && (

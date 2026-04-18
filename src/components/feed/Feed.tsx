@@ -6,6 +6,7 @@ import { addPost } from "@/lib/actions/feed";
 
 import type { Post } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { INPUT_SM } from "@/lib/styles";
 
 type CrewMap = Record<string, string>;
 
@@ -92,13 +93,13 @@ export function Feed({ initial, authorsById, tripId }: Props) {
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="Image URL (optional)"
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
+          className={INPUT_SM}
         />
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           placeholder="Caption, update, one-liner..."
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 min-h-[72px] leading-[1.5] resize-y"
+          className={`${INPUT_SM} min-h-[72px] leading-[1.5] resize-y`}
         />
         <div className="flex justify-end">
           <Button onClick={handlePost}>Post</Button>

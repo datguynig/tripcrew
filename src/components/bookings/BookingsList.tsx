@@ -11,6 +11,7 @@ import {
 import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
+import { INPUT_SM } from "@/lib/styles";
 
 type CrewOption = { id: string; name: string };
 
@@ -131,7 +132,7 @@ export function BookingsList({ initial, crew, tripId }: Props) {
             }
           }}
           placeholder="Add a booking..."
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
+          className={INPUT_SM}
         />
         <Button onClick={handleAdd}>Add</Button>
       </div>

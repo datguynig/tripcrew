@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { createInvite } from "@/lib/actions/invites";
 import { useToast } from "@/hooks/useToast";
+import { Card } from "@/components/ui/Card";
 
 function getInitials(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -51,11 +52,11 @@ export function PriorCrewChips({ tripId, people }: Props) {
   if (visible.length === 0) return null;
 
   return (
-    <div className="border border-line p-6 mt-8">
-      <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-1">
+    <Card tone="flat" className="mt-8">
+      <div className="label-sm-wide text-fg-3 mb-1">
         Previously traveled with
       </div>
-      <p className="text-[13px] text-fg-2 mb-4 max-w-[520px]">
+      <p className="body-sm text-fg-2 mb-4 max-w-[520px]">
         Click to generate an invite link and copy it. Paste it to them however
         you like.
       </p>
@@ -83,6 +84,6 @@ export function PriorCrewChips({ tripId, people }: Props) {
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

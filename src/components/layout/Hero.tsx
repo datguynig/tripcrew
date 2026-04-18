@@ -53,7 +53,7 @@ export function Hero({
 
   return (
     <div className="pt-[70px] pb-[60px] border-b border-line relative">
-      <div className="flex flex-wrap gap-7 mb-10 font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+      <div className="flex flex-wrap gap-7 mb-10 label text-fg-3">
         <span>
           LOC / <b className="text-fg font-medium">{cityLabel}</b>
         </span>
@@ -137,20 +137,16 @@ function StatCell({
 }) {
   return (
     <div className="p-6 border-r border-line last:border-r-0 max-[720px]:[&:nth-child(2n)]:border-r-0 max-[720px]:[&:nth-child(-n+2)]:border-b max-[720px]:[&:nth-child(-n+2)]:border-line">
-      <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-2.5">
-        {label}
-      </div>
+      <div className="label-sm-wide text-fg-3 mb-2.5">{label}</div>
       <div className="flex items-baseline">
-        <span className="text-[48px] font-medium tracking-[-0.03em] leading-none tabular">
-          {value}
-        </span>
+        <span className="display-md tabular">{value}</span>
         {unit && (
           <span className="text-fg-3 text-[20px] font-normal ml-0.5">
             {unit}
           </span>
         )}
       </div>
-      <div className="text-[13px] text-fg-2 mt-1.5 font-mono tracking-[0.05em]">
+      <div className="body-sm text-fg-2 mt-1.5 font-mono tracking-[0.05em]">
         {sub}
       </div>
     </div>

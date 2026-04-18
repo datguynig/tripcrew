@@ -7,6 +7,7 @@ import type { Expense } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { currencySymbol } from "@/lib/currency";
+import { INPUT_SM } from "@/lib/styles";
 
 type CrewOption = { id: string; name: string };
 
@@ -184,7 +185,7 @@ export function Ledger({
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           placeholder="What was it for..."
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
+          className={INPUT_SM}
         />
         <input
           type="number"
@@ -199,7 +200,7 @@ export function Ledger({
             }
           }}
           placeholder={`Amount (${symbol})`}
-          className="bg-bg-2 border border-line px-[14px] py-[11px] text-sm rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3"
+          className={INPUT_SM}
         />
         <Button onClick={handleAdd}>Log</Button>
       </div>

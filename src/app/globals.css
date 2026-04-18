@@ -71,6 +71,101 @@ body {
     -webkit-appearance: none;
     margin: 0;
   }
+
+  /* Focus ring — accent outline with offset, only on keyboard focus
+     (`:focus-visible`) so mouse clicks don't show the ring. See
+     designsystem.md §6. Remove the browser default so our ring
+     doesn't compound with it. */
+  *:focus {
+    outline: none;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="option"]:focus-visible {
+    outline-offset: 3px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 1px;
+  }
+}
+
+@layer components {
+  /* Typography utilities — canonical named styles from
+     designsystem.md §2.2. Prefer these over raw arbitrary-value
+     classes so the type scale stays consistent and a single edit
+     here propagates everywhere. */
+  .label-xs {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label-sm {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .label-sm-wide {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .body-xs {
+    font-size: 12px;
+  }
+  .body-sm {
+    font-size: 13px;
+  }
+  .subheading {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  .heading {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .display-sm {
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .display-md {
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .display-lg {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+  }
 }
 
 .tabular {
