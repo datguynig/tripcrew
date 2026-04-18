@@ -8,6 +8,7 @@ import {
   lockDestination,
   proposeCandidate,
   removeCandidate,
+  unlockDestination,
 } from "@/lib/actions/destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
@@ -290,6 +291,19 @@ export function Destinations({
     });
   };
 
+  const handleUnlock = () => {
+    if (
+      !confirm(
+        "Unlock this destination? The trip goes back to voting, existing votes are kept.",
+      )
+    )
+      return;
+    startTransition(async () => {
+      const res = await unlockDestination(tripId);
+      if (res?.error) toast.error(res.error);
+    });
+  };
+
   if (locked) {
     return (
       <>
@@ -302,7 +316,19 @@ export function Destinations({
               {lockedDestination ?? "—"}
             </div>
           </div>
-          <Badge tone="ok">Decision made</Badge>
+          <div className="flex items-center gap-3">
+            <Badge tone="ok">Decision made</Badge>
+            {isAdmin && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleUnlock}
+                disabled={pending}
+              >
+                {pending ? "Unlocking…" : "Unlock"}
+              </Button>
+            )}
+          </div>
         </div>
 
         {ranked.length > 0 && (

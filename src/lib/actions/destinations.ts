@@ -137,6 +137,40 @@ export async function castDestinationVote(input: {
   return { ok: true };
 }
 
+export async function unlockDestination(tripId: string) {
+  const parsed = z.string().uuid().safeParse(tripId);
+  if (!parsed.success) return { error: "Invalid trip" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const { data: member } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", parsed.data)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: "admin" | "member" }>();
+  if (member?.role !== "admin") return { error: "Admin only" };
+
+  const service = createServiceClient();
+  const { data: trip, error } = await service
+    .from("trips")
+    .update({ status: "planning", destination: null })
+    .eq("id", parsed.data)
+    .eq("status", "locked")
+    .select("slug")
+    .maybeSingle<{ slug: string }>();
+  if (error) return { error: error.message };
+  if (!trip) return { error: "Trip isn't locked" };
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/destinations`);
+  return { ok: true };
+}
+
 export async function lockDestination(tripId: string) {
   const parsed = z.string().uuid().safeParse(tripId);
   if (!parsed.success) return { error: "Invalid trip" };
