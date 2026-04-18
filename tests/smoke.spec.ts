@@ -72,11 +72,11 @@ test.describe("trip pages", () => {
 test.describe("date picker", () => {
   test("opens, picks a date, closes", async ({ page }) => {
     await page.goto("/trips/new");
-    // Start date picker trigger
-    const trigger = page.getByRole("button", { name: /pick a date/i }).first();
+    // Button's accessible name isn't always "Pick a date" — it inherits
+    // the Field's label association. Target by aria-haspopup instead.
+    const trigger = page.locator('[aria-haspopup="dialog"]').first();
     await trigger.click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    // Click "Today"
     await page.getByRole("button", { name: /today/i }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
@@ -85,7 +85,8 @@ test.describe("date picker", () => {
 test.describe("screenshots for visual review", () => {
   test("dashboard", async ({ page }) => {
     await page.goto("/");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/dashboard.png",
       fullPage: true,
@@ -94,7 +95,8 @@ test.describe("screenshots for visual review", () => {
 
   test("overview", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/overview.png",
       fullPage: true,
@@ -103,7 +105,8 @@ test.describe("screenshots for visual review", () => {
 
   test("crew", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}/crew`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/crew.png",
       fullPage: true,
@@ -112,7 +115,8 @@ test.describe("screenshots for visual review", () => {
 
   test("shortlist", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}/shortlist`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/shortlist.png",
       fullPage: true,
@@ -121,7 +125,8 @@ test.describe("screenshots for visual review", () => {
 
   test("bookings", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}/bookings`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/bookings.png",
       fullPage: true,
@@ -130,7 +135,8 @@ test.describe("screenshots for visual review", () => {
 
   test("ledger", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}/ledger`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/ledger.png",
       fullPage: true,
@@ -139,7 +145,8 @@ test.describe("screenshots for visual review", () => {
 
   test("feed", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}/feed`);
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/feed.png",
       fullPage: true,
@@ -148,7 +155,8 @@ test.describe("screenshots for visual review", () => {
 
   test("new trip form", async ({ page }) => {
     await page.goto("/trips/new");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.waitForTimeout(500);
     await page.screenshot({
       path: "tests/screenshots/new-trip.png",
       fullPage: true,

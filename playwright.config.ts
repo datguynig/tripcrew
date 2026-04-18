@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config as loadEnv } from "dotenv";
 import path from "node:path";
+
+loadEnv({ path: path.resolve(__dirname, ".env.local") });
 
 /**
  * Playwright smoke suite. Runs headless Chromium against the local dev
@@ -41,4 +44,12 @@ export default defineConfig({
       testIgnore: /auth\.setup\.ts/,
     },
   ],
+  webServer: {
+    command: "pnpm dev",
+    url: "http://localhost:3000/sign-in",
+    reuseExistingServer: !process.env.CI,
+    timeout: 60_000,
+    stdout: "ignore",
+    stderr: "pipe",
+  },
 });
