@@ -77,11 +77,21 @@ export function DestinationSearch({
           sessionRef.current,
           controller.signal,
         );
+        if (controller.signal.aborted) return;
         setSuggestions(results);
         setOpen(results.length > 0);
         setHighlight(0);
+      } catch (err) {
+        // Aborts on re-keystroke are expected — swallow them.
+        if (
+          err instanceof DOMException &&
+          (err.name === "AbortError" || err.code === 20)
+        ) {
+          return;
+        }
+        throw err;
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }, 180);
 
