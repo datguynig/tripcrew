@@ -352,6 +352,51 @@ Data rows use hairline dividers inside a border container:
 
 Mobile rows stack. Desktop uses `grid-cols-[...]` with named tracks. Never `flex justify-between` for a row that might wrap — the columns will misalign.
 
+### 4.11 State patterns
+
+Principle #4 says every state is designed. This section names the six we recognise and the canonical implementation for each. A component isn't finished until all applicable states are drawn.
+
+**The six states:**
+
+- **Loading** — data in flight, user waits
+- **Empty** — system healthy, no data yet
+- **Error** — something failed; explain + offer recovery
+- **Ideal** — fully populated, functional, happy path
+- **Partial** — data exists but incomplete (progress territory)
+- **Disabled** — an action is contextually unavailable
+
+**Canonical implementation:**
+
+| State | Where | Pattern |
+| --- | --- | --- |
+| Loading | On a button | Label swap: `{pending ? "Proposing…" : "Propose"}` |
+| Loading | Inline in a field | Pulsing 6px `bg-accent animate-pulse` dot in the trailing slot |
+| Empty | Whole block | `border border-line py-14 text-center` + mono caps `fg-3` copy + optional accent CTA link |
+| Error | Next to a field | `mt-[10px] text-err font-mono text-[11px] uppercase tracking-[0.08em]` |
+| Ideal | — | Just the component |
+| Partial | Under a numeric value | 2px hairline rail: `bg-line` track, `bg-accent` fill, `transition-[width] duration-300` (see `StatCell.progress`) |
+| Disabled | On a primitive | `opacity-50 cursor-not-allowed`; never grey out surrounding chrome |
+
+**Rules:**
+
+1. **Never leave a state undrawn.** No `data.length === 0 ? null : …` — shape the empty case.
+2. **Errors die where they're born.** Field errors sit next to the field. Page-level errors go in a top-strip card only when they block the page.
+3. **Loading doesn't clear content.** If data is already rendered, show progress inline (dot, rail) — don't replace with a skeleton mid-interaction.
+4. **Empty copy teaches the next action.** "Nobody in yet. Share the link." beats "No members."
+5. **Disabled means a precondition is unmet.** If you'd add a tooltip to explain why, the disable is lazy — surface the precondition instead.
+6. **One accent per state.** An accent empty-state CTA forbids any other accent on the same screen.
+
+**Affirming-feedback decision tree:**
+
+- **[Toast](src/components/ui/Toaster.tsx)** — success of user-initiated mutations; never passive events.
+- **`toast.undo`** — reversible deletes, in place of a confirmation dialog.
+- **[Dialog](src/components/ui/Dialog.tsx)** — only for genuinely destructive, non-reversible actions.
+
+**Known gaps** (also tracked in §10):
+
+- No canonical skeleton loader — the first real use defines it.
+- Partial-state language only exists on `StatCell`; rows and grids have no pattern yet.
+
 ---
 
 ## 5. Copy & voice
@@ -452,6 +497,8 @@ Tracked gaps between this doc and the current codebase. Not blockers, but addres
 - **Mixed arbitrary typography**: some existing components still use `font-mono text-[10px] tracking-[0.15em] uppercase` inline instead of the `.label-sm` utility. Migrate as you touch each file.
 - **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
 - **AdminPlaceholder** is about to be deleted once the last admin section editor ships.
+- **No canonical skeleton loader** (§4.11). The first real need defines the pattern.
+- **Partial-state rail only on StatCell** (§4.11). Rows and grids have no "partially filled" language yet.
 
 ---
 

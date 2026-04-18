@@ -1,4 +1,6 @@
-# Tripcrew — v2 Build Brief
+# Tripcrew — v2 Build Brief (ARCHIVED)
+
+> **Archived 2026-04-18.** This was the v1→v2 transition plan — all ten phases (F, G, K-a11y, H, I, J, L, M, N, P) have since shipped. Kept as a reference for the reasoning, schema diffs, and phase ordering; current project memory lives in [CLAUDE.md](../../CLAUDE.md).
 
 ## Purpose
 
