@@ -37,13 +37,15 @@ export function SpecGrid({
             i % 4 === 3 ? "border-r-0" : ""
           } ${i >= cells.length - (cells.length % 4 || 4) ? "last:border-b-0" : ""} max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0`}
         >
-          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-3">
-            {cell.label}
-          </div>
-          <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.15]">
+          <div className="label-sm-wide text-fg-3 mb-3">{cell.label}</div>
+          <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.2]">
             {cell.value}
           </div>
-          <div className="text-[13px] text-fg-2 mt-1.5">{cell.sub}</div>
+          {cell.sub && (
+            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 mt-2">
+              {cell.sub}
+            </div>
+          )}
         </div>
       ))}
     </div>

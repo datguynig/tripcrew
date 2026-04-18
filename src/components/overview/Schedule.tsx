@@ -33,8 +33,13 @@ export function Schedule({
           key={`${row.day_label}-${i}`}
           className="grid grid-cols-[140px_1fr] max-[520px]:grid-cols-1 border-b border-line last:border-b-0 py-[22px] px-6 gap-5"
         >
-          <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent pt-[3px]">
-            {row.day_label}
+          <div className="pt-[3px] max-[520px]:flex max-[520px]:items-baseline max-[520px]:gap-3">
+            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-4 tabular mb-[6px] max-[520px]:mb-0">
+              {String(i + 1).padStart(2, "0")}
+            </div>
+            <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent">
+              {row.day_label}
+            </div>
           </div>
           <div>
             <div className="text-[20px] font-medium tracking-[-0.02em] mb-[6px]">

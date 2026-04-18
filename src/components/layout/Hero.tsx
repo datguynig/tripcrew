@@ -67,11 +67,19 @@ export function Hero({
             {targetCrew ? ` / ${targetCrew}` : ""}
           </b>
         </span>
-        <span>
-          STATUS /{" "}
-          <b className="text-fg font-medium">
-            {status === "locked" ? "LOCKED" : "PLANNING"}
-          </b>
+        <span className="inline-flex items-center gap-[10px]">
+          STATUS /
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className={`w-[6px] h-[6px] rounded-full ${
+                status === "locked" ? "bg-ok" : "bg-warn"
+              }`}
+              aria-hidden="true"
+            />
+            <b className="text-fg font-medium">
+              {status === "locked" ? "LOCKED" : "PLANNING"}
+            </b>
+          </span>
         </span>
       </div>
 
@@ -107,12 +115,15 @@ export function Hero({
               : "—"
           }
           unit={targetBudgetPp !== null ? "pp" : undefined}
-          sub={targetBudgetPp !== null ? "Ex. flights" : "Not set"}
+          sub={targetBudgetPp !== null ? "Inc. flights" : "Not set"}
         />
         <StatCell
           label="Bookings"
-          value={`${bookingsDone}/${bookingsTotal}`}
-          sub="Locked in"
+          value={bookingsTotal > 0 ? `${bookingsDone}/${bookingsTotal}` : "—"}
+          sub={bookingsTotal > 0 ? "Locked in" : "Nothing to book yet"}
+          progress={
+            bookingsTotal > 0 ? bookingsDone / bookingsTotal : null
+          }
         />
         <StatCell
           label="Kitty"
@@ -129,11 +140,13 @@ function StatCell({
   value,
   unit,
   sub,
+  progress = null,
 }: {
   label: string;
   value: string;
   unit?: string;
   sub: string;
+  progress?: number | null;
 }) {
   return (
     <div className="p-6 border-r border-line last:border-r-0 max-[720px]:[&:nth-child(2n)]:border-r-0 max-[720px]:[&:nth-child(-n+2)]:border-b max-[720px]:[&:nth-child(-n+2)]:border-line">
@@ -146,7 +159,25 @@ function StatCell({
           </span>
         )}
       </div>
-      <div className="body-sm text-fg-2 mt-1.5 font-mono tracking-[0.05em]">
+      {progress !== null && (
+        <div
+          className="mt-3 h-[2px] bg-line overflow-hidden"
+          role="progressbar"
+          aria-valuenow={Math.round(progress * 100)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className="h-full bg-accent transition-[width] duration-300"
+            style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
+          />
+        </div>
+      )}
+      <div
+        className={`body-sm text-fg-2 font-mono tracking-[0.05em] ${
+          progress !== null ? "mt-2" : "mt-1.5"
+        }`}
+      >
         {sub}
       </div>
     </div>

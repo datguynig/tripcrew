@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/Button";
 import { DestinationSearch } from "@/components/destinations/DestinationSearch";
 import { StaticMap } from "@/components/destinations/StaticMap";
 import { useToast } from "@/hooks/useToast";
-import { INPUT_SM } from "@/lib/styles";
 
 type Props = {
   tripId: string;
@@ -399,49 +398,30 @@ export function Destinations({
         </div>
       )}
 
-      <div className="mb-8">
-        <div className="flex items-baseline justify-between gap-4 mb-3">
-          <div className="label-sm-wide text-fg-3">Add a destination</div>
-          {selectedPlace && (
-            <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.1em] uppercase text-fg-3">
-              <span className="w-[5px] h-[5px] rounded-full bg-ok" />
-              Place locked
-              {selectedPlace.country && (
-                <span className="text-fg-2">· {selectedPlace.country}</span>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="grid grid-cols-[1fr_auto] max-[520px]:grid-cols-1 gap-2">
-          <DestinationSearch
-            value={title}
-            onChange={(v) => {
-              setTitle(v);
-              if (selectedPlace && v !== selectedPlace.name) {
-                setSelectedPlace(null);
-              }
-            }}
-            onSelect={(place) =>
-              setSelectedPlace({
-                mapboxId: place.mapboxId,
-                name: place.name,
-                longitude: place.longitude,
-                latitude: place.latitude,
-                country: place.country,
-              })
+      <div className="mb-8 max-w-[640px]">
+        <DestinationSearch
+          value={title}
+          onChange={(v) => {
+            setTitle(v);
+            if (selectedPlace && v !== selectedPlace.name) {
+              setSelectedPlace(null);
             }
-            onEnter={handlePropose}
-          />
-          <Button
-            onClick={handlePropose}
-            disabled={pending || !title.trim()}
-            tone={selectedPlace ? "accent" : undefined}
-          >
-            {pending ? "Proposing…" : "Propose →"}
-          </Button>
-        </div>
+          }}
+          onSelect={(place) =>
+            setSelectedPlace({
+              mapboxId: place.mapboxId,
+              name: place.name,
+              longitude: place.longitude,
+              latitude: place.latitude,
+              country: place.country,
+            })
+          }
+          onSubmit={handlePropose}
+          selected={selectedPlace}
+          pending={pending}
+        />
         {error && (
-          <div className="mt-2 text-err font-mono text-[11px] uppercase tracking-[0.08em]">
+          <div className="mt-[10px] text-err font-mono text-[11px] uppercase tracking-[0.08em]">
             {error}
           </div>
         )}
