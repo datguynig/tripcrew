@@ -36,6 +36,7 @@ export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
                 }`}
               >
                 <span
+                  aria-hidden
                   className={`font-mono text-[10px] tracking-[0.1em] ${
                     active ? "text-accent" : "text-fg-4"
                   }`}

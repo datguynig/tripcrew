@@ -175,7 +175,7 @@ export function Calendar({
                     ? isToday
                       ? "text-fg hover:bg-bg-3 ring-1 ring-inset ring-line-2"
                       : "text-fg hover:bg-bg-3"
-                    : "text-fg-4 hover:bg-bg-3"
+                    : "text-fg-3 hover:bg-bg-3"
               }`}
             >
               {cell.d}

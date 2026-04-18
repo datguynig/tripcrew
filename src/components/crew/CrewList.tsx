@@ -89,7 +89,10 @@ export function CrewList({
             row.user_id === currentUserId ? "bg-[var(--color-accent-dim)]" : ""
           }`}
         >
-          <span className="font-mono text-[11px] tracking-[0.1em] text-fg-4">
+          <span
+            aria-hidden
+            className="font-mono text-[11px] tracking-[0.1em] text-fg-4"
+          >
             {String(i + 1).padStart(2, "0")}
           </span>
           <span className="text-[17px] font-medium tracking-[-0.015em]">
@@ -107,9 +110,12 @@ export function CrewList({
       {Array.from({ length: fill }).map((_, i) => (
         <div
           key={`slot-${i}`}
-          className="grid grid-cols-[80px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5 text-fg-4"
+          className="grid grid-cols-[80px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5 text-fg-3"
         >
-          <span className="font-mono text-[11px] tracking-[0.1em]">
+          <span
+            aria-hidden
+            className="font-mono text-[11px] tracking-[0.1em]"
+          >
             {String(rows.length + i + 1).padStart(2, "0")}
           </span>
           <span className="text-[15px] italic">Open slot</span>

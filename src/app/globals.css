@@ -6,8 +6,8 @@
   --color-bg-3: #1c1c1f;
   --color-fg: #f0f0f0;
   --color-fg-2: #a8a8ad;
-  --color-fg-3: #6b6b70;
-  --color-fg-4: #3e3e42;
+  --color-fg-3: #8c8c92; /* 5.0–5.8:1 on bg/bg-2/bg-3 — passes WCAG AA small text */
+  --color-fg-4: #3e3e42; /* decorative only; aria-hidden expected */
   --color-accent: #ff4c15;
   --color-accent-dim: rgba(255, 76, 21, 0.12);
   --color-ok: #5fe388;
