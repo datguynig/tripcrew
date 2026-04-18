@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   castDestinationVote,
@@ -13,6 +14,12 @@ import {
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/Dialog";
 import { DestinationSearch } from "@/components/destinations/DestinationSearch";
 import { StaticMap } from "@/components/destinations/StaticMap";
 import { useToast } from "@/hooks/useToast";
@@ -28,6 +35,7 @@ type Props = {
   voteDeadline: string | null;
   locked: boolean;
   lockedDestination: string | null;
+  aiDrafted: boolean;
 };
 
 type Filter = "all";
@@ -56,6 +64,7 @@ export function Destinations({
   voteDeadline,
   locked,
   lockedDestination,
+  aiDrafted,
 }: Props) {
   const [candidates, setCandidates] =
     useState<DestinationCandidate[]>(initialCandidates);
@@ -71,7 +80,9 @@ export function Destinations({
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
+  const [unlockOpen, setUnlockOpen] = useState(false);
   const toast = useToast();
+  const router = useRouter();
 
   useEffect(() => setCandidates(initialCandidates), [initialCandidates]);
   useEffect(() => setVotes(initialVotes), [initialVotes]);
@@ -284,20 +295,42 @@ export function Destinations({
     setError(null);
     startTransition(async () => {
       const res = await lockDestination(tripId);
-      if (res?.error) setError(res.error);
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+      // Fire the undo toast before navigating so it registers with
+      // the Toaster before the route swap. The Toaster sits in the
+      // root layout and survives the navigation.
+      toast.reversible({
+        message: "Destination locked.",
+        actionLabel: "Undo",
+        duration: 8000,
+        onAction: async () => {
+          const undo = await unlockDestination({ tripId, reset: false });
+          if (undo?.error) toast.error(undo.error);
+          else router.push(`/trips/${tripSlug}/destinations`);
+        },
+      });
+      if (res?.ok && res.slug) {
+        router.push(`/trips/${res.slug}`);
+      }
     });
   };
 
-  const handleUnlock = () => {
-    if (
-      !confirm(
-        "Unlock this destination? The trip goes back to voting, existing votes are kept.",
-      )
-    )
-      return;
+  const handleUnlockConfirm = (reset: boolean) => {
+    setUnlockOpen(false);
     startTransition(async () => {
-      const res = await unlockDestination(tripId);
-      if (res?.error) toast.error(res.error);
+      const res = await unlockDestination({ tripId, reset });
+      if (res?.error) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success(
+        reset
+          ? "Unlocked and drafts cleared."
+          : "Unlocked — back to voting.",
+      );
     });
   };
 
@@ -319,7 +352,7 @@ export function Destinations({
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={handleUnlock}
+                onClick={() => setUnlockOpen(true)}
                 disabled={pending}
               >
                 {pending ? "Unlocking…" : "Unlock"}
@@ -327,6 +360,44 @@ export function Destinations({
             )}
           </div>
         </div>
+
+        <Dialog open={unlockOpen} onOpenChange={setUnlockOpen}>
+          <DialogContent>
+            <DialogTitle>Unlock this destination?</DialogTitle>
+            <DialogDescription>
+              {aiDrafted
+                ? "This trip has been drafted by AI. You can keep the existing hero, schedule, activities and bookings (useful if you're just tweaking), or reset them to start fresh for a new destination."
+                : "The trip goes back to voting. Existing votes are kept."}
+            </DialogDescription>
+            <div className="flex items-center justify-end gap-2 flex-wrap">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setUnlockOpen(false)}
+              >
+                Cancel
+              </Button>
+              {aiDrafted && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleUnlockConfirm(false)}
+                  disabled={pending}
+                >
+                  Keep drafts
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleUnlockConfirm(aiDrafted)}
+                disabled={pending}
+              >
+                {aiDrafted ? "Reset drafts" : "Unlock"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {ranked.length > 0 && (
           <>

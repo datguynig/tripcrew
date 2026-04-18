@@ -5,6 +5,10 @@ import { Hero } from "@/components/layout/Hero";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
 import { Schedule } from "@/components/overview/Schedule";
+import { AIDraftCTA } from "@/components/overview/AIDraftCTA";
+import { AIFeedbackCard } from "@/components/overview/AIFeedbackCard";
+import { aiEnabled as aiConfigured } from "@/lib/ai";
+import { placesEnabled } from "@/lib/places";
 
 export const dynamic = "force-dynamic";
 
@@ -85,8 +89,56 @@ export default async function TripOverview({
 
       <section className="py-14 pb-24 section-enter">
         <SectionHeader code="§ 01" title="The brief." lead={overviewLead} />
-        <SpecGrid cells={specCells} isAdmin={isAdmin} tripSlug={trip.slug} />
-        <Schedule rows={scheduleRows} isAdmin={isAdmin} tripSlug={trip.slug} />
+
+        {(() => {
+          const showAICTA =
+            isAdmin &&
+            user?.profile.ai_enabled &&
+            trip.ai_drafted_at === null &&
+            aiConfigured() &&
+            placesEnabled() &&
+            !!trip.destination;
+
+          const hideEmptyPlaceholders =
+            showAICTA && specCells.length === 0 && scheduleRows.length === 0;
+
+          return (
+            <>
+              {showAICTA && trip.destination && (
+                <AIDraftCTA
+                  tripId={trip.id}
+                  destination={trip.destination}
+                  tripSlug={trip.slug}
+                  crewCount={crewCount ?? 0}
+                  currency={trip.currency ?? "GBP"}
+                  targetBudgetPp={trip.target_budget_pp}
+                  existingPreferences={trip.meta?.ai_preferences ?? null}
+                />
+              )}
+
+              {!hideEmptyPlaceholders && (
+                <>
+                  <SpecGrid
+                    cells={specCells}
+                    isAdmin={isAdmin}
+                    tripSlug={trip.slug}
+                    aiDrafted={trip.ai_drafted_at !== null}
+                  />
+                  <Schedule
+                    rows={scheduleRows}
+                    isAdmin={isAdmin}
+                    tripSlug={trip.slug}
+                    aiDrafted={trip.ai_drafted_at !== null}
+                  />
+                </>
+              )}
+            </>
+          );
+        })()}
+
+        {trip.ai_drafted_at !== null && user && (
+          <AIFeedbackCard tripId={trip.id} surface="all" />
+        )}
       </section>
     </>
   );

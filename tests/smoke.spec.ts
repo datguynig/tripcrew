@@ -29,11 +29,18 @@ test.describe("trip pages", () => {
     await page.goto(`/trips/${TRIP_SLUG}`);
     await expect(page.locator("h1").first()).toBeVisible();
     // Trip can be in `planning` (redirects to /destinations with
-    // "Where to" heading) or `locked` (overview with "The brief").
-    const heading = page.getByRole("heading").first();
-    await expect(heading).toBeVisible();
-    const text = (await heading.textContent()) ?? "";
-    expect(text).toMatch(/the brief|where to/i);
+    // "Where to." heading) or `locked` (overview with hero h1 +
+    // "The brief." section h2). Match based on final URL.
+    const url = page.url();
+    if (/\/destinations$/.test(url)) {
+      await expect(
+        page.getByRole("heading", { name: /where to/i }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        page.getByRole("heading", { name: /the brief/i }),
+      ).toBeVisible();
+    }
   });
 
   test("crew tab loads with at least one member", async ({ page }) => {
@@ -75,15 +82,32 @@ test.describe("trip pages", () => {
   });
 });
 
-test.describe("date picker", () => {
-  test("opens, picks a date, closes", async ({ page }) => {
+test.describe("date range picker", () => {
+  test("opens, shows dual months, picks a range, closes", async ({ page }) => {
     await page.goto("/trips/new");
-    // Button's accessible name isn't always "Pick a date" — it inherits
-    // the Field's label association. Target by aria-haspopup instead.
+    // Trip-dates trigger — target by aria-haspopup so we don't collide
+    // with the vote-deadline DateTimePicker below.
     const trigger = page.locator('[aria-haspopup="dialog"]').first();
     await trigger.click();
     await expect(page.getByRole("dialog")).toBeVisible();
-    await page.getByRole("button", { name: /today/i }).click();
+
+    // Dual-month view: two month labels visible (e.g. "Apr 2026", "May 2026").
+    const monthLabels = page.getByRole("dialog").locator("text=/^[A-Z][a-z]{2} \\d{4}$/");
+    await expect(monthLabels.first()).toBeVisible();
+
+    // Pick a start date (15th of the first month), then end (20th).
+    // Use `aria-pressed=false` cells with inMonth days (weekdays rendered
+    // with text only) — click a day, then another two days later.
+    const dayCells = page
+      .getByRole("dialog")
+      .getByRole("button")
+      .filter({ hasText: /^\d+$/ });
+    // Click the 10th visible day cell (arbitrary, mid-month)
+    await dayCells.nth(10).click();
+    // And another later cell to close the range
+    await dayCells.nth(15).click();
+
+    // Range complete → auto-closes.
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 });

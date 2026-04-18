@@ -1,13 +1,17 @@
+import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+
 type Cell = { label: string; value: string; sub: string };
 
 export function SpecGrid({
   cells,
   isAdmin,
   tripSlug,
+  aiDrafted = false,
 }: {
   cells: Cell[];
   isAdmin?: boolean;
   tripSlug?: string;
+  aiDrafted?: boolean;
 }) {
   if (cells.length === 0) {
     return (
@@ -29,7 +33,13 @@ export function SpecGrid({
     );
   }
   return (
-    <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line mb-9">
+    <div className="mb-9">
+      {aiDrafted && (
+        <div className="flex justify-end mb-2">
+          <AIDraftBadge />
+        </div>
+      )}
+      <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line">
       {cells.map((cell, i) => (
         <div
           key={`${cell.label}-${i}`}
@@ -48,6 +58,7 @@ export function SpecGrid({
           )}
         </div>
       ))}
+      </div>
     </div>
   );
 }

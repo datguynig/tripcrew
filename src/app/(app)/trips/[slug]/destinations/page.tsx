@@ -64,6 +64,7 @@ export default async function DestinationsPage({
         voteDeadline={trip.vote_deadline}
         locked={trip.status === "locked"}
         lockedDestination={trip.destination}
+        aiDrafted={trip.ai_drafted_at !== null}
       />
     </section>
   );

@@ -5,6 +5,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
+const candidateSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  mapboxId: z.string().trim().max(200).nullable().optional(),
+  longitude: z.number().finite().gte(-180).lte(180).nullable().optional(),
+  latitude: z.number().finite().gte(-90).lte(90).nullable().optional(),
+  country: z.string().trim().max(100).nullable().optional(),
+});
+
 const schema = z.object({
   name: z.string().trim().min(1, "Name required").max(80),
   startDate: z
@@ -20,6 +28,34 @@ const schema = z.object({
   voteDeadline: z.string().optional().or(z.literal("")),
   candidates: z.string().optional(),
 });
+
+function parseCandidates(raw: string | undefined) {
+  if (!raw) return [];
+  const trimmed = raw.trim();
+  if (!trimmed) return [];
+  // New-trip form sends JSON. If a caller ever POSTs plaintext (tests,
+  // legacy bookmarks), fall back to newline-splitting.
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = z.array(candidateSchema).max(20).parse(JSON.parse(trimmed));
+      return parsed;
+    } catch {
+      return [];
+    }
+  }
+  return trimmed
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 20)
+    .map((title) => ({
+      title: title.slice(0, 120),
+      mapboxId: null,
+      longitude: null,
+      latitude: null,
+      country: null,
+    }));
+}
 
 export type CreateTripState = { error?: string } | undefined;
 
@@ -120,18 +156,17 @@ export async function createTrip(
     return { error: "Could not add you as admin" };
   }
 
-  const candidateLines = (candidates ?? "")
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .slice(0, 20);
-
-  if (candidateLines.length > 0) {
-    const rows = candidateLines.map((title, i) => ({
+  const candidateRows = parseCandidates(candidates);
+  if (candidateRows.length > 0) {
+    const rows = candidateRows.map((c, i) => ({
       trip_id: trip.id,
-      title: title.slice(0, 120),
+      title: c.title.slice(0, 120),
       proposed_by: user.id,
       position: i + 1,
+      mapbox_id: c.mapboxId ?? null,
+      longitude: c.longitude ?? null,
+      latitude: c.latitude ?? null,
+      country: c.country ?? null,
     }));
     const { error: candErr } = await service
       .from("destination_candidates")

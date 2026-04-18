@@ -21,7 +21,7 @@ export default async function ShortlistPage({
   const supabase = await createClient();
   const { data: activities } = await supabase
     .from("activities")
-    .select("id, trip_id, title, meta, category, position, created_at")
+    .select("id, trip_id, title, meta, category, position, ai_drafted, created_at")
     .eq("trip_id", trip.id)
     .order("position", { ascending: true })
     .returns<Activity[]>();

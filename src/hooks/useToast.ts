@@ -9,6 +9,13 @@ type UndoOpts = {
   onCommit: () => void | Promise<void>;
 };
 
+type ReversibleOpts = {
+  message: string;
+  actionLabel?: string;
+  duration?: number;
+  onAction: () => void | Promise<void>;
+};
+
 export function useToast() {
   const success = (message: string) => sonnerToast.success(message);
   const error = (message: string) => sonnerToast.error(message);
@@ -36,5 +43,26 @@ export function useToast() {
     }, duration);
   };
 
-  return { success, error, info, undo };
+  // Like `undo`, but for cases where the server has already committed.
+  // The action button fires a reversal; if the user ignores the toast,
+  // nothing else happens. No auto-commit timer.
+  const reversible = ({
+    message,
+    actionLabel = "Undo",
+    duration = 8000,
+    onAction,
+  }: ReversibleOpts) => {
+    const id = sonnerToast(message, {
+      duration,
+      action: {
+        label: actionLabel,
+        onClick: () => {
+          void onAction();
+          sonnerToast.dismiss(id);
+        },
+      },
+    });
+  };
+
+  return { success, error, info, undo, reversible };
 }

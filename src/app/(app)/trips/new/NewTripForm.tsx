@@ -4,9 +4,10 @@ import { useActionState } from "react";
 import { createTrip, type CreateTripState } from "@/lib/actions/trips";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
-import { INPUT, INPUT_SM } from "@/lib/styles";
+import { CandidatesEditor } from "@/components/trips/CandidatesEditor";
+import { INPUT } from "@/lib/styles";
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -31,26 +32,19 @@ export function NewTripForm() {
       </Field>
 
       <Field
-        label="Start date"
+        label="Trip dates"
         name="startDate"
         helper="Optional, set later if unknown"
       >
-        <DatePicker name="startDate" />
-      </Field>
-      <Field label="End date" name="endDate">
-        <DatePicker name="endDate" />
+        <DateRangePicker />
       </Field>
 
       <Field
         label="Destination candidates"
         name="candidates"
-        helper="One per line. Skip if unsure — crew can propose later."
+        helper="Pick from real places. Skip if unsure — crew can propose later."
       >
-        <textarea
-          rows={5}
-          placeholder={"Lisbon\nBudapest\nMedellín"}
-          className={`${INPUT_SM} min-h-[120px] leading-[1.5] resize-y`}
-        />
+        <CandidatesEditor />
       </Field>
 
       <Field

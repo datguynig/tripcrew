@@ -38,6 +38,7 @@ type Props = {
   pending?: boolean;
   placeholder?: string;
   maxLength?: number;
+  autoFocus?: boolean;
 };
 
 export function DestinationSearch({
@@ -49,6 +50,7 @@ export function DestinationSearch({
   pending = false,
   placeholder = "Propose a destination (e.g. Lisbon)",
   maxLength = 120,
+  autoFocus = false,
 }: Props) {
   const enabled = useMemo(() => mapboxEnabled(), []);
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
@@ -59,6 +61,10 @@ export function DestinationSearch({
   const sessionRef = useRef<string>("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Once a suggestion is picked, skip the autocomplete fetch for that
+  // exact value so the dropdown doesn't snap closed → reopen with the
+  // same results. Cleared when the user types a different value.
+  const justPickedRef = useRef<string | null>(null);
 
   if (sessionRef.current === "" && enabled) {
     sessionRef.current = newSessionToken();
@@ -82,6 +88,11 @@ export function DestinationSearch({
       setOpen(false);
       return;
     }
+    // The value was just set by handleSelect; don't re-fetch against it.
+    if (justPickedRef.current !== null && justPickedRef.current === value) {
+      return;
+    }
+    justPickedRef.current = null;
 
     const controller = new AbortController();
     setLoading(true);
@@ -116,6 +127,7 @@ export function DestinationSearch({
   }, [value, enabled]);
 
   const handleSelect = async (s: PlaceSuggestion) => {
+    justPickedRef.current = s.name;
     onChange(s.name);
     setOpen(false);
     setSuggestions([]);
@@ -165,6 +177,7 @@ export function DestinationSearch({
       onBlur={() => setFocused(false)}
       placeholder={placeholder}
       maxLength={maxLength}
+      autoFocus={autoFocus}
       aria-label="Destination"
       {...(enabled
         ? {

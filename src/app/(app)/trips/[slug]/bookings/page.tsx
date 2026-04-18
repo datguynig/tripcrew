@@ -23,7 +23,7 @@ export default async function BookingsPage({
     supabase
       .from("bookings")
       .select(
-        "id, trip_id, title, assignee_id, done, position, created_at, created_by",
+        "id, trip_id, title, assignee_id, done, position, ai_drafted, created_at, created_by",
       )
       .eq("trip_id", trip.id)
       .order("position", { ascending: true })

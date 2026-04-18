@@ -12,6 +12,7 @@ import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
+import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
 
 type CrewOption = { id: string; name: string };
 
@@ -160,11 +161,12 @@ export function BookingsList({ initial, crew, tripId }: Props) {
                 }`}
               />
               <div
-                className={`text-[15px] font-medium tracking-[-0.01em] ${
+                className={`text-[15px] font-medium tracking-[-0.01em] flex items-center gap-2 flex-wrap ${
                   b.done ? "line-through" : ""
                 }`}
               >
-                {b.title}
+                <span>{b.title}</span>
+                {b.ai_drafted && <AIDraftBadge dot />}
               </div>
               <select
                 value={b.assignee_id ?? ""}

@@ -86,6 +86,8 @@ type Props = {
   onSelect: (iso: string) => void;
   onClear?: () => void;
   showToday?: boolean;
+  minDate?: string | null;
+  maxDate?: string | null;
 };
 
 export function Calendar({
@@ -93,6 +95,8 @@ export function Calendar({
   onSelect,
   onClear,
   showToday = true,
+  minDate,
+  maxDate,
 }: Props) {
   const [cursor, setCursor] = useState<{ y: number; m: number }>(() => {
     const parts = parseIso(value);
@@ -161,21 +165,32 @@ export function Calendar({
           const cellIso = toIso(cell.y, cell.m, cell.d);
           const isSelected = cellIso === value;
           const isToday = cellIso === today;
+          const disabled =
+            (minDate !== undefined && minDate !== null && cellIso < minDate) ||
+            (maxDate !== undefined && maxDate !== null && cellIso > maxDate);
           return (
             <button
               key={i}
               type="button"
-              onClick={() => onSelect(cellIso)}
+              onClick={() => !disabled && onSelect(cellIso)}
+              disabled={disabled}
               aria-label={formatDisplay(cellIso)}
               aria-pressed={isSelected}
-              className={`h-8 text-[12px] rounded cursor-pointer transition-colors tabular ${
-                isSelected
+              aria-disabled={disabled}
+              className={`h-8 text-[12px] rounded transition-colors tabular ${
+                disabled
+                  ? "text-fg-4 cursor-not-allowed line-through"
+                  : "cursor-pointer"
+              } ${
+                isSelected && !disabled
                   ? "bg-accent text-bg font-semibold"
-                  : cell.inMonth
+                  : !disabled && cell.inMonth
                     ? isToday
                       ? "text-fg hover:bg-bg-3 ring-1 ring-inset ring-line-2"
                       : "text-fg hover:bg-bg-3"
-                    : "text-fg-3 hover:bg-bg-3"
+                    : !disabled
+                      ? "text-fg-3 hover:bg-bg-3"
+                      : ""
               }`}
             >
               {cell.d}

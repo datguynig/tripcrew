@@ -1,44 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Calendar, formatDisplay } from "./Calendar";
+import { formatDisplay } from "./Calendar";
+import { RangeCalendar } from "./RangeCalendar";
+
+/**
+ * Single-field date range picker. Replaces the pair of DatePickers
+ * for trip dates. Opens a dual-month calendar with range selection,
+ * hover preview, and month pagination. Emits two hidden inputs so
+ * existing form-action plumbing reads startDate + endDate unchanged.
+ */
 
 type Props = {
-  name: string;
-  id?: string;
-  defaultValue?: string | null;
-  value?: string | null;
-  onChange?: (iso: string) => void;
-  placeholder?: string;
-  disabled?: boolean;
+  startName?: string;
+  endName?: string;
+  defaultStart?: string | null;
+  defaultEnd?: string | null;
   minDate?: string | null;
   maxDate?: string | null;
-  "aria-describedby"?: string;
-  "aria-invalid"?: boolean;
-  required?: boolean;
+  placeholder?: string;
+  disabled?: boolean;
+  onChange?: (next: { start: string | null; end: string | null }) => void;
 };
 
-export function DatePicker({
-  name,
-  id,
-  defaultValue,
-  value: controlledValue,
-  onChange,
-  placeholder = "Pick a date",
-  disabled,
+export function DateRangePicker({
+  startName = "startDate",
+  endName = "endDate",
+  defaultStart = null,
+  defaultEnd = null,
   minDate,
   maxDate,
-  "aria-describedby": ariaDescribedBy,
-  "aria-invalid": ariaInvalid,
-  required,
+  placeholder = "Pick dates",
+  disabled,
+  onChange,
 }: Props) {
-  const isControlled = controlledValue !== undefined;
-  const [internalIso, setInternalIso] = useState<string>(defaultValue ?? "");
-  const iso = isControlled ? (controlledValue ?? "") : internalIso;
-  const setIso = (next: string) => {
-    if (!isControlled) setInternalIso(next);
-    onChange?.(next);
-  };
+  const [start, setStart] = useState<string>(defaultStart ?? "");
+  const [end, setEnd] = useState<string>(defaultEnd ?? "");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -58,26 +55,38 @@ export function DatePicker({
     };
   }, [open]);
 
-  const displayText = iso ? formatDisplay(iso) : placeholder;
-  const isEmpty = !iso;
+  const handleChange = (next: { start: string | null; end: string | null }) => {
+    setStart(next.start ?? "");
+    setEnd(next.end ?? "");
+    onChange?.(next);
+    // Auto-close when the range is complete.
+    if (next.start && next.end) setOpen(false);
+  };
+
+  const label = (() => {
+    if (start && end) return `${formatDisplay(start)} → ${formatDisplay(end)}`;
+    if (start) return `${formatDisplay(start)} → pick end`;
+    return placeholder;
+  })();
+
+  const isEmpty = !start && !end;
 
   return (
     <div ref={containerRef} className="relative">
-      <input type="hidden" name={name} value={iso} required={required} />
+      <input type="hidden" name={startName} value={start} />
+      <input type="hidden" name={endName} value={end} />
+
       <button
         type="button"
-        id={id}
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-describedby={ariaDescribedBy}
-        aria-invalid={ariaInvalid}
         className={`w-full flex items-center justify-between gap-3 bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md hover:border-line-2 focus:border-line-2 outline-none transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default ${
           isEmpty ? "text-fg-3" : "text-fg"
         }`}
       >
-        <span className="truncate">{displayText}</span>
+        <span className="truncate tabular">{label}</span>
         <svg
           aria-hidden
           viewBox="0 0 16 16"
@@ -106,18 +115,13 @@ export function DatePicker({
       {open && (
         <div
           role="dialog"
-          className="absolute left-0 top-[calc(100%+6px)] z-50 bg-bg-2 border border-line rounded-md shadow-lg p-3"
+          aria-label="Pick trip dates"
+          className="absolute left-0 top-[calc(100%+6px)] z-50 bg-bg-2 border border-line rounded-md shadow-lg p-4"
         >
-          <Calendar
-            value={iso || null}
-            onSelect={(picked) => {
-              setIso(picked);
-              setOpen(false);
-            }}
-            onClear={() => {
-              setIso("");
-              setOpen(false);
-            }}
+          <RangeCalendar
+            start={start || null}
+            end={end || null}
+            onChange={handleChange}
             minDate={minDate}
             maxDate={maxDate}
           />

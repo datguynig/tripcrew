@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 async function revalidateTrip(tripId: string) {
@@ -137,8 +136,20 @@ export async function castDestinationVote(input: {
   return { ok: true };
 }
 
-export async function unlockDestination(tripId: string) {
-  const parsed = z.string().uuid().safeParse(tripId);
+const unlockSchema = z.object({
+  tripId: z.string().uuid(),
+  // When true, wipe AI-drafted content (hero, spec_grid, schedule,
+  // ai_drafted activities + bookings, ai_drafted_at). Keeps
+  // ai_preferences — they're durable context for a re-draft.
+  reset: z.boolean().optional(),
+});
+
+export async function unlockDestination(
+  input: string | { tripId: string; reset?: boolean },
+) {
+  const normalized =
+    typeof input === "string" ? { tripId: input } : input;
+  const parsed = unlockSchema.safeParse(normalized);
   if (!parsed.success) return { error: "Invalid trip" };
 
   const supabase = await createClient();
@@ -150,16 +161,66 @@ export async function unlockDestination(tripId: string) {
   const { data: member } = await supabase
     .from("trip_members")
     .select("role")
-    .eq("trip_id", parsed.data)
+    .eq("trip_id", parsed.data.tripId)
     .eq("user_id", user.id)
     .maybeSingle<{ role: "admin" | "member" }>();
   if (member?.role !== "admin") return { error: "Admin only" };
 
   const service = createServiceClient();
+
+  if (parsed.data.reset) {
+    // Load current meta so we can selectively clear spec_grid + schedule
+    // while preserving section_leads + ai_preferences (durable context).
+    const { data: current } = await service
+      .from("trips")
+      .select("meta")
+      .eq("id", parsed.data.tripId)
+      .maybeSingle<{ meta: Record<string, unknown> | null }>();
+    const meta = { ...(current?.meta ?? {}) } as Record<string, unknown>;
+    delete meta.spec_grid;
+    delete meta.schedule;
+
+    const { data: trip, error } = await service
+      .from("trips")
+      .update({
+        status: "planning",
+        destination: null,
+        hero_title: null,
+        hero_subtitle: null,
+        ai_drafted_at: null,
+        meta,
+      })
+      .eq("id", parsed.data.tripId)
+      .eq("status", "locked")
+      .select("slug")
+      .maybeSingle<{ slug: string }>();
+    if (error) return { error: error.message };
+    if (!trip) return { error: "Trip isn't locked" };
+
+    // Nuke AI-drafted rows so the new destination doesn't inherit
+    // Stockholm's activities/bookings.
+    await service
+      .from("activities")
+      .delete()
+      .eq("trip_id", parsed.data.tripId)
+      .eq("ai_drafted", true);
+    await service
+      .from("bookings")
+      .delete()
+      .eq("trip_id", parsed.data.tripId)
+      .eq("ai_drafted", true);
+
+    revalidatePath(`/trips/${trip.slug}`);
+    revalidatePath(`/trips/${trip.slug}/destinations`);
+    revalidatePath(`/trips/${trip.slug}/shortlist`);
+    revalidatePath(`/trips/${trip.slug}/bookings`);
+    return { ok: true as const, reset: true };
+  }
+
   const { data: trip, error } = await service
     .from("trips")
     .update({ status: "planning", destination: null })
-    .eq("id", parsed.data)
+    .eq("id", parsed.data.tripId)
     .eq("status", "locked")
     .select("slug")
     .maybeSingle<{ slug: string }>();
@@ -168,7 +229,7 @@ export async function unlockDestination(tripId: string) {
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/destinations`);
-  return { ok: true };
+  return { ok: true as const, reset: false };
 }
 
 export async function lockDestination(tripId: string) {
@@ -234,5 +295,7 @@ export async function lockDestination(tripId: string) {
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/destinations`);
-  redirect(`/trips/${trip.slug}`);
+  // No server-side redirect here — the client navigates after firing
+  // the "undo" toast, so the toast registers before the route swap.
+  return { ok: true as const, slug: trip.slug };
 }

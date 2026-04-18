@@ -1,13 +1,17 @@
+import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+
 type Row = { day_label: string; heading: string; body: string };
 
 export function Schedule({
   rows,
   isAdmin,
   tripSlug,
+  aiDrafted = false,
 }: {
   rows: Row[];
   isAdmin?: boolean;
   tripSlug?: string;
+  aiDrafted?: boolean;
 }) {
   if (rows.length === 0) {
     return (
@@ -27,7 +31,13 @@ export function Schedule({
     );
   }
   return (
-    <div className="border border-line">
+    <div>
+      {aiDrafted && (
+        <div className="flex justify-end mb-2">
+          <AIDraftBadge />
+        </div>
+      )}
+      <div className="border border-line">
       {rows.map((row, i) => (
         <div
           key={`${row.day_label}-${i}`}
@@ -49,6 +59,7 @@ export function Schedule({
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }

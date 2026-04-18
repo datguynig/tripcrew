@@ -64,16 +64,18 @@ Middleware redirects unauthed users on `(app)` routes to `/sign-in`.
 
 Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/migrations/](supabase/migrations/) for DDL):
 
-- `profiles` — one row per auth user
-- `trips` — status enum (`planning` | `locked`); holds `hero_title`, `hero_subtitle`, `city_label`, `dates_label`, `target_budget_pp`, `target_crew_size`, `currency`, `vote_deadline`, `start_date`, `end_date`, and a `meta` jsonb (`spec_grid`, `schedule`, `section_leads`)
+- `profiles` — one row per auth user; `ai_enabled` gates the closed-beta AI draft feature
+- `trips` — status enum (`planning` | `locked`); holds `hero_title`, `hero_subtitle`, `city_label`, `dates_label`, `target_budget_pp`, `target_crew_size`, `currency`, `vote_deadline`, `start_date`, `end_date`, `ai_drafted_at`, and a `meta` jsonb (`spec_grid`, `schedule`, `section_leads`)
 - `trip_members` — `(trip_id, user_id, role)`
 - `trip_invites` — tokenized invite links; email optional
 - `destination_candidates` — proposals; optional Mapbox `mapbox_id`, `longitude`, `latitude`, `country`
 - `destination_votes` — yes/maybe/no per candidate per user
-- `activities` + `votes` — shortlist items + user votes
-- `bookings` — checklist items; any member can edit/tick
+- `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`
+- `bookings` — checklist items; any member can edit/tick; rows track `ai_drafted`
 - `expenses` — `paid_by` + `amount`; only payer deletes own
 - `posts` — feed items; optional `image_url`
+- `ai_usage` — cost telemetry per draft pass (provider, tokens, Places requests, USD)
+- `ai_feedback` — thumbs up/down + optional note per AI-drafted surface
 
 **RLS**: members only see and act on data for trips they belong to.
 
@@ -89,7 +91,18 @@ Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_v
 
 ## Server actions
 
-Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`. Every action validates input with Zod before touching the DB.
+Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `aiDraft.ts`. Every action validates input with Zod before touching the DB.
+
+## AI draft ("Lock & draft")
+
+Closed-beta feature. Once a trip admin locks a destination, an admin with `profiles.ai_enabled = true` sees a single CTA that fires one bundled pass through Gemini 3 Flash Preview + Google Places to populate hero, spec grid, schedule, activities, and suggested bookings. Drafts land directly in the existing tables with `ai_drafted = true` markers (no accept/reject flow); users edit in place.
+
+- AI wrapper: [src/lib/ai.ts](src/lib/ai.ts) — Gemini via `@google/genai` with `searchPlaces` tool-use loop + Zod-validated JSON output. Swappable to Claude Haiku via the same `DraftResult` interface.
+- Places wrapper: [src/lib/places.ts](src/lib/places.ts) — Google Places (New) Text Search + Details, tight field mask for cost control.
+- Rate limit: [src/lib/rateLimit.ts](src/lib/rateLimit.ts) — DB-backed via `ai_usage` (2 drafts per trip per 24h, 1 per user per hour).
+- Gating: flip `profiles.ai_enabled` in Supabase Studio. No Stripe, no paywall, no subscription code yet.
+- Cost telemetry: `ai_usage` table; owner views `/ai-usage` (gated by `AI_BETA_OWNER_EMAIL` env).
+- Env vars needed: `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `AI_BETA_OWNER_EMAIL`.
 
 ## Running
 

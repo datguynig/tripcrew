@@ -76,6 +76,16 @@ Optional for destination autocomplete:
 NEXT_PUBLIC_MAPBOX_TOKEN=
 ```
 
+Optional for the AI draft ("Lock & draft") beta feature. All three keys are required to enable; without them the AI CTA stays hidden:
+
+```bash
+GEMINI_API_KEY=          # from https://aistudio.google.com/apikey
+GOOGLE_PLACES_API_KEY=   # GCP project with Places API (New) + billing
+AI_BETA_OWNER_EMAIL=     # email allowed to view /ai-usage cost dashboard
+```
+
+To flip a user into the beta: in Supabase Studio, `update profiles set ai_enabled = true where id = '<user-uuid>'`.
+
 Needed for local Playwright auth setup:
 
 ```bash

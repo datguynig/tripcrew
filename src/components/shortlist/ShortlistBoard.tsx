@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { castVote } from "@/lib/actions/shortlist";
 import { useToast } from "@/hooks/useToast";
 import type { Activity, Vote } from "@/lib/types";
+import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
 
 type Props = {
   activities: Activity[];
@@ -190,8 +191,11 @@ export function ShortlistBoard({
               className="grid grid-cols-[1fr_220px_160px] max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5"
             >
               <div>
-                <div className="text-[17px] font-medium tracking-[-0.015em] mb-1">
-                  {a.title}
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <div className="text-[17px] font-medium tracking-[-0.015em]">
+                    {a.title}
+                  </div>
+                  {a.ai_drafted && <AIDraftBadge dot />}
                 </div>
                 {a.meta && (
                   <div className="text-xs text-fg-3 font-mono tracking-[0.02em]">

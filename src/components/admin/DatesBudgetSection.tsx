@@ -7,7 +7,7 @@ import {
 } from "@/app/(app)/trips/[slug]/admin/actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
-import { DatePicker } from "@/components/ui/DatePicker";
+import { DateRangePicker } from "@/components/ui/DateRangePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { MoneyInput } from "@/components/ui/MoneyInput";
 import { useToast } from "@/hooks/useToast";
@@ -59,15 +59,14 @@ export function DatesBudgetSection({
       <input type="hidden" name="tripId" value={tripId} />
 
       <Field
-        label="Start date"
+        label="Trip dates"
         name="startDate"
         helper="Drives the T-minus counter."
       >
-        <DatePicker name="startDate" defaultValue={startDate} />
-      </Field>
-
-      <Field label="End date" name="endDate">
-        <DatePicker name="endDate" defaultValue={endDate} />
+        <DateRangePicker
+          defaultStart={startDate}
+          defaultEnd={endDate}
+        />
       </Field>
 
       <Field

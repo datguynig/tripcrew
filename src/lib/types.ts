@@ -2,6 +2,7 @@ export type Profile = {
   id: string;
   name: string;
   joined_at: string;
+  ai_enabled: boolean;
 };
 
 export type TripStatus = "planning" | "locked";
@@ -17,10 +18,38 @@ export type SectionLeadKey =
   | "feed";
 export type SectionLeads = Partial<Record<SectionLeadKey, string>>;
 
+export type AiOriginAirport = {
+  name: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
+};
+
+export type AiBudgetTier = "tight" | "mid" | "lavish" | "custom";
+
+export type AiVibeTag =
+  | "chill"
+  | "active"
+  | "foodie"
+  | "nightlife"
+  | "culture"
+  | "outdoors"
+  | "beach";
+
+export type AiPreferences = {
+  origin: AiOriginAirport | null;
+  crew_size: number;
+  budget_tier: AiBudgetTier;
+  budget_custom_pp: number | null;
+  vibes: AiVibeTag[];
+};
+
 export type TripMeta = {
   spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
   section_leads?: SectionLeads;
+  ai_preferences?: AiPreferences;
 };
 
 export type Trip = {
@@ -43,6 +72,7 @@ export type Trip = {
   // Nullable to tolerate a period where the `currency` column has not
   // yet been migrated in. Display helpers default to GBP when absent.
   currency: string | null;
+  ai_drafted_at: string | null;
   created_at: string;
 };
 
@@ -61,6 +91,7 @@ export type Activity = {
   meta: string | null;
   category: "day" | "night";
   position: number;
+  ai_drafted: boolean;
   created_at: string;
 };
 
@@ -78,6 +109,7 @@ export type Booking = {
   assignee_id: string | null;
   done: boolean;
   position: number;
+  ai_drafted: boolean;
   created_at: string;
   created_by: string | null;
 };
@@ -144,4 +176,39 @@ export type ExpenseWithPayer = Expense & {
 
 export type PostWithAuthor = Post & {
   author_name: string;
+};
+
+export type AiProvider = "gemini" | "claude";
+export type AiFeedbackSurface =
+  | "schedule"
+  | "hero_spec"
+  | "activities"
+  | "bookings"
+  | "all";
+
+export type AiUsage = {
+  id: string;
+  user_id: string | null;
+  trip_id: string;
+  operation: string;
+  provider: AiProvider;
+  model: string | null;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  thinking_tokens: number | null;
+  ai_cost_usd: string | null;
+  places_requests: number | null;
+  places_cost_usd: string | null;
+  total_cost_usd: string | null;
+  created_at: string;
+};
+
+export type AiFeedback = {
+  id: string;
+  trip_id: string;
+  user_id: string | null;
+  surface: AiFeedbackSurface;
+  rating: -1 | 1 | null;
+  note: string | null;
+  created_at: string;
 };
