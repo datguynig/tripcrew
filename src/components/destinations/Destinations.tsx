@@ -13,6 +13,7 @@ import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { DestinationSearch } from "@/components/destinations/DestinationSearch";
+import { StaticMap } from "@/components/destinations/StaticMap";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
 
@@ -61,6 +62,13 @@ export function Destinations({
   const [votes, setVotes] = useState<DestinationVote[]>(initialVotes);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
+  const [selectedPlace, setSelectedPlace] = useState<{
+    mapboxId: string;
+    name: string;
+    longitude: number;
+    latitude: number;
+    country: string | null;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
@@ -190,13 +198,25 @@ export function Destinations({
     const t = title.trim();
     if (!t) return;
     setError(null);
+    // Only persist mapbox data if the user actually picked a suggestion
+    // whose name matches what's in the field — otherwise they typed
+    // something else after selecting, and the coords wouldn't be right.
+    const coords =
+      selectedPlace && t === title.trim() && selectedPlace.longitude !== null
+        ? selectedPlace
+        : null;
     setTitle("");
     setNote("");
+    setSelectedPlace(null);
     startTransition(async () => {
       const res = await proposeCandidate({
         tripId,
         title: t,
         note: note.trim() || null,
+        mapboxId: coords?.mapboxId ?? null,
+        longitude: coords?.longitude ?? null,
+        latitude: coords?.latitude ?? null,
+        country: coords?.country ?? null,
       });
       if (res?.error) setError(res.error);
     });
@@ -358,7 +378,21 @@ export function Destinations({
       <div className="border border-line p-[18px] px-5 mb-7 grid gap-[10px]">
         <DestinationSearch
           value={title}
-          onChange={setTitle}
+          onChange={(v) => {
+            setTitle(v);
+            if (selectedPlace && v !== selectedPlace.name) {
+              setSelectedPlace(null);
+            }
+          }}
+          onSelect={(place) =>
+            setSelectedPlace({
+              mapboxId: place.mapboxId,
+              name: place.name,
+              longitude: place.longitude,
+              latitude: place.latitude,
+              country: place.country,
+            })
+          }
           onEnter={handlePropose}
         />
         <textarea
@@ -401,20 +435,38 @@ export function Destinations({
                 key={c.id}
                 className="grid grid-cols-[1fr_220px_160px_36px] max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5"
               >
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    {leader && total > 0 && (
-                      <Badge tone="accent" size="sm">Leading</Badge>
-                    )}
-                    <div className="text-[17px] font-medium tracking-[-0.015em]">
-                      {c.title}
-                    </div>
-                  </div>
-                  {c.note && (
-                    <div className="text-[13px] text-fg-2 leading-[1.45]">
-                      {c.note}
-                    </div>
+                <div className="flex gap-3 items-start">
+                  {c.longitude !== null && c.latitude !== null && (
+                    <StaticMap
+                      longitude={c.longitude}
+                      latitude={c.latitude}
+                      width={88}
+                      height={62}
+                      zoom={4}
+                      alt={`Map of ${c.title}`}
+                      className="shrink-0"
+                    />
                   )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {leader && total > 0 && (
+                        <Badge tone="accent" size="sm">Leading</Badge>
+                      )}
+                      <div className="text-[17px] font-medium tracking-[-0.015em]">
+                        {c.title}
+                      </div>
+                      {c.country && (
+                        <Badge tone="muted" size="sm">
+                          {c.country}
+                        </Badge>
+                      )}
+                    </div>
+                    {c.note && (
+                      <div className="text-[13px] text-fg-2 leading-[1.45]">
+                        {c.note}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>

@@ -108,6 +108,10 @@ export type DestinationCandidate = {
   proposed_by: string | null;
   position: number;
   created_at: string;
+  mapbox_id: string | null;
+  longitude: number | null;
+  latitude: number | null;
+  country: string | null;
 };
 
 export type DestinationVote = {

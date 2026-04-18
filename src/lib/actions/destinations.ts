@@ -22,12 +22,20 @@ const proposeSchema = z.object({
   tripId: z.string().uuid(),
   title: z.string().trim().min(1).max(120),
   note: z.string().trim().max(280).optional().nullable(),
+  mapboxId: z.string().trim().min(1).max(200).optional().nullable(),
+  longitude: z.number().finite().gte(-180).lte(180).optional().nullable(),
+  latitude: z.number().finite().gte(-90).lte(90).optional().nullable(),
+  country: z.string().trim().max(100).optional().nullable(),
 });
 
 export async function proposeCandidate(input: {
   tripId: string;
   title: string;
   note?: string | null;
+  mapboxId?: string | null;
+  longitude?: number | null;
+  latitude?: number | null;
+  country?: string | null;
 }) {
   const parsed = proposeSchema.safeParse(input);
   if (!parsed.success) return { error: "Title required (≤120 chars)" };
@@ -54,6 +62,10 @@ export async function proposeCandidate(input: {
     note: parsed.data.note || null,
     proposed_by: user.id,
     position,
+    mapbox_id: parsed.data.mapboxId ?? null,
+    longitude: parsed.data.longitude ?? null,
+    latitude: parsed.data.latitude ?? null,
+    country: parsed.data.country ?? null,
   });
   if (error) return { error: error.message };
 
