@@ -62,7 +62,6 @@ export function Destinations({
     useState<DestinationCandidate[]>(initialCandidates);
   const [votes, setVotes] = useState<DestinationVote[]>(initialVotes);
   const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
   const [selectedPlace, setSelectedPlace] = useState<{
     mapboxId: string;
     name: string;
@@ -207,13 +206,12 @@ export function Destinations({
         ? selectedPlace
         : null;
     setTitle("");
-    setNote("");
     setSelectedPlace(null);
     startTransition(async () => {
       const res = await proposeCandidate({
         tripId,
         title: t,
-        note: note.trim() || null,
+        note: null,
         mapboxId: coords?.mapboxId ?? null,
         longitude: coords?.longitude ?? null,
         latitude: coords?.latitude ?? null,
@@ -420,13 +418,6 @@ export function Destinations({
             })
           }
           onEnter={handlePropose}
-        />
-        <textarea
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="Pitch it (optional, ≤280 chars)"
-          maxLength={280}
-          className={`${INPUT_SM} min-h-[56px] leading-[1.5] resize-y`}
         />
         <div className="flex justify-between items-center gap-3">
           {error && (
