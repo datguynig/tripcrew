@@ -6,7 +6,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
 import { Schedule } from "@/components/overview/Schedule";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 function formatDateRange(start: string | null, end: string | null) {
   if (!start && !end) return "Dates TBD";

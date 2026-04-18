@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { ShortlistBoard } from "@/components/shortlist/ShortlistBoard";
 import type { Activity, Vote } from "@/lib/types";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default async function ShortlistPage({
   params,

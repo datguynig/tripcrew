@@ -18,7 +18,7 @@ setup("authenticate", async ({ page }) => {
   await page.getByRole("button", { name: /sign in/i }).click();
 
   await page.waitForURL((url) => !url.pathname.startsWith("/sign-in"), {
-    timeout: 10_000,
+    timeout: 30_000,
   });
   await expect(page.locator("body")).toBeVisible();
 

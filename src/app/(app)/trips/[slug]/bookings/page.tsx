@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { BookingsList } from "@/components/bookings/BookingsList";
 import type { Booking } from "@/lib/types";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default async function BookingsPage({
   params,

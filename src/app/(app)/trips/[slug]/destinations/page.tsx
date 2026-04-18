@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Destinations } from "@/components/destinations/Destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default async function DestinationsPage({
   params,

@@ -5,7 +5,7 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Ledger } from "@/components/ledger/Ledger";
 import type { Expense } from "@/lib/types";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 export default async function LedgerPage({
   params,

@@ -3,7 +3,7 @@ import { getUserTrips } from "@/lib/auth";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
 
-export const revalidate = 0;
+export const dynamic = "force-dynamic";
 
 function formatRange(start: string | null, end: string | null) {
   if (!start && !end) return "Dates TBD";
