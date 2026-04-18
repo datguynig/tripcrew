@@ -56,7 +56,10 @@ export async function suggestPlaces(
     q,
     language: "en",
     limit: "6",
-    types: "place,region,country,locality",
+    // Cities (place) + named areas within cities (locality) only. Regions
+    // and countries are too coarse for a trip destination — a user isn't
+    // booking a trip to "Senegal the region" vs "Dakar the city".
+    types: "place,locality",
     access_token: token(),
     session_token: sessionToken,
   });
