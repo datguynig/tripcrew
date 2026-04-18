@@ -85,7 +85,13 @@ export function DateTimePicker({
 
   return (
     <div ref={containerRef} className="relative">
-      <input type="hidden" name={name} value={combined} required={required} />
+      <input
+        type="hidden"
+        name={name}
+        value={combined}
+        required={required}
+        suppressHydrationWarning
+      />
       <button
         type="button"
         id={id}
@@ -97,7 +103,9 @@ export function DateTimePicker({
           isEmpty ? "text-fg-3" : "text-fg"
         }`}
       >
-        <span className="truncate">{displayText}</span>
+        <span className="truncate" suppressHydrationWarning>
+          {displayText}
+        </span>
         <svg
           aria-hidden
           viewBox="0 0 16 16"
