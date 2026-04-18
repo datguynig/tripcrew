@@ -1,12 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   updateTripIdentity,
   type ActionState,
 } from "@/app/(app)/trips/[slug]/admin/actions";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { DestinationSearch } from "@/components/destinations/DestinationSearch";
 import { useToast } from "@/hooks/useToast";
 import { INPUT } from "@/lib/styles";
 
@@ -23,6 +24,7 @@ export function IdentitySection({ tripId, name, destination }: Props) {
   );
   const toast = useToast();
   const lastOkRef = useRef<unknown>(null);
+  const [destinationValue, setDestinationValue] = useState(destination ?? "");
 
   useEffect(() => {
     if (state?.ok && lastOkRef.current !== state) {
@@ -46,6 +48,7 @@ export function IdentitySection({ tripId, name, destination }: Props) {
           className={INPUT}
         />
       </Field>
+      <input type="hidden" name="destination" value={destinationValue} />
       <Field
         label="Destination"
         name="destination"
@@ -55,11 +58,11 @@ export function IdentitySection({ tripId, name, destination }: Props) {
             : "Set manually, or lock a candidate on the Where to? tab."
         }
       >
-        <input
-          defaultValue={destination ?? ""}
-          maxLength={80}
+        <DestinationSearch
+          value={destinationValue}
+          onChange={setDestinationValue}
           placeholder="Lisbon"
-          className={INPUT}
+          maxLength={80}
         />
       </Field>
       {state?.error && (

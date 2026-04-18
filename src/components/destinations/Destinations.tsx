@@ -12,6 +12,7 @@ import {
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { DestinationSearch } from "@/components/destinations/DestinationSearch";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
 
@@ -355,19 +356,10 @@ export function Destinations({
       )}
 
       <div className="border border-line p-[18px] px-5 mb-7 grid gap-[10px]">
-        <input
-          type="text"
+        <DestinationSearch
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handlePropose();
-            }
-          }}
-          placeholder="Propose a destination (e.g. Lisbon)"
-          maxLength={120}
-          className={INPUT_SM}
+          onChange={setTitle}
+          onEnter={handlePropose}
         />
         <textarea
           value={note}
