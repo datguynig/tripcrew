@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   listRecent,
@@ -25,6 +25,14 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Ref mirror of notifications so the realtime handler can read
+  // current state without capturing stale closures or nesting
+  // setState calls (React's updater callbacks must be pure).
+  const notificationsRef = useRef<Notification[]>([]);
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
 
   // Initial fetch.
   useEffect(() => {
@@ -66,10 +74,8 @@ export function useNotifications() {
           (payload) => {
             if (payload.eventType === "INSERT") {
               const row = payload.new as Notification;
-              setNotifications((prev) => {
-                if (prev.some((n) => n.id === row.id)) return prev;
-                return [row, ...prev].slice(0, 20);
-              });
+              if (notificationsRef.current.some((n) => n.id === row.id)) return;
+              setNotifications((prev) => [row, ...prev].slice(0, 20));
               if (row.read_at === null) {
                 setUnreadCount((c) => c + 1);
               }
@@ -77,24 +83,30 @@ export function useNotifications() {
             }
             if (payload.eventType === "UPDATE") {
               const row = payload.new as Notification;
+              const existing = notificationsRef.current.find(
+                (n) => n.id === row.id,
+              );
               setNotifications((prev) =>
                 prev.map((n) => (n.id === row.id ? row : n)),
               );
-              // Recompute unread from current list — cheap, avoids
-              // drift if a previous optimistic update diverged.
-              setNotifications((prev) => {
-                setUnreadCount(prev.filter((n) => n.read_at === null).length);
-                return prev;
-              });
+              if (!existing) return;
+              const wasUnread = existing.read_at === null;
+              const isUnread = row.read_at === null;
+              if (wasUnread === isUnread) return;
+              setUnreadCount((c) =>
+                isUnread ? c + 1 : Math.max(0, c - 1),
+              );
               return;
             }
             if (payload.eventType === "DELETE") {
               const row = payload.old as { id?: string };
-              setNotifications((prev) => {
-                const next = prev.filter((n) => n.id !== row.id);
-                setUnreadCount(next.filter((n) => n.read_at === null).length);
-                return next;
-              });
+              const existing = notificationsRef.current.find(
+                (n) => n.id === row.id,
+              );
+              setNotifications((prev) => prev.filter((n) => n.id !== row.id));
+              if (existing && existing.read_at === null) {
+                setUnreadCount((c) => Math.max(0, c - 1));
+              }
             }
           },
         )
@@ -107,34 +119,32 @@ export function useNotifications() {
   }, []);
 
   const onMarkAsRead = (id: string) => {
-    let wasUnread = false;
-    const now = new Date().toISOString();
+    const existing = notificationsRef.current.find((n) => n.id === id);
+    if (!existing || existing.read_at !== null) return;
+    const optimisticStamp = new Date().toISOString();
     setNotifications((prev) =>
-      prev.map((n) => {
-        if (n.id === id && n.read_at === null) {
-          wasUnread = true;
-          return { ...n, read_at: now };
-        }
-        return n;
-      }),
+      prev.map((n) =>
+        n.id === id ? { ...n, read_at: optimisticStamp } : n,
+      ),
     );
-    if (wasUnread) {
-      setUnreadCount((c) => Math.max(0, c - 1));
-    }
+    setUnreadCount((c) => Math.max(0, c - 1));
     void markAsReadAction(id).then((res) => {
-      if (res?.error) {
-        // Revert — the realtime stream will also reconcile eventually
-        // but we undo immediately so the UI doesn't stall.
+      if (!res?.error) return;
+      // Only revert if nothing else has landed for this row since our
+      // optimistic write. Otherwise realtime is authoritative and we
+      // must not clobber it.
+      const current = notificationsRef.current.find((n) => n.id === id);
+      if (current?.read_at === optimisticStamp) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, read_at: null } : n)),
         );
-        if (wasUnread) setUnreadCount((c) => c + 1);
+        setUnreadCount((c) => c + 1);
       }
     });
   };
 
   const onMarkAllRead = () => {
-    const snapshot = notifications;
+    const snapshot = notificationsRef.current;
     const previousUnread = unreadCount;
     const now = new Date().toISOString();
     setNotifications((prev) =>

@@ -134,10 +134,14 @@ export async function updateSpecCell(input: {
   // Both surface the same number (per-head budget) and the Hero stat
   // cell reads target_budget_pp directly — keeping them in sync here
   // is the only way to avoid a stale "target budget" above an edited
-  // spec cell. Match on the canonical label, case-insensitive.
+  // spec cell. Match on the canonical positional index (DEFAULT_SPEC_LABELS
+  // has "Per head" at index 2) rather than a label string, so that AI
+  // re-drafts with a slightly different label ("Per person", etc.)
+  // don't silently desync the two surfaces.
+  const PER_HEAD_INDEX = DEFAULT_SPEC_LABELS.indexOf("Per head");
   const update: Record<string, unknown> = { meta: nextMeta };
   const isPerHead =
-    nextCell.label.toLowerCase() === "per head" &&
+    parsed.data.index === PER_HEAD_INDEX &&
     typeof parsed.data.patch.amount !== "undefined";
   if (isPerHead) {
     update.target_budget_pp = parsed.data.patch.amount;

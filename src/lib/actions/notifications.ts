@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import type { Notification } from "@/lib/types";
 
 export async function listRecent(
@@ -31,6 +31,11 @@ export async function listRecent(
   return { notifications: data ?? [], unreadCount: count ?? 0 };
 }
 
+// Mark-read writes go through the service role because we removed
+// the RLS update policy (see 20260419230000_notifications_tighten_rls.sql).
+// Auth is still enforced: we verify the user with the SSR client and
+// scope the update to `user_id = auth.uid()` in the query itself.
+
 export async function markAsRead(id: string) {
   const parsed = z.string().uuid().safeParse(id);
   if (!parsed.success) return { error: "Invalid id" };
@@ -41,7 +46,8 @@ export async function markAsRead(id: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
-  const { error } = await supabase
+  const service = createServiceClient();
+  const { error } = await service
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", parsed.data)
@@ -58,7 +64,8 @@ export async function markAllRead() {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
-  const { error } = await supabase
+  const service = createServiceClient();
+  const { error } = await service
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", user.id)

@@ -239,6 +239,12 @@ function deepLinkFor(n: Notification): string | null {
   const slug = n.payload?.trip_slug;
   if (!slug) return null;
   const kind = n.kind as NotificationKind;
+  // A removed user no longer has access to the trip — deep-linking
+  // lands them on a redirect / 404. Leave the row clickable (to mark
+  // as read) but don't navigate.
+  if (kind === "role_changed" && n.payload?.new_role === "removed") {
+    return null;
+  }
   switch (kind) {
     case "destination_locked":
     case "trip_drafted":
