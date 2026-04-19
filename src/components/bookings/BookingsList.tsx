@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+import { RerollButton } from "@/components/overview/RerollButton";
 
 type CrewOption = { id: string; name: string };
 
@@ -20,9 +21,19 @@ type Props = {
   initial: Booking[];
   crew: CrewOption[];
   tripId: string;
+  isAdmin: boolean;
+  canReroll: boolean;
+  rerollBlockedReason: string | null;
 };
 
-export function BookingsList({ initial, crew, tripId }: Props) {
+export function BookingsList({
+  initial,
+  crew,
+  tripId,
+  isAdmin,
+  canReroll,
+  rerollBlockedReason,
+}: Props) {
   const [bookings, setBookings] = useState<Booking[]>(initial);
   const [title, setTitle] = useState("");
   const [, startTransition] = useTransition();
@@ -144,13 +155,30 @@ export function BookingsList({ initial, crew, tripId }: Props) {
         </div>
       ) : (
         <div className="border border-line">
-          {bookings.map((b) => (
+          {bookings.map((b) => {
+            const showReroll = isAdmin && b.ai_drafted;
+            return (
             <div
               key={b.id}
-              className={`grid grid-cols-[28px_1fr_180px_36px] max-[640px]:grid-cols-[28px_1fr_36px] items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 ${
+              className={`group grid ${
+                showReroll
+                  ? "grid-cols-[24px_28px_1fr_180px_36px] max-[640px]:grid-cols-[24px_28px_1fr_36px]"
+                  : "grid-cols-[28px_1fr_180px_36px] max-[640px]:grid-cols-[28px_1fr_36px]"
+              } items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 ${
                 b.done ? "opacity-50" : ""
               }`}
             >
+              {showReroll && (
+                <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
+                  <RerollButton
+                    tripId={tripId}
+                    surface="bookings"
+                    rowId={b.id}
+                    disabled={!canReroll}
+                    blockedReason={rerollBlockedReason}
+                  />
+                </div>
+              )}
               <button
                 onClick={() => handleToggle(b.id, !b.done)}
                 aria-label={b.done ? "Mark not done" : "Mark done"}
@@ -189,7 +217,8 @@ export function BookingsList({ initial, crew, tripId }: Props) {
                 ✕
               </Button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

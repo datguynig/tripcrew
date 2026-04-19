@@ -89,6 +89,9 @@ const BookingsOnlySchema = z.object({
   bookings: z.array(BookingSchema).min(3).max(12),
 });
 
+const ActivityReplacementSchema = z.object({ activity: ActivitySchema });
+const BookingReplacementSchema = z.object({ booking: BookingSchema });
+
 // --- Input / output types --------------------------------------------------
 
 export type DraftContext = {
@@ -345,6 +348,97 @@ export async function draftSurface(
     biasLongitude,
   });
   return { surface: "bookings", value: value.bookings, usage };
+}
+
+export type RowReplacementInput = {
+  surface: "activities" | "bookings";
+  ctx: DraftContext;
+  replacing: string;
+  existingTitles: string[];
+  feedbackNote?: string | null;
+};
+
+export type RowReplacementResult =
+  | { surface: "activities"; value: ActivityBrief; usage: DraftUsage }
+  | { surface: "bookings"; value: BookingBrief; usage: DraftUsage };
+
+export async function draftReplacement(
+  input: RowReplacementInput,
+): Promise<RowReplacementResult> {
+  const { surface, ctx, replacing, existingTitles, feedbackNote } = input;
+  const bannedList = existingTitles
+    .filter((t) => t.toLowerCase() !== replacing.toLowerCase())
+    .slice(0, 20)
+    .map((t) => `- ${t}`)
+    .join("\n");
+
+  const systemInstruction = [
+    "You are the trip-planning assistant for Tripcrew. One item in the",
+    "trip plan needs a replacement — draft exactly one new item that is",
+    "different from the one being replaced AND different from the other",
+    "items already in the plan. Ground specific venues via searchPlaces.",
+    "Voice: tight, editorial, Monocle-style.",
+    "",
+    surface === "activities"
+      ? [
+          "Output ONLY one activity. Day-or-night, grounded in a real",
+          'venue. `meta` is an all-caps mono label like "2H · €35".',
+          "",
+          'Respond with a SINGLE JSON object, no prose:',
+          '{ "activity": { "title": string, "meta": string, "category": "day"|"night" } }',
+        ].join("\n")
+      : [
+          "Output ONLY one booking — an actionable reservation the crew",
+          "needs to make in advance.",
+          "",
+          'Respond with a SINGLE JSON object, no prose:',
+          '{ "booking": { "title": string } }',
+        ].join("\n"),
+  ].join("\n");
+
+  const lines = [
+    `destination: ${ctx.destination}`,
+    `crew_size: ${ctx.crewSize}`,
+    `budget_per_head: ${
+      ctx.budgetPerHead !== null ? `${ctx.budgetPerHead} ${ctx.currency}` : "unset"
+    }`,
+  ];
+  if (ctx.budgetTier) lines.push(`budget_tier: ${ctx.budgetTier}`);
+  if (ctx.vibes && ctx.vibes.length > 0) {
+    lines.push(`vibes: ${ctx.vibes.join(", ")}`);
+  }
+  lines.push("", `replacing: "${replacing}"`);
+  if (bannedList) {
+    lines.push("", "other items already in the plan (don't duplicate):");
+    lines.push(bannedList);
+  }
+  if (feedbackNote && feedbackNote.trim()) {
+    lines.push("", `the crew said: "${feedbackNote.trim()}"`);
+  }
+  lines.push("", `Draft one replacement ${surface === "activities" ? "activity" : "booking"}.`);
+  const userPrompt = lines.join("\n");
+
+  const biasLatitude = ctx.destinationLatitude ?? 0;
+  const biasLongitude = ctx.destinationLongitude ?? 0;
+
+  if (surface === "activities") {
+    const { value, usage } = await runGeminiLoop({
+      systemInstruction,
+      userPrompt,
+      schema: ActivityReplacementSchema,
+      biasLatitude,
+      biasLongitude,
+    });
+    return { surface, value: value.activity, usage };
+  }
+  const { value, usage } = await runGeminiLoop({
+    systemInstruction,
+    userPrompt,
+    schema: BookingReplacementSchema,
+    biasLatitude,
+    biasLongitude,
+  });
+  return { surface: "bookings", value: value.booking, usage };
 }
 
 async function runGeminiLoop<T>({

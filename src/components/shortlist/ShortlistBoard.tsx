@@ -6,11 +6,16 @@ import { castVote } from "@/lib/actions/shortlist";
 import { useToast } from "@/hooks/useToast";
 import type { Activity, Vote } from "@/lib/types";
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+import { RerollButton } from "@/components/overview/RerollButton";
 
 type Props = {
   activities: Activity[];
   initialVotes: Vote[];
   currentUserId: string;
+  tripId: string;
+  isAdmin: boolean;
+  canReroll: boolean;
+  rerollBlockedReason: string | null;
 };
 
 type Filter = "all" | "day" | "night";
@@ -19,6 +24,10 @@ export function ShortlistBoard({
   activities,
   initialVotes,
   currentUserId,
+  tripId,
+  isAdmin,
+  canReroll,
+  rerollBlockedReason,
 }: Props) {
   const [votes, setVotes] = useState<Vote[]>(initialVotes);
   const [filter, setFilter] = useState<Filter>("all");
@@ -185,11 +194,27 @@ export function ShortlistBoard({
           const c = counts.get(a.id) ?? { yes: 0, maybe: 0, no: 0 };
           const total = c.yes + c.maybe + c.no;
           const mine = myVote.get(a.id);
+          const showReroll = isAdmin && a.ai_drafted;
           return (
             <div
               key={a.id}
-              className="grid grid-cols-[1fr_220px_160px] max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5"
+              className={`group grid ${
+                showReroll
+                  ? "grid-cols-[24px_1fr_220px_160px]"
+                  : "grid-cols-[1fr_220px_160px]"
+              } max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5`}
             >
+              {showReroll && (
+                <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
+                  <RerollButton
+                    tripId={tripId}
+                    surface="activities"
+                    rowId={a.id}
+                    disabled={!canReroll}
+                    blockedReason={rerollBlockedReason}
+                  />
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <div className="text-[17px] font-medium tracking-[-0.015em]">

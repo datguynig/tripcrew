@@ -1,8 +1,9 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getCurrentUser, getTrip } from "@/lib/auth";
+import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { BookingsList } from "@/components/bookings/BookingsList";
+import { getRedraftAvailability } from "@/lib/actions/aiDraft";
 import type { Booking } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,13 @@ export default async function BookingsPage({
   const done = bookings?.filter((b) => b.done).length ?? 0;
   const total = bookings?.length ?? 0;
 
+  const member = await getTripMember(trip.id, user.id);
+  const isAdmin = member?.role === "admin";
+  const rerollAvailability =
+    isAdmin && user.profile.ai_enabled && trip.destination
+      ? await getRedraftAvailability(trip.id)
+      : null;
+
   const lead =
     trip.meta?.section_leads?.bookings ??
     "The checklist. Claim one, book it, tick it. Simple accountability.";
@@ -58,7 +66,16 @@ export default async function BookingsPage({
         title="Bookings."
         lead={lead}
       />
-      <BookingsList initial={bookings ?? []} crew={crew} tripId={trip.id} />
+      <BookingsList
+        initial={bookings ?? []}
+        crew={crew}
+        tripId={trip.id}
+        isAdmin={isAdmin}
+        canReroll={rerollAvailability?.ok ?? false}
+        rerollBlockedReason={
+          rerollAvailability?.ok ? null : rerollAvailability?.reason ?? null
+        }
+      />
     </section>
   );
 }

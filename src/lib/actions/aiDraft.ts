@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   aiEnabled,
+  draftReplacement,
   draftSurface,
   draftTrip,
   type DraftSurface,
@@ -562,6 +563,215 @@ export async function redraftSection(input: {
   return {
     ok: true as const,
     surface: parsed.data.surface,
+  };
+}
+
+const rerollRowSchema = z.object({
+  tripId: z.string().uuid(),
+  surface: z.enum(["activities", "bookings"]),
+  rowId: z.string().uuid(),
+});
+
+export async function rerollRow(input: {
+  tripId: string;
+  surface: "activities" | "bookings";
+  rowId: string;
+}) {
+  const parsed = rerollRowSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
+  if (!aiEnabled()) return { error: "AI drafting is not configured" };
+  if (!placesEnabled()) return { error: "Places lookup is not configured" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const [{ data: profile }, { data: member }, { data: trip }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("ai_enabled")
+        .eq("id", user.id)
+        .maybeSingle<{ ai_enabled: boolean }>(),
+      supabase
+        .from("trip_members")
+        .select("role")
+        .eq("trip_id", parsed.data.tripId)
+        .eq("user_id", user.id)
+        .maybeSingle<{ role: "admin" | "member" }>(),
+      supabase
+        .from("trips")
+        .select("*")
+        .eq("id", parsed.data.tripId)
+        .maybeSingle<Trip>(),
+    ]);
+
+  if (!profile?.ai_enabled) return { error: "Not in the AI beta" };
+  if (member?.role !== "admin") return { error: "Admins only" };
+  if (!trip) return { error: "Trip not found" };
+  if (!trip.destination) return { error: "Trip destination is empty" };
+
+  const gate = await checkAiDraftRateLimit(createServiceClient(), {
+    userId: user.id,
+    tripId: trip.id,
+  });
+  if (!gate.ok) return { error: gate.reason };
+
+  const { data: coords } = await supabase
+    .from("destination_candidates")
+    .select("longitude, latitude, title")
+    .eq("trip_id", trip.id)
+    .not("longitude", "is", null)
+    .not("latitude", "is", null)
+    .limit(10)
+    .returns<
+      Array<{ longitude: number; latitude: number; title: string }>
+    >();
+  const matched =
+    (coords ?? []).find((c) => c.title === trip.destination) ?? coords?.[0];
+
+  const { count: crewCount } = await supabase
+    .from("trip_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("trip_id", trip.id);
+  const prefs = trip.meta?.ai_preferences ?? null;
+  const effectiveCrewSize =
+    prefs?.crew_size ?? trip.target_crew_size ?? crewCount ?? 4;
+  const effectiveBudget =
+    prefs?.budget_tier === "custom"
+      ? (prefs.budget_custom_pp ?? trip.target_budget_pp)
+      : prefs?.budget_tier === "tight"
+        ? 400
+        : prefs?.budget_tier === "lavish"
+          ? 2500
+          : prefs?.budget_tier === "mid"
+            ? 950
+            : trip.target_budget_pp;
+
+  const service = createServiceClient();
+  let replacing: string;
+  let existingTitles: string[];
+  let rowPosition: number;
+  if (parsed.data.surface === "activities") {
+    const { data: row } = await service
+      .from("activities")
+      .select("title, position, ai_drafted")
+      .eq("id", parsed.data.rowId)
+      .eq("trip_id", trip.id)
+      .maybeSingle<{ title: string; position: number; ai_drafted: boolean }>();
+    if (!row) return { error: "Row not found" };
+    replacing = row.title;
+    rowPosition = row.position;
+    const { data: all } = await service
+      .from("activities")
+      .select("title")
+      .eq("trip_id", trip.id)
+      .returns<Array<{ title: string }>>();
+    existingTitles = (all ?? []).map((a) => a.title);
+  } else {
+    const { data: row } = await service
+      .from("bookings")
+      .select("title, position, ai_drafted")
+      .eq("id", parsed.data.rowId)
+      .eq("trip_id", trip.id)
+      .maybeSingle<{ title: string; position: number; ai_drafted: boolean }>();
+    if (!row) return { error: "Row not found" };
+    replacing = row.title;
+    rowPosition = row.position;
+    const { data: all } = await service
+      .from("bookings")
+      .select("title")
+      .eq("trip_id", trip.id)
+      .returns<Array<{ title: string }>>();
+    existingTitles = (all ?? []).map((b) => b.title);
+  }
+
+  let result;
+  try {
+    result = await draftReplacement({
+      surface: parsed.data.surface,
+      ctx: {
+        destination: trip.destination,
+        destinationLatitude: matched?.latitude ?? null,
+        destinationLongitude: matched?.longitude ?? null,
+        startDate: trip.start_date,
+        endDate: trip.end_date,
+        crewSize: effectiveCrewSize,
+        budgetPerHead: effectiveBudget,
+        currency: trip.currency ?? "GBP",
+        origin: prefs?.origin ?? null,
+        budgetTier: prefs?.budget_tier ?? null,
+        vibes: prefs?.vibes ?? [],
+      },
+      replacing,
+      existingTitles,
+    });
+  } catch (err) {
+    console.error("[rerollRow] generation failed", err);
+    return {
+      error:
+        err instanceof Error
+          ? `Re-roll failed: ${err.message}`
+          : "Re-roll failed",
+    };
+  }
+
+  await service.from("ai_usage").insert({
+    user_id: user.id,
+    trip_id: trip.id,
+    operation: `reroll_${parsed.data.surface}`,
+    provider: result.usage.provider,
+    model: result.usage.model,
+    input_tokens: result.usage.inputTokens,
+    output_tokens: result.usage.outputTokens,
+    thinking_tokens: result.usage.thinkingTokens,
+    ai_cost_usd: result.usage.aiCostUsd,
+    places_requests: result.usage.placesRequests,
+    places_cost_usd: result.usage.placesCostUsd,
+    total_cost_usd: result.usage.totalCostUsd,
+  });
+
+  if (result.surface === "activities") {
+    const { error: upErr } = await service
+      .from("activities")
+      .update({
+        title: result.value.title,
+        meta: result.value.meta || null,
+        category: result.value.category,
+        ai_drafted: true,
+      })
+      .eq("id", parsed.data.rowId)
+      .eq("trip_id", trip.id);
+    if (upErr) {
+      console.error("[rerollRow] activity update failed", upErr);
+      return { error: "Re-roll generated but failed to save." };
+    }
+  } else {
+    const { error: upErr } = await service
+      .from("bookings")
+      .update({
+        title: result.value.title,
+        ai_drafted: true,
+      })
+      .eq("id", parsed.data.rowId)
+      .eq("trip_id", trip.id);
+    if (upErr) {
+      console.error("[rerollRow] booking update failed", upErr);
+      return { error: "Re-roll generated but failed to save." };
+    }
+  }
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/shortlist`);
+  revalidatePath(`/trips/${trip.slug}/bookings`);
+
+  return {
+    ok: true as const,
+    surface: parsed.data.surface,
+    newTitle: result.value.title,
   };
 }
 
