@@ -44,7 +44,7 @@ export default async function FeedPage({
 
   const lead =
     trip.meta?.section_leads?.feed ??
-    "Photos and dispatches from the trip. Paste an image URL, add a line, post.";
+    "Photos and dispatches from the trip. Upload a shot, add a line, post.";
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -53,7 +53,12 @@ export default async function FeedPage({
         title="Feed."
         lead={lead}
       />
-      <Feed initial={posts ?? []} authorsById={authorsById} tripId={trip.id} />
+      <Feed
+        initial={posts ?? []}
+        authorsById={authorsById}
+        tripId={trip.id}
+        currentUserId={user.id}
+      />
     </section>
   );
 }

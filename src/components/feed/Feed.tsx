@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { addPost } from "@/lib/actions/feed";
+import { addPost, deletePost } from "@/lib/actions/feed";
 import { uploadPostImage } from "@/lib/uploadImage";
 import { useToast } from "@/hooks/useToast";
 
@@ -16,6 +16,7 @@ type Props = {
   initial: Post[];
   authorsById: CrewMap;
   tripId: string;
+  currentUserId: string;
 };
 
 function formatDate(iso: string) {
@@ -31,7 +32,7 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function Feed({ initial, authorsById, tripId }: Props) {
+export function Feed({ initial, authorsById, tripId, currentUserId }: Props) {
   const toast = useToast();
   const [posts, setPosts] = useState<Post[]>(initial);
   const [caption, setCaption] = useState("");
@@ -149,6 +150,38 @@ export function Feed({ initial, authorsById, tripId }: Props) {
     });
   };
 
+  const handleDelete = (id: string) => {
+    const removed = posts.find((p) => p.id === id);
+    if (!removed) return;
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    toast.undo({
+      message: "Post removed",
+      duration: 5000,
+      onUndo: () =>
+        setPosts((prev) =>
+          [...prev, removed].sort(
+            (a, b) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime(),
+          ),
+        ),
+      onCommit: () =>
+        startTransition(async () => {
+          const res = await deletePost(id);
+          if (res?.error) {
+            toast.error(res.error);
+            setPosts((prev) =>
+              [...prev, removed].sort(
+                (a, b) =>
+                  new Date(b.created_at).getTime() -
+                  new Date(a.created_at).getTime(),
+              ),
+            );
+          }
+        }),
+    });
+  };
+
   return (
     <>
       <div className="border border-line p-[18px] px-5 mb-7 grid gap-[14px]">
@@ -240,11 +273,23 @@ export function Feed({ initial, authorsById, tripId }: Props) {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-3">
           {posts.map((p) => {
             const hasImage = p.image_url && !brokenImages.has(p.id);
+            const imageMissing = p.image_url && brokenImages.has(p.id);
+            const isAuthor = p.author_id === currentUserId;
             return (
               <div
                 key={p.id}
-                className="border border-line bg-bg-2 flex flex-col overflow-hidden"
+                className="border border-line bg-bg-2 flex flex-col overflow-hidden relative"
               >
+                {isAuthor && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(p.id)}
+                    aria-label="Delete post"
+                    className="absolute top-2 right-2 z-10 h-7 w-7 flex items-center justify-center text-fg-3 hover:text-err bg-bg-2/80 backdrop-blur-sm transition-colors cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
                 {hasImage && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -255,6 +300,11 @@ export function Feed({ initial, authorsById, tripId }: Props) {
                       setBrokenImages((prev) => new Set(prev).add(p.id))
                     }
                   />
+                )}
+                {imageMissing && (
+                  <div className="w-full aspect-[4/3] bg-bg-3 flex items-center justify-center font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
+                    Image unavailable
+                  </div>
                 )}
                 <div className="p-[14px] px-4 flex-1 flex flex-col">
                   {p.caption && (
