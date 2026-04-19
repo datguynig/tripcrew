@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { Badge } from "@/components/ui/Badge";
 import { getInitials } from "@/lib/initials";
 import type { Profile } from "@/lib/types";
 
@@ -72,33 +73,39 @@ export function AccountMenu({ profile }: Props) {
           ref={popoverRef}
           role="menu"
           aria-label="Account"
-          className="absolute top-[calc(100%+6px)] right-0 w-[240px] bg-bg-2 border border-line rounded-md shadow-lg z-50 overflow-hidden max-[520px]:fixed max-[520px]:top-[66px] max-[520px]:right-5 max-[520px]:left-5 max-[520px]:w-auto"
+          className="absolute right-0 top-[calc(100%+10px)] z-50 min-w-[240px] max-w-[calc(100vw-20px)] bg-bg-2 border border-line rounded-md shadow-lg py-2"
         >
-          <div className="px-5 py-3 border-b border-line">
-            <div className="label-xs text-fg-3">Signed in as</div>
-            <div className="text-[13px] font-medium text-fg truncate mt-1">
-              {profile.name}
-            </div>
-          </div>
+          <Badge tone="muted" size="sm" className="block px-4 pt-2 pb-1">
+            Account
+          </Badge>
 
           <Link
             href="/account"
             role="menuitem"
             data-popover-focus="first"
-            className="flex items-center min-h-[44px] px-5 text-[13px] text-fg hover:bg-bg-3 active:bg-bg-3 transition-colors border-b border-line"
+            className="flex items-center gap-3 px-4 py-[10px] hover:bg-bg-3 active:bg-bg-3 transition-colors"
           >
-            Account
+            <span className="flex-1 min-w-0">
+              <span className="block text-[14px] font-medium tracking-[-0.01em] truncate">
+                Account
+              </span>
+              <span className="block font-mono text-[10px] tracking-[0.08em] uppercase text-fg-3 truncate">
+                {profile.name}
+              </span>
+            </span>
           </Link>
 
-          <form action="/sign-out" method="post" className="block">
-            <button
-              type="submit"
-              role="menuitem"
-              className="w-full flex items-center min-h-[44px] px-5 text-[13px] text-fg hover:bg-bg-3 active:bg-bg-3 transition-colors cursor-pointer text-left"
-            >
-              Sign out
-            </button>
-          </form>
+          <div className="border-t border-line mt-1 pt-1">
+            <form action="/sign-out" method="post" className="block">
+              <button
+                type="submit"
+                role="menuitem"
+                className="w-full flex items-center gap-3 px-4 py-[10px] text-[14px] font-medium tracking-[-0.01em] text-fg-2 hover:bg-bg-3 hover:text-fg active:bg-bg-3 transition-colors cursor-pointer text-left"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>
