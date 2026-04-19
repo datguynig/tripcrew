@@ -114,6 +114,9 @@ export type DraftContext = {
   } | null;
   budgetTier?: "tight" | "mid" | "lavish" | "custom" | null;
   vibes?: string[];
+  // When present, appended to the user prompt as crew-provided
+  // feedback the AI should address in the new draft.
+  feedbackNote?: string | null;
 };
 
 export type DraftUsage = {
@@ -255,6 +258,10 @@ function buildUserPrompt(ctx: DraftContext): string {
     lines.push(
       `crew_voted_activities: ${ctx.topVotedShortlist.slice(0, 10).join(", ")}`,
     );
+  }
+  if (ctx.feedbackNote && ctx.feedbackNote.trim()) {
+    lines.push("", `the crew said about the previous draft: "${ctx.feedbackNote.trim()}"`);
+    lines.push("Make sure the new draft addresses this feedback.");
   }
   lines.push("", "Draft the trip.");
   return lines.join("\n");

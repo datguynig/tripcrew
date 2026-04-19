@@ -71,12 +71,14 @@ const inputSchema = z.object({
   tripId: z.string().uuid(),
   force: z.boolean().optional(),
   preferences: preferencesSchema.optional(),
+  feedbackNote: z.string().trim().max(500).nullable().optional(),
 });
 
 export async function draftTripAction(input: {
   tripId: string;
   force?: boolean;
   preferences?: AiPreferences;
+  feedbackNote?: string | null;
 }) {
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) return { error: "Invalid input" };
@@ -181,6 +183,7 @@ export async function draftTripAction(input: {
       origin: prefs?.origin ?? null,
       budgetTier: prefs?.budget_tier ?? null,
       vibes: prefs?.vibes ?? [],
+      feedbackNote: parsed.data.feedbackNote ?? null,
     });
   } catch (err) {
     console.error("[aiDraft] generation failed", err);

@@ -167,7 +167,15 @@ export default async function TripOverview({
         })()}
 
         {trip.ai_drafted_at !== null && user && (
-          <AIFeedbackCard tripId={trip.id} surface="all" />
+          <AIFeedbackCard
+            tripId={trip.id}
+            surface="all"
+            canRedraft={availability?.ok ?? false}
+            redraftBlockedReason={
+              availability?.ok ? null : availability?.reason ?? null
+            }
+            destination={trip.destination}
+          />
         )}
       </section>
     </>
