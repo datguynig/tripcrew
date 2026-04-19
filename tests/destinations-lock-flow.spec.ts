@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import {
+  getTripIdBySlug,
+  readTripAiState,
+  seedAiDraft,
+} from "./helpers/db";
 
 /**
  * Exercises the admin-gated lock/unlock flow end-to-end:
@@ -10,7 +15,10 @@ import { test, expect } from "@playwright/test";
  *   6. Unlock → trip back to planning
  *
  * Avoids the AI draft path because it calls a real external provider
- * (Gemini + Google Places) and racks up cost per run.
+ * (Gemini + Google Places) and racks up cost per run. The
+ * "Reset drafts" branch below seeds a fake AI draft via the service
+ * role so we can exercise the destructive unlock without spending
+ * money on Gemini + Places.
  */
 
 async function createTripAndProposeCandidate(
@@ -132,5 +140,76 @@ test.describe("destination lock / unlock admin flow", () => {
     await expect(
       page.getByRole("button", { name: /^lock destination$/i }),
     ).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("reset drafts wipes AI-drafted hero + meta + rows", async ({ page }) => {
+    await createTripAndProposeCandidate(
+      page,
+      `Reset Drafts Test ${Date.now()}`,
+      "Barcelona",
+    );
+
+    // Lock via UI so the trip reaches status='locked' with the real
+    // winner title + revalidation. Wait on the Overview-only hero
+    // heading rather than waitForURL — the dev server can be slow
+    // enough that the URL race trips up the regex matcher.
+    await page.getByRole("button", { name: /^lock destination$/i }).click();
+    await expect(
+      page.getByRole("heading", { name: /the brief/i }),
+    ).toBeVisible({ timeout: 15_000 });
+
+    // Pull the slug out of the URL so we can seed + verify via
+    // service-role Supabase client.
+    const url = page.url();
+    const slug = url.match(/\/trips\/([^/?#]+)/)?.[1];
+    expect(slug, "slug parsed from URL").toBeTruthy();
+    const tripId = await getTripIdBySlug(slug!);
+
+    // Pretend the AI draft ran: stamp hero + meta + ai_drafted_at +
+    // one ai_drafted activity + one ai_drafted booking.
+    await seedAiDraft(tripId);
+
+    // Baseline: confirm the fixture landed.
+    const before = await readTripAiState(tripId);
+    expect(before.trip?.ai_drafted_at, "ai_drafted_at set").not.toBeNull();
+    expect(before.trip?.hero_title).toBe("Fixture hero title.");
+    expect(before.aiActivityCount).toBeGreaterThanOrEqual(1);
+    expect(before.aiBookingCount).toBeGreaterThanOrEqual(1);
+
+    // Re-fetch the destinations page — server render picks up the
+    // freshly seeded ai_drafted_at so the Dialog renders the
+    // AI-aware copy + Keep/Reset buttons.
+    await page.goto(`/trips/${slug}/destinations`);
+    await page.getByRole("button", { name: /^unlock$/i }).click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(
+      dialog.getByText(/drafted by ai/i),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: /^keep drafts$/i }),
+    ).toBeVisible();
+
+    await dialog.getByRole("button", { name: /^reset drafts$/i }).click();
+
+    // Back to planning — the Lock Destination button returns.
+    await expect(
+      page.getByRole("button", { name: /^lock destination$/i }),
+    ).toBeVisible({ timeout: 5_000 });
+
+    // DB side: the destructive unlock should have cleared the hero,
+    // wiped spec_grid + schedule from meta, and deleted the
+    // ai_drafted activity + booking rows.
+    const after = await readTripAiState(tripId);
+    expect(after.trip?.status).toBe("planning");
+    expect(after.trip?.ai_drafted_at).toBeNull();
+    expect(after.trip?.hero_title).toBeNull();
+    expect(after.trip?.hero_subtitle).toBeNull();
+    const meta = (after.trip?.meta ?? {}) as Record<string, unknown>;
+    expect(meta.spec_grid, "spec_grid cleared").toBeUndefined();
+    expect(meta.schedule, "schedule cleared").toBeUndefined();
+    expect(after.aiActivityCount).toBe(0);
+    expect(after.aiBookingCount).toBe(0);
   });
 });
