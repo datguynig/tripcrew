@@ -5,8 +5,6 @@ import { SectionHeader } from "@/components/layout/SectionHeader";
 import { AdminCard } from "@/components/admin/AdminCard";
 import { IdentitySection } from "@/components/admin/IdentitySection";
 import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
-import { HeroSpecSection } from "@/components/admin/HeroSpecSection";
-import { ScheduleSection } from "@/components/admin/ScheduleSection";
 import { SectionLeadsSection } from "@/components/admin/SectionLeadsSection";
 import {
   CrewManagement,
@@ -60,7 +58,7 @@ export default async function AdminPage({
       <SectionHeader
         code="§ 07"
         title="Admin."
-        lead="Edit trip identity, dates, budget, and the content shown across tabs. Changes are live for everyone in the crew."
+        lead="Trip settings and crew management. Hero, spec grid, and schedule are edited inline on Overview."
       />
 
       <div className="grid gap-10">
@@ -94,32 +92,6 @@ export default async function AdminPage({
 
         <AdminCard
           code="C"
-          title="Hero & spec grid"
-          description="The overview headline, subtitle, and the 4-cell spec grid."
-        >
-          <HeroSpecSection
-            tripId={trip.id}
-            heroTitle={trip.hero_title}
-            heroSubtitle={trip.hero_subtitle}
-            cityLabel={trip.city_label}
-            datesLabel={trip.dates_label}
-            specGrid={trip.meta?.spec_grid ?? []}
-          />
-        </AdminCard>
-
-        <AdminCard
-          code="D"
-          title="Schedule"
-          description="Day-by-day plan. Add, remove, reorder rows."
-        >
-          <ScheduleSection
-            tripId={trip.id}
-            schedule={trip.meta?.schedule ?? []}
-          />
-        </AdminCard>
-
-        <AdminCard
-          code="E"
           title="Section leads"
           description="Short intro under the title on Overview, Shortlist, Bookings, Ledger, Feed."
         >
@@ -130,7 +102,7 @@ export default async function AdminPage({
         </AdminCard>
 
         <AdminCard
-          code="F"
+          code="D"
           title="Crew management"
           description="Promote, demote, remove members. Delete the trip."
         >

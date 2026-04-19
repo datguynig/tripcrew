@@ -114,6 +114,8 @@ export default async function TripOverview({
         kittyTotal={kittyTotal}
         targetBudgetPp={trip.target_budget_pp}
         currency={trip.currency}
+        tripId={trip.id}
+        isAdmin={isAdmin}
       />
 
       <section className="py-14 pb-24 section-enter">
@@ -127,9 +129,6 @@ export default async function TripOverview({
             aiConfigured() &&
             placesEnabled() &&
             !!trip.destination;
-
-          const hideEmptyPlaceholders =
-            showAICTA && specCells.length === 0 && scheduleRows.length === 0;
 
           return (
             <>
@@ -145,24 +144,23 @@ export default async function TripOverview({
                 />
               )}
 
-              {!hideEmptyPlaceholders && (
-                <>
-                  <SpecGrid
-                    cells={specCells}
-                    isAdmin={isAdmin}
-                    tripSlug={trip.slug}
-                    aiDrafted={aiDrafted}
-                    aiRail={aiRailSpec}
-                  />
-                  <Schedule
-                    rows={scheduleRows}
-                    isAdmin={isAdmin}
-                    tripSlug={trip.slug}
-                    aiDrafted={aiDrafted}
-                    aiRail={aiRailSchedule}
-                  />
-                </>
-              )}
+              <SpecGrid
+                cells={specCells}
+                isAdmin={isAdmin}
+                tripId={trip.id}
+                tripSlug={trip.slug}
+                currency={trip.currency ?? "GBP"}
+                aiDrafted={aiDrafted}
+                aiRail={aiRailSpec}
+              />
+              <Schedule
+                rows={scheduleRows}
+                isAdmin={isAdmin}
+                tripId={trip.id}
+                tripSlug={trip.slug}
+                aiDrafted={aiDrafted}
+                aiRail={aiRailSchedule}
+              />
             </>
           );
         })()}

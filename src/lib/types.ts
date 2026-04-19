@@ -8,7 +8,15 @@ export type Profile = {
 export type TripStatus = "planning" | "locked";
 export type TripRole = "admin" | "member";
 
-export type SpecItem = { label: string; value: string; sub: string };
+export type SpecItem = {
+  label: string;
+  value: string;
+  sub: string;
+  // Authoritative numeric when the cell is monetary (e.g. "Per head").
+  // When present, value is a derived display string kept in sync for
+  // legacy reads but never authoritative. Symbol comes from trip.currency.
+  amount?: number | null;
+};
 export type ScheduleItem = { day_label: string; heading: string; body: string };
 export type SectionLeadKey =
   | "overview"

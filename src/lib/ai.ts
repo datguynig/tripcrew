@@ -34,6 +34,13 @@ const SpecCellSchema = z.object({
   label: z.string().min(1).max(30),
   value: z.string().min(1).max(80),
   sub: z.string().max(60),
+  amount: z
+    .number()
+    .finite()
+    .min(0)
+    .max(10_000_000)
+    .nullable()
+    .optional(),
 });
 
 const ScheduleRowSchema = z.object({
@@ -168,6 +175,9 @@ const SYSTEM_PROMPT = [
   "  sleep), \"Flights\" (route + duration), \"Per head\" (budget value),",
   "  \"The rule\" (a single destination-specific constraint, e.g.",
   "  \"Systembolaget by Fri 3pm\" for Stockholm).",
+  "  For the budget cell, return `amount` as a plain number (e.g. 950)",
+  "  and omit the currency symbol from `value` — the app formats it with",
+  "  the crew's currency. Omit `amount` on all other cells.",
   "",
   "Output: when you have enough information, respond with a SINGLE",
   "JSON object matching this exact shape, nothing else — no prose",
@@ -176,7 +186,7 @@ const SYSTEM_PROMPT = [
   "{",
   '  "hero_title": string (≤80 chars, e.g. "Lisbon"),',
   '  "hero_subtitle": string (≤300 chars, one paragraph, editorial),',
-  '  "spec_grid": [ { "label": string, "value": string, "sub": string }, ... × 4 ],',
+  '  "spec_grid": [ { "label": string, "value": string, "sub": string, "amount"?: number|null }, ... × 4 ],',
   '  "schedule": [ { "day_label": string, "heading": string, "body": string }, ... ],',
   '  "activities": [ { "title": string, "meta": string, "category": "day"|"night" }, ... ],',
   '  "bookings": [ { "title": string }, ... ]',
@@ -457,9 +467,11 @@ function buildSurfaceSystemPrompt(surface: DraftSurface): string {
       "Output ONLY the spec_grid: exactly 4 cells. Suggested labels:",
       '"Base" (where they sleep), "Flights" (route + duration), "Per head"',
       '(budget value), "The rule" (a single destination-specific constraint).',
+      "For the budget cell, return `amount` as a plain number (e.g. 950) and",
+      "omit the currency symbol from `value`. Omit `amount` on other cells.",
       "",
       "Respond with a SINGLE JSON object, no prose:",
-      '{ "spec_grid": [ { "label": string, "value": string, "sub": string }, ... × 4 ] }',
+      '{ "spec_grid": [ { "label": string, "value": string, "sub": string, "amount"?: number|null }, ... × 4 ] }',
     ].join("\n"),
     schedule: [
       "Output ONLY the schedule. One row per trip day (inferred from",

@@ -1,46 +1,88 @@
+"use client";
+
+import { useState } from "react";
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
 import { AIDraftRail } from "@/components/overview/AIDraftRail";
+import { InlineEdit } from "@/components/ui/InlineEdit";
+import { InlineMoneyEdit } from "@/components/ui/InlineMoneyEdit";
+import { InlineTextarea } from "@/components/ui/InlineTextarea";
+import { updateSpecCell } from "@/lib/actions/overviewInline";
+import { useToast } from "@/hooks/useToast";
+import { DEFAULT_SPEC_LABELS } from "@/lib/constants";
+import type { SpecItem } from "@/lib/types";
 
-type Cell = { label: string; value: string; sub: string };
+type AiRail = {
+  tripId: string;
+  destination: string;
+  draftedAt: string | null;
+  canRedraft: boolean;
+  blockedReason: string | null;
+};
+
+type Props = {
+  cells: SpecItem[];
+  isAdmin?: boolean;
+  tripId: string;
+  tripSlug?: string;
+  currency: string;
+  aiDrafted?: boolean;
+  aiRail?: AiRail;
+};
 
 export function SpecGrid({
   cells,
   isAdmin,
-  tripSlug,
+  tripId,
+  currency,
   aiDrafted = false,
   aiRail,
-}: {
-  cells: Cell[];
-  isAdmin?: boolean;
-  tripSlug?: string;
-  aiDrafted?: boolean;
-  aiRail?: {
-    tripId: string;
-    destination: string;
-    draftedAt: string | null;
-    canRedraft: boolean;
-    blockedReason: string | null;
-  };
-}) {
-  if (cells.length === 0) {
+}: Props) {
+  const toast = useToast();
+  const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const displayed: SpecItem[] =
+    optimistic ??
+    (cells.length > 0
+      ? cells
+      : isAdmin
+        ? DEFAULT_SPEC_LABELS.map((label) => ({ label, value: "", sub: "" }))
+        : []);
+
+  if (displayed.length === 0) {
     return (
       <div className="border border-line py-14 text-center mb-9">
-        <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
-          {isAdmin
-            ? "Spec grid empty"
-            : "Spec grid · details coming soon"}
+        <div className="label-sm-wide text-fg-3">
+          Spec grid · details coming soon
         </div>
-        {isAdmin && tripSlug && (
-          <a
-            href={`/trips/${tripSlug}/admin`}
-            className="inline-block mt-3 font-mono text-[11px] tracking-[0.1em] uppercase text-accent hover:text-fg transition-colors"
-          >
-            Set it in admin →
-          </a>
-        )}
       </div>
     );
   }
+
+  const commit = async (
+    index: number,
+    patch: { value?: string; sub?: string; amount?: number | null },
+  ): Promise<boolean> => {
+    const prev = displayed;
+    const next = prev.map((c, i): SpecItem => {
+      if (i !== index) return c;
+      const merged: SpecItem = { ...c, ...patch };
+      if (typeof patch.amount !== "undefined" && patch.amount !== null) {
+        merged.value = patch.amount.toLocaleString("en-US");
+      }
+      return merged;
+    });
+    setOptimistic(next);
+    const res = await updateSpecCell({ tripId, index, patch });
+    if (res?.error) {
+      setOptimistic(prev);
+      toast.error(res.error);
+      return false;
+    }
+    setOptimistic(null);
+    return true;
+  };
+
   return (
     <div className="mb-9">
       {aiDrafted && aiRail ? (
@@ -58,25 +100,82 @@ export function SpecGrid({
           <AIDraftBadge />
         </div>
       ) : null}
+
       <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line">
-      {cells.map((cell, i) => (
-        <div
-          key={`${cell.label}-${i}`}
-          className={`py-[22px] px-6 border-r border-b border-line ${
-            i % 4 === 3 ? "border-r-0" : ""
-          } ${i >= cells.length - (cells.length % 4 || 4) ? "last:border-b-0" : ""} max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0`}
-        >
-          <div className="label-sm-wide text-fg-3 mb-3">{cell.label}</div>
-          <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.2]">
-            {cell.value}
-          </div>
-          {cell.sub && (
-            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 mt-2">
-              {cell.sub}
+        {displayed.map((cell, i) => {
+          const isMoney = typeof cell.amount === "number";
+          const dim =
+            editingIndex !== null && editingIndex !== i
+              ? "opacity-40 transition-opacity"
+              : "transition-opacity";
+
+          return (
+            <div
+              key={`${cell.label}-${i}`}
+              className={`py-[22px] px-6 border-r border-b border-line ${
+                i % 4 === 3 ? "border-r-0" : ""
+              } ${
+                i >= displayed.length - (displayed.length % 4 || 4)
+                  ? "last:border-b-0"
+                  : ""
+              } max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0 ${dim}`}
+            >
+              <div className="label-sm-wide text-fg-3 mb-3">{cell.label}</div>
+
+              <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.2]">
+                {isMoney || cell.label.toLowerCase() === "per head" ? (
+                  <InlineMoneyEdit
+                    amount={cell.amount ?? 0}
+                    currency={currency}
+                    onCommit={(next) => commit(i, { amount: next })}
+                    editable={!!isAdmin}
+                    ariaLabel={`Edit ${cell.label} amount`}
+                    onEditingChange={(e) => setEditingIndex(e ? i : null)}
+                  />
+                ) : (
+                  <InlineEdit
+                    value={cell.value}
+                    onCommit={(next) => commit(i, { value: next })}
+                    editable={!!isAdmin}
+                    as="span"
+                    maxLength={80}
+                    ariaLabel={`Edit ${cell.label} value`}
+                    emptyLabel="Add value"
+                    onEditingChange={(e) => setEditingIndex(e ? i : null)}
+                    className="inline"
+                  />
+                )}
+              </div>
+
+              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 mt-2">
+                {cell.label.toLowerCase() === "the rule" ? (
+                  <InlineTextarea
+                    value={cell.sub}
+                    onCommit={(next) => commit(i, { sub: next })}
+                    editable={!!isAdmin}
+                    maxLength={60}
+                    ariaLabel={`Edit ${cell.label} detail`}
+                    emptyLabel="Add detail"
+                    onEditingChange={(e) => setEditingIndex(e ? i : null)}
+                    className="font-mono text-[10px] tracking-[0.15em] uppercase"
+                  />
+                ) : (
+                  <InlineEdit
+                    value={cell.sub}
+                    onCommit={(next) => commit(i, { sub: next })}
+                    editable={!!isAdmin}
+                    as="span"
+                    maxLength={60}
+                    ariaLabel={`Edit ${cell.label} detail`}
+                    emptyLabel="Add detail"
+                    onEditingChange={(e) => setEditingIndex(e ? i : null)}
+                    className="inline font-mono text-[10px] tracking-[0.15em] uppercase"
+                  />
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      ))}
+          );
+        })}
       </div>
     </div>
   );

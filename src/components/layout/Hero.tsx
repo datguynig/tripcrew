@@ -2,6 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { currencySymbol } from "@/lib/currency";
+import { InlineEdit } from "@/components/ui/InlineEdit";
+import { InlineTextarea } from "@/components/ui/InlineTextarea";
+import { updateHeroField } from "@/lib/actions/overviewInline";
+import { useToast } from "@/hooks/useToast";
 
 function daysUntil(iso: string) {
   const target = new Date(`${iso}T00:00:00Z`).getTime();
@@ -23,6 +27,8 @@ type Props = {
   kittyTotal: number;
   targetBudgetPp: number | null;
   currency: string | null;
+  tripId: string;
+  isAdmin: boolean;
 };
 
 export function Hero({
@@ -39,7 +45,10 @@ export function Hero({
   kittyTotal,
   targetBudgetPp,
   currency,
+  tripId,
+  isAdmin,
 }: Props) {
+  const toast = useToast();
   const symbol = currencySymbol(currency);
   const [days, setDays] = useState(() =>
     startDate ? daysUntil(startDate) : null,
@@ -50,6 +59,18 @@ export function Hero({
     const id = setInterval(() => setDays(daysUntil(startDate)), 60_000);
     return () => clearInterval(id);
   }, [startDate]);
+
+  const commit = async (
+    field: "hero_title" | "hero_subtitle",
+    value: string,
+  ): Promise<boolean> => {
+    const res = await updateHeroField({ tripId, field, value });
+    if (res?.error) {
+      toast.error(res.error);
+      return false;
+    }
+    return true;
+  };
 
   return (
     <div className="pt-[70px] pb-[60px] border-b border-line relative">
@@ -90,14 +111,31 @@ export function Hero({
           letterSpacing: "-0.055em",
         }}
       >
-        {heroTitle}
+        <InlineEdit
+          value={heroTitle}
+          onCommit={(v) => commit("hero_title", v)}
+          editable={isAdmin}
+          as="span"
+          maxLength={80}
+          ariaLabel="Edit trip title"
+          emptyLabel="Add title"
+          className="inline"
+        />
         <span className="text-accent">.</span>
       </h1>
 
-      {heroSubtitle && (
-        <p className="max-w-[620px] text-[18px] leading-[1.5] text-fg-2">
-          {heroSubtitle}
-        </p>
+      {(isAdmin || heroSubtitle) && (
+        <div className="max-w-[620px] text-[18px] leading-[1.5] text-fg-2">
+          <InlineTextarea
+            value={heroSubtitle ?? ""}
+            onCommit={(v) => commit("hero_subtitle", v)}
+            editable={isAdmin}
+            maxLength={300}
+            ariaLabel="Edit trip subtitle"
+            emptyLabel="Add a subtitle — one line, editorial."
+            className="block"
+          />
+        </div>
       )}
 
       <div className="mt-14 grid grid-cols-4 max-[720px]:grid-cols-2 border-t border-line">
