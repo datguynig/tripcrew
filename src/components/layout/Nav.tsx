@@ -22,7 +22,7 @@ export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
 
   return (
     <div className="sticky top-[49px] z-40 bg-bg/85 backdrop-blur-md border-b border-line">
-      <div className="max-w-[1280px] mx-auto px-7">
+      <div className="max-w-[1280px] mx-auto px-7 max-[520px]:px-5">
         <nav className="nav-scroll flex gap-0 overflow-x-auto">
           {tabs.map((tab) => {
             const href = `${base}${tab.path}`;

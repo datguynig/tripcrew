@@ -228,4 +228,9 @@ body {
 }
 .nav-scroll {
   scrollbar-width: none;
+  /* touch-action: pan-x lets horizontal swipes scroll the tabs while
+     vertical swipes bubble up to the page, so the nav doesn't
+     capture attempted page scrolls on mobile. */
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
 }
