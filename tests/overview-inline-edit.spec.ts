@@ -45,11 +45,12 @@ async function createLockedTrip(
 async function readTripMeta(tripId: string) {
   const { data } = await adminClient()
     .from("trips")
-    .select("hero_title, hero_subtitle, meta")
+    .select("hero_title, hero_subtitle, target_budget_pp, meta")
     .eq("id", tripId)
     .maybeSingle<{
       hero_title: string | null;
       hero_subtitle: string | null;
+      target_budget_pp: number | null;
       meta: {
         spec_grid?: Array<{
           label: string;
@@ -171,6 +172,10 @@ test.describe("overview inline editing", () => {
     expect(perHeadItem?.amount).toBe(1250);
     // value is kept in sync for legacy readers — 1,250 formatted.
     expect(perHeadItem?.value).toBe("1,250");
+    // The "Per head" cell is the trip's per-head budget; updating it
+    // here must also update target_budget_pp so the Hero stat cell
+    // (which reads that column) stays consistent.
+    expect(saved?.target_budget_pp).toBe(1250);
   });
 
   test("schedule: add day → edit heading → delete with undo toast", async ({

@@ -130,9 +130,22 @@ export async function updateSpecCell(input: {
   );
   const nextMeta: TripMeta = { ...(data.meta ?? {}), spec_grid: nextSpec };
 
+  // Mirror the "Per head" spec cell into trips.target_budget_pp.
+  // Both surface the same number (per-head budget) and the Hero stat
+  // cell reads target_budget_pp directly — keeping them in sync here
+  // is the only way to avoid a stale "target budget" above an edited
+  // spec cell. Match on the canonical label, case-insensitive.
+  const update: Record<string, unknown> = { meta: nextMeta };
+  const isPerHead =
+    nextCell.label.toLowerCase() === "per head" &&
+    typeof parsed.data.patch.amount !== "undefined";
+  if (isPerHead) {
+    update.target_budget_pp = parsed.data.patch.amount;
+  }
+
   const { error } = await supabase
     .from("trips")
-    .update({ meta: nextMeta })
+    .update(update)
     .eq("id", parsed.data.tripId);
   if (error) return { error: "Could not save." };
 
