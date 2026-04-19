@@ -102,14 +102,21 @@ export function NotificationsBell({
           className: open ? "!text-fg !bg-bg-2" : "",
         })}
       >
-        <span
-          className={`font-mono text-[14px] leading-none ${
-            unreadCount > 0 ? "text-fg" : ""
-          }`}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={unreadCount > 0 ? "text-fg" : ""}
           aria-hidden
         >
-          ¶
-        </span>
+          <path d="M18 16V11a6 6 0 0 0-12 0v5l-2 2h16l-2-2z" />
+          <path d="M10 20a2 2 0 0 0 4 0" />
+        </svg>
       </button>
 
       {unreadCount > 0 && (
