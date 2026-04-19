@@ -75,7 +75,7 @@ export function Hero({
 
   return (
     <div className="pt-[70px] pb-[60px] border-b border-line relative">
-      <div className="flex flex-wrap gap-7 mb-10 label text-fg-3">
+      <div className="flex flex-wrap gap-x-7 gap-y-2 mb-10 label text-fg-3">
         <span>
           LOC / <b className="text-fg font-medium">{cityLabel}</b>
         </span>
