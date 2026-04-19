@@ -21,10 +21,3 @@ export function AdminCard({ code, title, description, children }: Props) {
   );
 }
 
-export function AdminPlaceholder() {
-  return (
-    <div className="border border-dashed border-line-2 py-8 text-center label text-fg-3">
-      Coming in the next commit
-    </div>
-  );
-}

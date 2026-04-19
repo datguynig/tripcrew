@@ -38,7 +38,9 @@ export function AirportSearch({
   const [highlight, setHighlight] = useState(0);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const justPickedRef = useRef<string | null>(null);
+  // Seed with initial value so a prefilled field (re-opened prefs
+  // modal) doesn't fire the search + pop the dropdown on mount.
+  const justPickedRef = useRef<string | null>(value || null);
 
   useEffect(() => {
     if (!open) return;

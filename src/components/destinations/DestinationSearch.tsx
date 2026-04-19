@@ -63,8 +63,11 @@ export function DestinationSearch({
   const inputRef = useRef<HTMLInputElement>(null);
   // Once a suggestion is picked, skip the autocomplete fetch for that
   // exact value so the dropdown doesn't snap closed → reopen with the
-  // same results. Cleared when the user types a different value.
-  const justPickedRef = useRef<string | null>(null);
+  // same results. Cleared when the user types a different value. Seed
+  // with the initial value so a prefilled field (e.g. admin page with
+  // an existing destination) doesn't auto-open a suggestion list on
+  // mount — the user didn't type it.
+  const justPickedRef = useRef<string | null>(value || null);
 
   if (sessionRef.current === "" && enabled) {
     sessionRef.current = newSessionToken();

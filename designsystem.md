@@ -496,7 +496,6 @@ Tracked gaps between this doc and the current codebase. Not blockers, but addres
 
 - **Mixed arbitrary typography**: some existing components still use `font-mono text-[10px] tracking-[0.15em] uppercase` inline instead of the `.label-sm` utility. Migrate as you touch each file.
 - **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
-- **AdminPlaceholder** is about to be deleted once the last admin section editor ships.
 - **No canonical skeleton loader** (§4.11). The first real need defines the pattern.
 - **Partial-state rail only on StatCell** (§4.11). Rows and grids have no "partially filled" language yet.
 
