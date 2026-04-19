@@ -32,6 +32,11 @@ export type AiOriginAirport = {
   latitude: number | null;
   longitude: number | null;
   placeId: string | null;
+  // IATA metro code (LON, NYC, PAR…) when the user picked a "city — all
+  // airports" option. When present, the AI uses the metro in the flights
+  // cell ("LON → ARN") instead of committing to a single airport.
+  metro?: string | null;
+  metroAirports?: string[] | null;
 };
 
 export type AiBudgetTier = "tight" | "mid" | "lavish" | "custom";

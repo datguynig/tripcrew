@@ -44,6 +44,8 @@ const preferencesSchema = z.object({
       latitude: z.number().finite().gte(-90).lte(90).nullable(),
       longitude: z.number().finite().gte(-180).lte(180).nullable(),
       placeId: z.string().trim().max(200).nullable(),
+      metro: z.string().trim().max(10).nullable().optional(),
+      metroAirports: z.array(z.string().trim().max(10)).max(12).nullable().optional(),
     })
     .nullable(),
   crew_size: z.number().int().min(1).max(50),

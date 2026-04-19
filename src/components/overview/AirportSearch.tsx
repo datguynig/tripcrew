@@ -183,6 +183,7 @@ export function AirportSearch({
           <div className="max-h-[280px] overflow-y-auto">
             {results.map((a, i) => {
               const active = i === highlight;
+              const isMetro = !!a.metro;
               return (
                 <button
                   key={a.id}
@@ -211,6 +212,16 @@ export function AirportSearch({
                       </div>
                     )}
                   </div>
+                  {isMetro && (
+                    <span
+                      className={`shrink-0 font-mono text-[9px] tracking-[0.18em] uppercase tabular ${
+                        active ? "text-accent" : "text-fg-3"
+                      }`}
+                      aria-label="Metropolitan area"
+                    >
+                      {a.metro} · {a.metroAirports?.length ?? 0}
+                    </span>
+                  )}
                 </button>
               );
             })}

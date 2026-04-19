@@ -106,6 +106,8 @@ export type DraftContext = {
     address: string | null;
     latitude: number | null;
     longitude: number | null;
+    metro?: string | null;
+    metroAirports?: string[] | null;
   } | null;
   budgetTier?: "tight" | "mid" | "lavish" | "custom" | null;
   vibes?: string[];
@@ -227,9 +229,18 @@ function buildUserPrompt(ctx: DraftContext): string {
     const parts = [ctx.origin.name];
     if (ctx.origin.address) parts.push(`(${ctx.origin.address})`);
     lines.push(`origin_airport: ${parts.join(" ")}`);
-    lines.push(
-      "Use this as the departure point when drafting the flights spec cell (e.g. 'LHR → CAI'). Frame day-1 schedule around arrival from this airport.",
-    );
+    if (ctx.origin.metro) {
+      lines.push(
+        `origin_metro: ${ctx.origin.metro} (any of: ${(ctx.origin.metroAirports ?? []).join(", ")})`,
+      );
+      lines.push(
+        "Use the IATA metro code in the flights cell (e.g. 'LON → ARN, ~2h25') rather than committing to a specific airport — the crew may fly from any of the listed airports.",
+      );
+    } else {
+      lines.push(
+        "Use this as the departure point when drafting the flights spec cell (e.g. 'LHR → CAI'). Frame day-1 schedule around arrival from this airport.",
+      );
+    }
   }
   if (ctx.vibes && ctx.vibes.length > 0) {
     lines.push(`vibes: ${ctx.vibes.join(", ")}`);

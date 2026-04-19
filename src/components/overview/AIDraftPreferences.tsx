@@ -87,6 +87,8 @@ export function AIDraftPreferences({
       latitude: a.latitude,
       longitude: a.longitude,
       placeId: a.id || null,
+      metro: a.metro ?? null,
+      metroAirports: a.metroAirports ?? null,
     });
   };
 
@@ -178,6 +180,8 @@ export function AIDraftPreferences({
                       address: origin.address ?? "",
                       latitude: origin.latitude,
                       longitude: origin.longitude,
+                      metro: origin.metro ?? null,
+                      metroAirports: origin.metroAirports ?? null,
                     }
                   : null
               }
