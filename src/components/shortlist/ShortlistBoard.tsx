@@ -183,7 +183,7 @@ export function ShortlistBoard({
       </div>
 
       {filtered.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-line py-14 text-center label text-fg-3">
           {activities.length === 0
             ? "Shortlist empty · activities coming soon"
             : "No activities match this filter"}

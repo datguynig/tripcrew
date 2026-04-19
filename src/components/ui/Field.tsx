@@ -55,7 +55,7 @@ export function Field({
         className={
           hideLabel
             ? "sr-only"
-            : "font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3"
+            : "label-sm text-fg-3"
         }
       >
         {label}

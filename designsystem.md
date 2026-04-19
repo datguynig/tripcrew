@@ -304,19 +304,17 @@ Hero stats pattern (four cells across, `border-r` hairlines). The **inner paddin
 
 Always the first thing inside a `<section>` that isn't the Hero.
 
-### 4.7 Badge (**planned**, not yet built)
+### 4.7 Badge
 
-A component for short uppercase-mono status labels. Currently these are inlined per-component:
+[components/ui/Badge.tsx](src/components/ui/Badge.tsx) — short uppercase-mono status label. Non-interactive; wraps in a `<span>`.
 
-- "Admin" in [CrewManagement](src/components/admin/CrewManagement.tsx)
-- "LOCKED" / "PLANNING" in [Hero](src/components/layout/Hero.tsx)
-- "You" in [CrewList](src/components/crew/CrewList.tsx)
-- "Leading" in [Destinations](src/components/destinations/Destinations.tsx)
-
-Target API:
 ```tsx
-<Badge tone="accent | ok | warn | err | neutral" size="sm | md">LOCKED</Badge>
+<Badge tone="accent | ok | warn | err | neutral | muted" size="sm | md | lg">LOCKED</Badge>
 ```
+
+- `tone` defaults to `muted` (`fg-3`). Use `accent` for "this row is winning"-style signals, `ok/warn/err` for semantic state.
+- `size` defaults to `md` — 10px mono at 0.15em tracking. `sm` is 9px/0.18em (tight inline meta), `lg` is 11px/0.15em (prominent status in a header).
+- Use this component instead of inlining `font-mono text-[10px] tracking-[0.15em] uppercase` on a `<span>`. For static page labels that aren't chips (section labels, field labels), use the `.label`, `.label-sm`, `.label-sm-wide`, `.label-xs` utility classes from §2.2 directly.
 
 ### 4.8 Toast
 
@@ -494,10 +492,10 @@ Before merging a new component, confirm every row:
 
 Tracked gaps between this doc and the current codebase. Not blockers, but address when touching the area:
 
-- **Mixed arbitrary typography**: some existing components still use `font-mono text-[10px] tracking-[0.15em] uppercase` inline instead of the `.label-sm` utility. Migrate as you touch each file.
 - **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
 - **No canonical skeleton loader** (§4.11). The first real need defines the pattern.
 - **Partial-state rail only on StatCell** (§4.11). Rows and grids have no "partially filled" language yet.
+- **Two legitimate typography outliers**: [TripSwitcher](src/components/layout/TripSwitcher.tsx) uses `text-[11px] tracking-[0.18em]` (wider tracking for the brand line); [PriorCrewChips](src/components/invites/PriorCrewChips.tsx) uses `text-[9px] tracking-[0.15em]`. Both fall within §2.2's tracking rules but don't match a named utility. Leave as-is until there's a second use for either variant.
 
 ---
 

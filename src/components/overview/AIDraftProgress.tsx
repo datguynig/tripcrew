@@ -58,7 +58,7 @@ export function AIDraftProgress({ destination }: Props) {
           <span className="text-fg-3">.</span>
         </div>
 
-        <p className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3">
+        <p className="label-sm-wide text-fg-3">
           This usually takes ~10 seconds.
         </p>
 

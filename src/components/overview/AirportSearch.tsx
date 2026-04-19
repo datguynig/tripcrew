@@ -175,7 +175,7 @@ export function AirportSearch({
             <div className="label-sm text-fg-3 tabular">
               Airports · {results.length.toString().padStart(2, "0")}
             </div>
-            <div className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 flex items-center gap-3">
+            <div className="label-xs text-fg-3 flex items-center gap-3">
               <span>↑↓ nav</span>
               <span className="text-accent">↵ pick</span>
             </div>
@@ -214,7 +214,7 @@ export function AirportSearch({
                   </div>
                   {isMetro && (
                     <span
-                      className={`shrink-0 font-mono text-[9px] tracking-[0.18em] uppercase tabular ${
+                      className={`shrink-0 label-xs tabular ${
                         active ? "text-accent" : "text-fg-3"
                       }`}
                       aria-label="Metropolitan area"

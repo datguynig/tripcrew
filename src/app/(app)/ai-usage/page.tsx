@@ -89,14 +89,14 @@ export default async function AiUsagePage() {
       )}
 
       {usage.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-line py-14 text-center label text-fg-3">
           No drafts logged yet
         </div>
       ) : (
         <div className="border border-line overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-line text-fg-3 font-mono text-[10px] tracking-[0.15em] uppercase">
+              <tr className="border-b border-line text-fg-3 label-sm">
                 <th className="text-left py-3 px-4">When</th>
                 <th className="text-left py-3 px-4">Trip</th>
                 <th className="text-left py-3 px-4">User</th>

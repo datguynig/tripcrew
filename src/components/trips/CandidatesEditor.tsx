@@ -150,7 +150,7 @@ export function CandidatesEditor() {
         <button
           type="button"
           onClick={add}
-          className="self-start mt-1 font-mono text-[10px] tracking-[0.18em] uppercase text-accent hover:text-fg transition-colors cursor-pointer"
+          className="self-start mt-1 label-sm-wide text-accent hover:text-fg transition-colors cursor-pointer"
         >
           + Add another
         </button>

@@ -436,7 +436,7 @@ export function Destinations({
     <>
       {deadlineText && (
         <div
-          className={`inline-flex items-center gap-2 font-mono text-[10px] tracking-[0.15em] uppercase py-[6px] px-3 rounded-full border mb-6 ${
+          className={`inline-flex items-center gap-2 label-sm py-[6px] px-3 rounded-full border mb-6 ${
             deadlinePassed
               ? "border-err/40 text-err"
               : "border-line-2 text-fg-2"
@@ -452,7 +452,7 @@ export function Destinations({
       {soloAdmin && (
         <div className="border border-accent/40 bg-accent/[0.06] p-5 mb-7 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-accent mb-1">
+            <div className="label-sm-wide text-accent mb-1">
               Crew of one
             </div>
             <p className="text-[14px] text-fg-2 max-w-[520px]">
@@ -499,7 +499,7 @@ export function Destinations({
       </div>
 
       {ranked.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-line py-14 text-center label text-fg-3">
           No candidates · propose one
         </div>
       ) : (

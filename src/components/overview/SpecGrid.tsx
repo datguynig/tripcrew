@@ -155,7 +155,7 @@ export function SpecGrid({
                 )}
               </div>
 
-              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 mt-2">
+              <div className="label-sm text-fg-3 mt-2">
                 {cell.label.toLowerCase() === "the rule" ? (
                   <InlineTextarea
                     value={cell.sub}
@@ -165,7 +165,7 @@ export function SpecGrid({
                     ariaLabel={`Edit ${cell.label} detail`}
                     emptyLabel="Add detail"
                     onEditingChange={(e) => setEditingIndex(e ? i : null)}
-                    className="font-mono text-[10px] tracking-[0.15em] uppercase"
+                    className="label-sm"
                   />
                 ) : (
                   <InlineEdit
@@ -177,7 +177,7 @@ export function SpecGrid({
                     ariaLabel={`Edit ${cell.label} detail`}
                     emptyLabel="Add detail"
                     onEditingChange={(e) => setEditingIndex(e ? i : null)}
-                    className="inline font-mono text-[10px] tracking-[0.15em] uppercase"
+                    className="inline label-sm"
                   />
                 )}
               </div>

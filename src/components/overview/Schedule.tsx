@@ -176,7 +176,7 @@ export function Schedule({
           <button
             type="button"
             onClick={addDay}
-            className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent hover:text-fg transition-colors cursor-pointer"
+            className="label text-accent hover:text-fg transition-colors cursor-pointer"
           >
             + Add the first day
           </button>
@@ -218,7 +218,7 @@ export function Schedule({
               >
                 <div className="pt-[3px] max-[520px]:flex max-[520px]:items-baseline max-[520px]:gap-3">
                   <div
-                    className={`font-mono text-[10px] tracking-[0.18em] uppercase text-fg-4 tabular mb-[6px] max-[520px]:mb-0 ${
+                    className={`label-sm-wide text-fg-4 tabular mb-[6px] max-[520px]:mb-0 ${
                       isAdmin ? "cursor-grab active:cursor-grabbing" : ""
                     } select-none`}
                     aria-hidden={!isAdmin}
@@ -226,7 +226,7 @@ export function Schedule({
                     {String(i + 1).padStart(2, "0")}
                   </div>
                   <div
-                    className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent tabular select-none"
+                    className="label text-accent tabular select-none"
                     title="Day slots are fixed; drag a row to reorder activities."
                   >
                     {deriveDayLabel(i, startDate)}
@@ -292,7 +292,7 @@ export function Schedule({
             <button
               type="button"
               onClick={addDay}
-              className="w-full py-4 text-center font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 hover:text-accent hover:bg-bg-2 transition-colors cursor-pointer"
+              className="w-full py-4 text-center label-sm-wide text-fg-3 hover:text-accent hover:bg-bg-2 transition-colors cursor-pointer"
             >
               <span aria-hidden>+</span> Add day
             </button>

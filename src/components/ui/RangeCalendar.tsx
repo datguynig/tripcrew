@@ -143,10 +143,10 @@ export function RangeCalendar({
           ‹
         </button>
         <div className="flex-1 grid grid-cols-2 gap-4 max-[640px]:grid-cols-1">
-          <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg text-center">
+          <div className="label text-fg text-center">
             {MONTHS[cursor.m]} {cursor.y}
           </div>
-          <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg text-center max-[640px]:hidden">
+          <div className="label text-fg text-center max-[640px]:hidden">
             {MONTHS[second.m]} {second.y}
           </div>
         </div>

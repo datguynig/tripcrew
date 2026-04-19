@@ -18,7 +18,7 @@ export function AIDraftBadge({ className = "", dot = false }: Props) {
   if (dot) {
     return (
       <span
-        className={`inline-flex items-center gap-[5px] font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 ${className}`}
+        className={`inline-flex items-center gap-[5px] label-xs text-fg-3 ${className}`}
         title="Drafted by AI"
       >
         <span
@@ -31,7 +31,7 @@ export function AIDraftBadge({ className = "", dot = false }: Props) {
   }
   return (
     <span
-      className={`inline-flex items-center gap-[5px] font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 border border-line rounded-[3px] px-[6px] py-[2px] ${className}`}
+      className={`inline-flex items-center gap-[5px] label-xs text-fg-3 border border-line rounded-[3px] px-[6px] py-[2px] ${className}`}
       title="Drafted by AI"
     >
       <span

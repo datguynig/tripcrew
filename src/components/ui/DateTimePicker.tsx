@@ -143,7 +143,7 @@ export function DateTimePicker({
             }}
           />
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-line">
-            <span className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
+            <span className="label-sm text-fg-3">
               Time
             </span>
             <input

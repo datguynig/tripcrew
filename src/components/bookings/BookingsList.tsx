@@ -150,7 +150,7 @@ export function BookingsList({
       </div>
 
       {bookings.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-line py-14 text-center label text-fg-3">
           Nothing to book yet
         </div>
       ) : (

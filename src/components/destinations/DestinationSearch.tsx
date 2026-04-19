@@ -255,7 +255,7 @@ export function DestinationSearch({
             <div className="label-sm text-fg-3 tabular">
               Suggestions · {suggestions.length.toString().padStart(2, "0")}
             </div>
-            <div className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 flex items-center gap-3">
+            <div className="label-xs text-fg-3 flex items-center gap-3">
               <span>↑↓ nav</span>
               <span className="text-accent">↵ pick</span>
             </div>
@@ -294,7 +294,7 @@ export function DestinationSearch({
                   </div>
                   {tail && (
                     <div
-                      className={`font-mono text-[10px] tracking-[0.15em] uppercase shrink-0 ${
+                      className={`label-sm shrink-0 ${
                         active ? "text-fg" : "text-fg-2"
                       }`}
                     >
@@ -380,7 +380,7 @@ function SubmitChip({
   onClick: () => void;
 }) {
   const base =
-    "h-[34px] px-[14px] rounded-[5px] flex items-center gap-[8px] font-mono text-[10px] tracking-[0.18em] uppercase transition-colors disabled:cursor-not-allowed cursor-pointer";
+    "h-[34px] px-[14px] rounded-[5px] flex items-center gap-[8px] label-sm-wide transition-colors disabled:cursor-not-allowed cursor-pointer";
   const style = !enabled
     ? "bg-transparent text-fg-4"
     : matched
@@ -412,7 +412,7 @@ function CoordTicker({
   const lat = `${Math.abs(latitude).toFixed(2)}°${latitude >= 0 ? "N" : "S"}`;
   const lon = `${Math.abs(longitude).toFixed(2)}°${longitude >= 0 ? "E" : "W"}`;
   return (
-    <div className="mt-[10px] flex items-center gap-[10px] font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3 tabular">
+    <div className="mt-[10px] flex items-center gap-[10px] label-sm text-fg-3 tabular">
       <span
         className="w-[5px] h-[5px] rounded-full bg-accent"
         aria-hidden="true"

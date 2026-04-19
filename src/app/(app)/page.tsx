@@ -38,7 +38,7 @@ export default async function Dashboard() {
 
       {trips.length === 0 ? (
         <div className="border border-line py-20 text-center">
-          <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 mb-4">
+          <div className="label text-fg-3 mb-4">
             No trips yet
           </div>
           <div className="text-[17px] text-fg-2 mb-6 max-w-[420px] mx-auto">

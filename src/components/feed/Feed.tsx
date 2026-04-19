@@ -196,10 +196,10 @@ export function Feed({ initial, authorsById, tripId, currentUserId }: Props) {
               }`}
             />
             <div className="flex-1 flex flex-col justify-between p-4 min-w-0">
-              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-2 truncate">
+              <div className="label-sm text-fg-2 truncate">
                 {file.name}
               </div>
-              <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
+              <div className="label-sm text-fg-3">
                 {uploading ? "Uploading…" : formatBytes(file.size)}
               </div>
             </div>
@@ -237,10 +237,10 @@ export function Feed({ initial, authorsById, tripId, currentUserId }: Props) {
                 if (picked) handlePickFile(picked);
               }}
             />
-            <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg-2 mb-2">
+            <div className="label text-fg-2 mb-2">
               Drop or pick a photo
             </div>
-            <div className="font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
+            <div className="label-sm text-fg-3">
               JPEG · PNG · WebP · HEIC · Max 8 MB
             </div>
           </label>
@@ -266,7 +266,7 @@ export function Feed({ initial, authorsById, tripId, currentUserId }: Props) {
       </div>
 
       {posts.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-line py-14 text-center label text-fg-3">
           Feed empty · first to post wins
         </div>
       ) : (
@@ -302,7 +302,7 @@ export function Feed({ initial, authorsById, tripId, currentUserId }: Props) {
                   />
                 )}
                 {imageMissing && (
-                  <div className="w-full aspect-[4/3] bg-bg-3 flex items-center justify-center font-mono text-[10px] tracking-[0.15em] uppercase text-fg-3">
+                  <div className="w-full aspect-[4/3] bg-bg-3 flex items-center justify-center label-sm text-fg-3">
                     Image unavailable
                   </div>
                 )}

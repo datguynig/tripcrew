@@ -133,7 +133,7 @@ export function TripSwitcher({ trips }: Props) {
               role="menuitem"
               className="flex items-center gap-3 px-4 py-[10px] text-[13px] text-accent hover:bg-bg-3 transition-colors"
             >
-              <span className="font-mono text-[11px] tracking-[0.15em] uppercase">
+              <span className="label">
                 + Create trip
               </span>
             </Link>

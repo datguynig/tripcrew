@@ -124,7 +124,7 @@ function MagicLinkForm({ next }: { next: string | null }) {
 
   if (state?.ok) {
     return (
-      <div className="font-mono text-[11px] uppercase tracking-[0.15em] text-fg-2">
+      <div className="label text-fg-2">
         Link sent. Check your inbox.
       </div>
     );

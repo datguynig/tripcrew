@@ -95,7 +95,7 @@ export function AIDraftCTA({
           {tripSlug && (
             <Link
               href={`/trips/${tripSlug}/admin`}
-              className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 hover:text-fg transition-colors"
+              className="label-sm-wide text-fg-3 hover:text-fg transition-colors"
             >
               Or fill manually in admin →
             </Link>

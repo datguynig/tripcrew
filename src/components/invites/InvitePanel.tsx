@@ -115,7 +115,7 @@ export function InvitePanel({ tripId, origin, initial }: Props) {
     <Card padding={7} tone="flat" className="mt-8">
       <div className="flex items-baseline justify-between gap-4 mb-4">
         <div>
-          <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent mb-1">
+          <div className="label text-accent mb-1">
             Invite
           </div>
           <h3 className="text-[20px] font-medium tracking-[-0.02em]">
@@ -137,7 +137,7 @@ export function InvitePanel({ tripId, origin, initial }: Props) {
       </div>
 
       {invites.length === 0 ? (
-        <div className="border border-dashed border-line-2 py-8 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+        <div className="border border-dashed border-line-2 py-8 text-center label text-fg-3">
           No active invite links
         </div>
       ) : (

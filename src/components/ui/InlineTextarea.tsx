@@ -118,7 +118,7 @@ export function InlineTextarea({
       {hasValue ? (
         displayed
       ) : (
-        <span className="text-fg-4 font-mono text-[11px] tracking-[0.15em] uppercase">
+        <span className="text-fg-4 label">
           {emptyLabel}
         </span>
       )}

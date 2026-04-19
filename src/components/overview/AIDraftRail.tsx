@@ -55,7 +55,7 @@ export function AIDraftRail({
     <>
       <div className="mb-2 relative flex items-center justify-between gap-3">
         <span
-          className="inline-flex items-center gap-[5px] font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3"
+          className="inline-flex items-center gap-[5px] label-xs text-fg-3"
           title={draftedAt ? `Drafted by AI · ${relTime(draftedAt)}` : "Drafted by AI"}
         >
           <span
@@ -74,7 +74,7 @@ export function AIDraftRail({
                 aria-haspopup="dialog"
                 aria-expanded={historyOpen}
                 aria-label={`Show previous ${humanSurface(surface)} drafts`}
-                className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 hover:text-fg transition-colors cursor-pointer tabular"
+                className="label-xs text-fg-3 hover:text-fg transition-colors cursor-pointer tabular"
               >
                 <span aria-hidden="true">↺</span> {versionsCount} prev
               </button>
@@ -85,7 +85,7 @@ export function AIDraftRail({
               disabled={disabled}
               title={canRedraft ? "Re-draft this section" : blockedReason ?? undefined}
               aria-label={`Redraft ${humanSurface(surface)}`}
-              className={`font-mono text-[9px] tracking-[0.18em] uppercase transition-colors cursor-pointer disabled:cursor-not-allowed ${
+              className={`label-xs transition-colors cursor-pointer disabled:cursor-not-allowed ${
                 !canRedraft
                   ? "text-fg-4"
                   : "text-fg-3 hover:text-accent"

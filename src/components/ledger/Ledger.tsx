@@ -151,7 +151,7 @@ export function Ledger({
     <>
       <div className="grid grid-cols-3 max-[640px]:grid-cols-1 border border-line mb-7">
         <div className="p-[22px] px-6 border-r border-line max-[640px]:border-r-0 max-[640px]:border-b last:border-r-0 max-[640px]:last:border-b-0">
-          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-[10px]">
+          <div className="label-sm-wide text-fg-3 mb-[10px]">
             Total pooled
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
@@ -160,7 +160,7 @@ export function Ledger({
           </div>
         </div>
         <div className="p-[22px] px-6 border-r border-line max-[640px]:border-r-0 max-[640px]:border-b last:border-r-0 max-[640px]:last:border-b-0">
-          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-[10px]">
+          <div className="label-sm-wide text-fg-3 mb-[10px]">
             Even split
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
@@ -169,7 +169,7 @@ export function Ledger({
           </div>
         </div>
         <div className="p-[22px] px-6">
-          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-[10px]">
+          <div className="label-sm-wide text-fg-3 mb-[10px]">
             You&apos;ve covered
           </div>
           <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
@@ -206,7 +206,7 @@ export function Ledger({
       </div>
 
       {expenses.length === 0 ? (
-        <div className="border border-line py-14 text-center font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3 mb-8">
+        <div className="border border-line py-14 text-center label text-fg-3 mb-8">
           No expenses logged
         </div>
       ) : (
@@ -253,7 +253,7 @@ export function Ledger({
 
       {crew.length >= 2 && expenses.length > 0 && (
         <div className="border border-line p-6">
-          <div className="font-mono text-[10px] tracking-[0.18em] uppercase text-fg-3 mb-4">
+          <div className="label-sm-wide text-fg-3 mb-4">
             Settlement · positive = owed back
           </div>
           {balances.map((b) => {

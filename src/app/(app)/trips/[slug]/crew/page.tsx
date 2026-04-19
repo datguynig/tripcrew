@@ -62,7 +62,7 @@ export default async function CrewPage({
     <section className="py-14 pb-24 section-enter">
       <SectionHeader code="§ 02" title="Crew." lead={lead} />
 
-      <div className="flex justify-between items-baseline mb-6 font-mono text-[11px] tracking-[0.15em] uppercase text-fg-3">
+      <div className="flex justify-between items-baseline mb-6 label text-fg-3">
         <span>
           <b className="text-fg text-[14px] font-medium font-sans tracking-[-0.01em] normal-case mr-1">
             {count}

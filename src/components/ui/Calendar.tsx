@@ -136,7 +136,7 @@ export function Calendar({
         >
           ‹
         </button>
-        <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-fg">
+        <div className="label text-fg">
           {MONTHS[cursor.m]} {cursor.y}
         </div>
         <button
