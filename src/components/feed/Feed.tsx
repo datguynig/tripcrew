@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addPost } from "@/lib/actions/feed";
 import { uploadPostImage } from "@/lib/uploadImage";
+import { useToast } from "@/hooks/useToast";
 
 import type { Post } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
@@ -31,10 +32,11 @@ function formatBytes(n: number): string {
 }
 
 export function Feed({ initial, authorsById, tripId }: Props) {
+  const toast = useToast();
   const [posts, setPosts] = useState<Post[]>(initial);
   const [caption, setCaption] = useState("");
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
-  const [, startTransition] = useTransition();
+  const [isPosting, startTransition] = useTransition();
 
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -124,6 +126,7 @@ export function Feed({ initial, authorsById, tripId }: Props) {
 
   const canPost =
     !uploading &&
+    !isPosting &&
     ((uploadedUrl !== null && !uploadError) || caption.trim().length > 0);
 
   const handlePost = () => {
@@ -133,11 +136,16 @@ export function Feed({ initial, authorsById, tripId }: Props) {
     setCaption("");
     clearFile();
     startTransition(async () => {
-      await addPost({
+      const res = await addPost({
         tripId,
         imageUrl,
         caption: trimmedCap || null,
       });
+      if (res?.error) {
+        toast.error(res.error);
+      } else {
+        toast.success("Posted");
+      }
     });
   };
 
@@ -219,7 +227,7 @@ export function Feed({ initial, authorsById, tripId }: Props) {
         />
         <div className="flex justify-end">
           <Button onClick={handlePost} disabled={!canPost}>
-            {uploading ? "Uploading…" : "Post"}
+            {uploading ? "Uploading…" : isPosting ? "Posting…" : "Post"}
           </Button>
         </div>
       </div>
