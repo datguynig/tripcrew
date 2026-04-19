@@ -1,4 +1,5 @@
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+import { AIDraftRail } from "@/components/overview/AIDraftRail";
 
 type Cell = { label: string; value: string; sub: string };
 
@@ -7,11 +8,19 @@ export function SpecGrid({
   isAdmin,
   tripSlug,
   aiDrafted = false,
+  aiRail,
 }: {
   cells: Cell[];
   isAdmin?: boolean;
   tripSlug?: string;
   aiDrafted?: boolean;
+  aiRail?: {
+    tripId: string;
+    destination: string;
+    draftedAt: string | null;
+    canRedraft: boolean;
+    blockedReason: string | null;
+  };
 }) {
   if (cells.length === 0) {
     return (
@@ -34,11 +43,21 @@ export function SpecGrid({
   }
   return (
     <div className="mb-9">
-      {aiDrafted && (
+      {aiDrafted && aiRail ? (
+        <AIDraftRail
+          tripId={aiRail.tripId}
+          destination={aiRail.destination}
+          surface="spec_grid"
+          draftedAt={aiRail.draftedAt}
+          isAdmin={!!isAdmin}
+          canRedraft={aiRail.canRedraft}
+          blockedReason={aiRail.blockedReason}
+        />
+      ) : aiDrafted ? (
         <div className="flex justify-end mb-2">
           <AIDraftBadge />
         </div>
-      )}
+      ) : null}
       <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line">
       {cells.map((cell, i) => (
         <div

@@ -45,11 +45,18 @@ export type AiPreferences = {
   vibes: AiVibeTag[];
 };
 
+export type TripDraftSurface =
+  | "spec_grid"
+  | "schedule"
+  | "activities"
+  | "bookings";
+
 export type TripMeta = {
   spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
   section_leads?: SectionLeads;
   ai_preferences?: AiPreferences;
+  surface_drafted_at?: Partial<Record<TripDraftSurface, string>>;
 };
 
 export type Trip = {

@@ -9,6 +9,7 @@ import { AIDraftCTA } from "@/components/overview/AIDraftCTA";
 import { AIFeedbackCard } from "@/components/overview/AIFeedbackCard";
 import { aiEnabled as aiConfigured } from "@/lib/ai";
 import { placesEnabled } from "@/lib/places";
+import { getRedraftAvailability } from "@/lib/actions/aiDraft";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,34 @@ export default async function TripOverview({
   const bookingsDone = bookings?.filter((b) => b.done).length ?? 0;
   const kittyTotal =
     expenses?.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
+
+  const aiDrafted = trip.ai_drafted_at !== null;
+  const availability =
+    aiDrafted && isAdmin && user?.profile.ai_enabled && trip.destination
+      ? await getRedraftAvailability(trip.id)
+      : null;
+  const surfaceDraftedAt = trip.meta?.surface_drafted_at ?? {};
+  const aiRailBase =
+    aiDrafted && isAdmin && user?.profile.ai_enabled && trip.destination
+      ? {
+          tripId: trip.id,
+          destination: trip.destination,
+          canRedraft: availability?.ok ?? false,
+          blockedReason: availability?.ok ? null : availability?.reason ?? null,
+        }
+      : undefined;
+  const aiRailSpec = aiRailBase
+    ? {
+        ...aiRailBase,
+        draftedAt: surfaceDraftedAt.spec_grid ?? trip.ai_drafted_at,
+      }
+    : undefined;
+  const aiRailSchedule = aiRailBase
+    ? {
+        ...aiRailBase,
+        draftedAt: surfaceDraftedAt.schedule ?? trip.ai_drafted_at,
+      }
+    : undefined;
 
   const heroTitle = trip.hero_title ?? trip.destination ?? trip.name;
   const heroSubtitle = trip.hero_subtitle;
@@ -122,13 +151,15 @@ export default async function TripOverview({
                     cells={specCells}
                     isAdmin={isAdmin}
                     tripSlug={trip.slug}
-                    aiDrafted={trip.ai_drafted_at !== null}
+                    aiDrafted={aiDrafted}
+                    aiRail={aiRailSpec}
                   />
                   <Schedule
                     rows={scheduleRows}
                     isAdmin={isAdmin}
                     tripSlug={trip.slug}
-                    aiDrafted={trip.ai_drafted_at !== null}
+                    aiDrafted={aiDrafted}
+                    aiRail={aiRailSchedule}
                   />
                 </>
               )}

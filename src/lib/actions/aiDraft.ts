@@ -3,7 +3,14 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { aiEnabled, draftTrip } from "@/lib/ai";
+import {
+  aiEnabled,
+  draftSurface,
+  draftTrip,
+  type DraftSurface,
+  type ScheduleRow,
+  type SpecCell,
+} from "@/lib/ai";
 import { placesEnabled } from "@/lib/places";
 import { checkAiDraftRateLimit } from "@/lib/rateLimit";
 import type { AiPreferences, Trip, TripMeta } from "@/lib/types";
@@ -184,8 +191,6 @@ export async function draftTripAction(input: {
 
   const service = createServiceClient();
 
-  // Log usage first so we always have a record of spend even if the
-  // DB writes below fail partway through.
   await service.from("ai_usage").insert({
     user_id: user.id,
     trip_id: trip.id,
@@ -201,7 +206,21 @@ export async function draftTripAction(input: {
     total_cost_usd: result.usage.totalCostUsd,
   });
 
-  // Activities — find current max position to append cleanly.
+  // A force-redraft replaces existing AI rows rather than stacking on
+  // top of them. Manual rows (ai_drafted=false) are preserved.
+  if (parsed.data.force) {
+    await service
+      .from("activities")
+      .delete()
+      .eq("trip_id", trip.id)
+      .eq("ai_drafted", true);
+    await service
+      .from("bookings")
+      .delete()
+      .eq("trip_id", trip.id)
+      .eq("ai_drafted", true);
+  }
+
   const { data: lastActivity } = await service
     .from("activities")
     .select("position")
@@ -251,11 +270,18 @@ export async function draftTripAction(input: {
   }
 
   // Trip hero + meta + ai_drafted_at — the atomic "done" marker.
+  const nowIso = new Date().toISOString();
   const existingMeta: TripMeta = trip.meta ?? {};
   const nextMeta: TripMeta = {
     ...existingMeta,
     spec_grid: result.draft.spec_grid,
     schedule: result.draft.schedule,
+    surface_drafted_at: {
+      spec_grid: nowIso,
+      schedule: nowIso,
+      activities: nowIso,
+      bookings: nowIso,
+    },
     ...(prefs ? { ai_preferences: prefs } : {}),
   };
 
@@ -265,7 +291,7 @@ export async function draftTripAction(input: {
       hero_title: result.draft.hero_title,
       hero_subtitle: result.draft.hero_subtitle,
       meta: nextMeta,
-      ai_drafted_at: new Date().toISOString(),
+      ai_drafted_at: nowIso,
     })
     .eq("id", trip.id);
 
@@ -285,6 +311,284 @@ export async function draftTripAction(input: {
       bookings: bookingRows.length,
     },
   };
+}
+
+const redraftSectionSchema = z.object({
+  tripId: z.string().uuid(),
+  surface: z.enum(["spec_grid", "schedule", "activities", "bookings"]),
+  feedbackNote: z.string().trim().max(500).optional().nullable(),
+});
+
+export async function redraftSection(input: {
+  tripId: string;
+  surface: DraftSurface;
+  feedbackNote?: string | null;
+}) {
+  const parsed = redraftSectionSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
+  if (!aiEnabled()) return { error: "AI drafting is not configured" };
+  if (!placesEnabled()) return { error: "Places lookup is not configured" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const [{ data: profile }, { data: member }, { data: trip }] =
+    await Promise.all([
+      supabase
+        .from("profiles")
+        .select("ai_enabled")
+        .eq("id", user.id)
+        .maybeSingle<{ ai_enabled: boolean }>(),
+      supabase
+        .from("trip_members")
+        .select("role")
+        .eq("trip_id", parsed.data.tripId)
+        .eq("user_id", user.id)
+        .maybeSingle<{ role: "admin" | "member" }>(),
+      supabase
+        .from("trips")
+        .select("*")
+        .eq("id", parsed.data.tripId)
+        .maybeSingle<Trip>(),
+    ]);
+
+  if (!profile?.ai_enabled) return { error: "Not in the AI beta" };
+  if (member?.role !== "admin") return { error: "Admins only" };
+  if (!trip) return { error: "Trip not found" };
+  if (trip.status !== "locked") return { error: "Lock the destination first" };
+  if (!trip.destination) return { error: "Trip destination is empty" };
+  if (trip.ai_drafted_at === null) {
+    return { error: "Run the first draft before redrafting a section" };
+  }
+
+  const gate = await checkAiDraftRateLimit(createServiceClient(), {
+    userId: user.id,
+    tripId: trip.id,
+  });
+  if (!gate.ok) return { error: gate.reason };
+
+  const { data: coords } = await supabase
+    .from("destination_candidates")
+    .select("longitude, latitude, title")
+    .eq("trip_id", trip.id)
+    .not("longitude", "is", null)
+    .not("latitude", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(10)
+    .returns<
+      Array<{ longitude: number; latitude: number; title: string }>
+    >();
+  const matched =
+    (coords ?? []).find((c) => c.title === trip.destination) ?? coords?.[0];
+
+  const { count: crewCount } = await supabase
+    .from("trip_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("trip_id", trip.id);
+
+  const prefs = trip.meta?.ai_preferences ?? null;
+  const effectiveCrewSize =
+    prefs?.crew_size ?? trip.target_crew_size ?? crewCount ?? 4;
+  const effectiveBudget =
+    prefs?.budget_tier === "custom"
+      ? (prefs.budget_custom_pp ?? trip.target_budget_pp)
+      : prefs?.budget_tier === "tight"
+        ? 400
+        : prefs?.budget_tier === "lavish"
+          ? 2500
+          : prefs?.budget_tier === "mid"
+            ? 950
+            : trip.target_budget_pp;
+
+  const service = createServiceClient();
+  const [{ data: currentActivities }, { data: currentBookings }] =
+    await Promise.all([
+      service
+        .from("activities")
+        .select("title, meta, category, ai_drafted")
+        .eq("trip_id", trip.id)
+        .order("position", { ascending: true })
+        .returns<
+          Array<{
+            title: string;
+            meta: string | null;
+            category: "day" | "night";
+            ai_drafted: boolean;
+          }>
+        >(),
+      service
+        .from("bookings")
+        .select("title, ai_drafted")
+        .eq("trip_id", trip.id)
+        .order("position", { ascending: true })
+        .returns<Array<{ title: string; ai_drafted: boolean }>>(),
+    ]);
+
+  let result;
+  try {
+    result = await draftSurface({
+      surface: parsed.data.surface,
+      ctx: {
+        destination: trip.destination,
+        destinationLatitude: matched?.latitude ?? null,
+        destinationLongitude: matched?.longitude ?? null,
+        startDate: trip.start_date,
+        endDate: trip.end_date,
+        crewSize: effectiveCrewSize,
+        budgetPerHead: effectiveBudget,
+        currency: trip.currency ?? "GBP",
+        origin: prefs?.origin ?? null,
+        budgetTier: prefs?.budget_tier ?? null,
+        vibes: prefs?.vibes ?? [],
+      },
+      existing: {
+        hero_title: trip.hero_title,
+        hero_subtitle: trip.hero_subtitle,
+        spec_grid: trip.meta?.spec_grid,
+        schedule: trip.meta?.schedule,
+        activities: currentActivities ?? undefined,
+        bookings: currentBookings ?? undefined,
+      },
+      feedbackNote: parsed.data.feedbackNote ?? null,
+    });
+  } catch (err) {
+    console.error("[redraftSection] generation failed", err);
+    return {
+      error:
+        err instanceof Error
+          ? `Redraft failed: ${err.message}`
+          : "Redraft failed",
+    };
+  }
+
+  await service.from("ai_usage").insert({
+    user_id: user.id,
+    trip_id: trip.id,
+    operation: `redraft_${parsed.data.surface}`,
+    provider: result.usage.provider,
+    model: result.usage.model,
+    input_tokens: result.usage.inputTokens,
+    output_tokens: result.usage.outputTokens,
+    thinking_tokens: result.usage.thinkingTokens,
+    ai_cost_usd: result.usage.aiCostUsd,
+    places_requests: result.usage.placesRequests,
+    places_cost_usd: result.usage.placesCostUsd,
+    total_cost_usd: result.usage.totalCostUsd,
+  });
+
+  const nowIso = new Date().toISOString();
+  const existingMeta: TripMeta = trip.meta ?? {};
+  const nextMeta: TripMeta = {
+    ...existingMeta,
+    surface_drafted_at: {
+      ...(existingMeta.surface_drafted_at ?? {}),
+      [result.surface]: nowIso,
+    },
+  };
+
+  if (result.surface === "spec_grid") {
+    nextMeta.spec_grid = result.value as SpecCell[];
+  } else if (result.surface === "schedule") {
+    nextMeta.schedule = result.value as ScheduleRow[];
+  } else if (result.surface === "activities") {
+    await service
+      .from("activities")
+      .delete()
+      .eq("trip_id", trip.id)
+      .eq("ai_drafted", true);
+    const rows = result.value.map((a, i) => ({
+      trip_id: trip.id,
+      title: a.title,
+      meta: a.meta || null,
+      category: a.category,
+      position: 1000 + i,
+      ai_drafted: true,
+    }));
+    const { error: actErr } = await service.from("activities").insert(rows);
+    if (actErr) {
+      console.error("[redraftSection] activities insert failed", actErr);
+      return { error: "Redraft generated but failed to save. Try again." };
+    }
+  } else {
+    await service
+      .from("bookings")
+      .delete()
+      .eq("trip_id", trip.id)
+      .eq("ai_drafted", true);
+    const rows = result.value.map((b, i) => ({
+      trip_id: trip.id,
+      title: b.title,
+      position: 1000 + i,
+      created_by: user.id,
+      ai_drafted: true,
+    }));
+    const { error: bookErr } = await service.from("bookings").insert(rows);
+    if (bookErr) {
+      console.error("[redraftSection] bookings insert failed", bookErr);
+      return { error: "Redraft generated but failed to save. Try again." };
+    }
+  }
+
+  const { error: tripErr } = await service
+    .from("trips")
+    .update({ meta: nextMeta })
+    .eq("id", trip.id);
+  if (tripErr) {
+    console.error("[redraftSection] trip update failed", tripErr);
+    return { error: "Redraft generated but failed to save. Try again." };
+  }
+
+  if (parsed.data.feedbackNote && parsed.data.feedbackNote.trim()) {
+    await service.from("ai_feedback").insert({
+      trip_id: trip.id,
+      user_id: user.id,
+      surface:
+        parsed.data.surface === "spec_grid" ? "hero_spec" : parsed.data.surface,
+      rating: -1,
+      note: parsed.data.feedbackNote.trim(),
+    });
+  }
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/shortlist`);
+  revalidatePath(`/trips/${trip.slug}/bookings`);
+
+  return {
+    ok: true as const,
+    surface: parsed.data.surface,
+  };
+}
+
+export async function getRedraftAvailability(tripId: string) {
+  const parsed = z.string().uuid().safeParse(tripId);
+  if (!parsed.success) return { ok: false as const, reason: "Invalid trip" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false as const, reason: "Not signed in" };
+
+  const { data: member } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", parsed.data)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: "admin" | "member" }>();
+  if (member?.role !== "admin") {
+    return { ok: false as const, reason: "Admins only" };
+  }
+
+  const verdict = await checkAiDraftRateLimit(createServiceClient(), {
+    userId: user.id,
+    tripId: parsed.data,
+  });
+  if (verdict.ok) return { ok: true as const };
+  return { ok: false as const, reason: verdict.reason };
 }
 
 const feedbackSchema = z.object({

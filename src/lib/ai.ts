@@ -62,6 +62,25 @@ export const TripDraftSchema = z.object({
 });
 
 export type TripDraft = z.infer<typeof TripDraftSchema>;
+export type SpecCell = z.infer<typeof SpecCellSchema>;
+export type ScheduleRow = z.infer<typeof ScheduleRowSchema>;
+export type ActivityBrief = z.infer<typeof ActivitySchema>;
+export type BookingBrief = z.infer<typeof BookingSchema>;
+
+export type DraftSurface = "spec_grid" | "schedule" | "activities" | "bookings";
+
+const SpecGridOnlySchema = z.object({
+  spec_grid: z.array(SpecCellSchema).length(4),
+});
+const ScheduleOnlySchema = z.object({
+  schedule: z.array(ScheduleRowSchema).min(1).max(10),
+});
+const ActivitiesOnlySchema = z.object({
+  activities: z.array(ActivitySchema).min(6).max(20),
+});
+const BookingsOnlySchema = z.object({
+  bookings: z.array(BookingSchema).min(3).max(12),
+});
 
 // --- Input / output types --------------------------------------------------
 
@@ -228,6 +247,98 @@ function extractJson(text: string): unknown {
 }
 
 export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
+  const { value, usage } = await runGeminiLoop({
+    systemInstruction: SYSTEM_PROMPT,
+    userPrompt: buildUserPrompt(ctx),
+    schema: TripDraftSchema,
+    biasLatitude: ctx.destinationLatitude ?? 0,
+    biasLongitude: ctx.destinationLongitude ?? 0,
+  });
+  return { draft: value, usage };
+}
+
+export type SurfaceDraftInput = {
+  surface: DraftSurface;
+  ctx: DraftContext;
+  existing: {
+    hero_title?: string | null;
+    hero_subtitle?: string | null;
+    spec_grid?: SpecCell[];
+    schedule?: ScheduleRow[];
+    activities?: Array<{ title: string; meta?: string | null; category: "day" | "night" }>;
+    bookings?: Array<{ title: string }>;
+  };
+  feedbackNote?: string | null;
+};
+
+export type SurfaceDraftResult =
+  | { surface: "spec_grid"; value: SpecCell[]; usage: DraftUsage }
+  | { surface: "schedule"; value: ScheduleRow[]; usage: DraftUsage }
+  | { surface: "activities"; value: ActivityBrief[]; usage: DraftUsage }
+  | { surface: "bookings"; value: BookingBrief[]; usage: DraftUsage };
+
+export async function draftSurface(
+  input: SurfaceDraftInput,
+): Promise<SurfaceDraftResult> {
+  const { surface, ctx } = input;
+  const systemInstruction = buildSurfaceSystemPrompt(surface);
+  const userPrompt = buildSurfaceUserPrompt(input);
+  const biasLatitude = ctx.destinationLatitude ?? 0;
+  const biasLongitude = ctx.destinationLongitude ?? 0;
+
+  if (surface === "spec_grid") {
+    const { value, usage } = await runGeminiLoop({
+      systemInstruction,
+      userPrompt,
+      schema: SpecGridOnlySchema,
+      biasLatitude,
+      biasLongitude,
+    });
+    return { surface, value: value.spec_grid, usage };
+  }
+  if (surface === "schedule") {
+    const { value, usage } = await runGeminiLoop({
+      systemInstruction,
+      userPrompt,
+      schema: ScheduleOnlySchema,
+      biasLatitude,
+      biasLongitude,
+    });
+    return { surface, value: value.schedule, usage };
+  }
+  if (surface === "activities") {
+    const { value, usage } = await runGeminiLoop({
+      systemInstruction,
+      userPrompt,
+      schema: ActivitiesOnlySchema,
+      biasLatitude,
+      biasLongitude,
+    });
+    return { surface, value: value.activities, usage };
+  }
+  const { value, usage } = await runGeminiLoop({
+    systemInstruction,
+    userPrompt,
+    schema: BookingsOnlySchema,
+    biasLatitude,
+    biasLongitude,
+  });
+  return { surface: "bookings", value: value.bookings, usage };
+}
+
+async function runGeminiLoop<T>({
+  systemInstruction,
+  userPrompt,
+  schema,
+  biasLatitude,
+  biasLongitude,
+}: {
+  systemInstruction: string;
+  userPrompt: string;
+  schema: z.ZodSchema<T>;
+  biasLatitude: number;
+  biasLongitude: number;
+}): Promise<{ value: T; usage: DraftUsage }> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY is not set");
 
@@ -239,7 +350,7 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
   // use when thinking is enabled. Reconstructing the turn ourselves
   // drops the signature → INVALID_ARGUMENT from the API.
   const contents: Content[] = [
-    { role: "user", parts: [{ text: buildUserPrompt(ctx) }] },
+    { role: "user", parts: [{ text: userPrompt }] },
   ];
 
   let placesRequests = 0;
@@ -247,17 +358,12 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
   let outputTokens = 0;
   let thinkingTokens = 0;
 
-  // Location bias for Places calls. If we don't have coords (pre-Mapbox
-  // trips), bias is degraded but searchText still works — tweak later.
-  const biasLat = ctx.destinationLatitude ?? 0;
-  const biasLng = ctx.destinationLongitude ?? 0;
-
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
     const response = await client.models.generateContent({
       model: MODEL,
       contents,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction,
         tools: [{ functionDeclarations: [SEARCH_PLACES_TOOL] }],
         thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
         temperature: 0.7,
@@ -280,15 +386,13 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
         if (query && placesRequests < MAX_PLACES_REQUESTS) {
           placesRequests++;
           const hits = await searchText(query, {
-            latitude: biasLat,
-            longitude: biasLng,
+            latitude: biasLatitude,
+            longitude: biasLongitude,
             radiusMeters: 25_000,
             maxResults: 6,
           });
           results = hits;
         }
-        // Echo the model's full content back — preserves thoughts +
-        // thoughtSignature on the functionCall part.
         contents.push(modelContent);
         contents.push({
           role: "user",
@@ -307,7 +411,7 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
 
     const text = response.text ?? "";
     const parsedUnknown = extractJson(text);
-    const draft = TripDraftSchema.parse(parsedUnknown);
+    const value = schema.parse(parsedUnknown);
 
     const aiCostUsd =
       inputTokens * GEMINI_INPUT_USD_PER_TOKEN +
@@ -315,7 +419,7 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
     const placesCostUsd = placesRequests * PLACES_SEARCH_USD_PER_REQUEST;
 
     return {
-      draft,
+      value,
       usage: {
         provider: "gemini",
         model: MODEL,
@@ -333,6 +437,120 @@ export async function draftTrip(ctx: DraftContext): Promise<DraftResult> {
   throw new Error(
     `AI draft exceeded ${MAX_TOOL_ITERATIONS} tool iterations without converging on a final response`,
   );
+}
+
+function buildSurfaceSystemPrompt(surface: DraftSurface): string {
+  const shared = [
+    "You are the trip-planning assistant for Tripcrew, a collaborative",
+    "group-trip app. The crew has already drafted this trip once — you",
+    "are re-drafting a single section. Stay consistent with the other",
+    "sections already in place. Use the searchPlaces tool for any",
+    "specific venue you name.",
+    "",
+    "Voice: tight, editorial, confident. Short sentences. Monocle, not",
+    "AirTravel Weekly.",
+    "",
+  ].join("\n");
+
+  const surfaceRules: Record<DraftSurface, string> = {
+    spec_grid: [
+      "Output ONLY the spec_grid: exactly 4 cells. Suggested labels:",
+      '"Base" (where they sleep), "Flights" (route + duration), "Per head"',
+      '(budget value), "The rule" (a single destination-specific constraint).',
+      "",
+      "Respond with a SINGLE JSON object, no prose:",
+      '{ "spec_grid": [ { "label": string, "value": string, "sub": string }, ... × 4 ] }',
+    ].join("\n"),
+    schedule: [
+      "Output ONLY the schedule. One row per trip day (inferred from",
+      "start + end date), heading + 1–3 sentence body. Name specific",
+      "venues; order by time of day.",
+      "",
+      "Respond with a SINGLE JSON object, no prose:",
+      '{ "schedule": [ { "day_label": string, "heading": string, "body": string }, ... ] }',
+    ].join("\n"),
+    activities: [
+      "Output ONLY the activities. 6–20 items, mix day + night,",
+      'grounded in real venues. `meta` is an all-caps mono label like "2H · €35".',
+      "",
+      "Respond with a SINGLE JSON object, no prose:",
+      '{ "activities": [ { "title": string, "meta": string, "category": "day"|"night" }, ... ] }',
+    ].join("\n"),
+    bookings: [
+      "Output ONLY the bookings. 3–12 actionable items the crew must",
+      'book or reserve in advance (e.g. "Book Michelin dinner at Belcanto Fri night").',
+      "",
+      "Respond with a SINGLE JSON object, no prose:",
+      '{ "bookings": [ { "title": string }, ... ] }',
+    ].join("\n"),
+  };
+
+  return shared + surfaceRules[surface];
+}
+
+function buildSurfaceUserPrompt(input: SurfaceDraftInput): string {
+  const { surface, ctx, existing, feedbackNote } = input;
+  const lines = [
+    `destination: ${ctx.destination}`,
+    `start_date: ${ctx.startDate ?? "TBD"}`,
+    `end_date: ${ctx.endDate ?? "TBD"}`,
+    `crew_size: ${ctx.crewSize}`,
+    `budget_per_head: ${
+      ctx.budgetPerHead !== null ? `${ctx.budgetPerHead} ${ctx.currency}` : "unset"
+    }`,
+  ];
+  if (ctx.origin?.name) {
+    lines.push(`origin_airport: ${ctx.origin.name}`);
+  }
+  if (ctx.vibes && ctx.vibes.length > 0) {
+    lines.push(`vibes: ${ctx.vibes.join(", ")}`);
+  }
+
+  if (existing.hero_title) {
+    lines.push("", `hero_title: ${existing.hero_title}`);
+  }
+  if (existing.hero_subtitle) {
+    lines.push(`hero_subtitle: ${existing.hero_subtitle}`);
+  }
+
+  const includeSpec = surface !== "spec_grid" && existing.spec_grid?.length;
+  const includeSchedule = surface !== "schedule" && existing.schedule?.length;
+  const includeActivities =
+    surface !== "activities" && existing.activities?.length;
+  const includeBookings = surface !== "bookings" && existing.bookings?.length;
+
+  if (includeSpec) {
+    lines.push("", "existing spec_grid:");
+    for (const c of existing.spec_grid!) {
+      lines.push(`- ${c.label}: ${c.value}${c.sub ? ` (${c.sub})` : ""}`);
+    }
+  }
+  if (includeSchedule) {
+    lines.push("", "existing schedule:");
+    for (const row of existing.schedule!) {
+      lines.push(`- ${row.day_label}: ${row.heading}`);
+    }
+  }
+  if (includeActivities) {
+    lines.push("", "existing activities (sample):");
+    for (const a of existing.activities!.slice(0, 8)) {
+      lines.push(`- ${a.title}${a.meta ? ` — ${a.meta}` : ""}`);
+    }
+  }
+  if (includeBookings) {
+    lines.push("", "existing bookings:");
+    for (const b of existing.bookings!.slice(0, 8)) {
+      lines.push(`- ${b.title}`);
+    }
+  }
+
+  if (feedbackNote && feedbackNote.trim()) {
+    lines.push("", `the crew said: "${feedbackNote.trim()}"`);
+    lines.push("Address this feedback in the new draft.");
+  }
+
+  lines.push("", `Re-draft the ${surface}.`);
+  return lines.join("\n");
 }
 
 function round4(n: number): number {

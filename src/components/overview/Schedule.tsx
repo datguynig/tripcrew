@@ -1,4 +1,5 @@
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
+import { AIDraftRail } from "@/components/overview/AIDraftRail";
 
 type Row = { day_label: string; heading: string; body: string };
 
@@ -7,11 +8,19 @@ export function Schedule({
   isAdmin,
   tripSlug,
   aiDrafted = false,
+  aiRail,
 }: {
   rows: Row[];
   isAdmin?: boolean;
   tripSlug?: string;
   aiDrafted?: boolean;
+  aiRail?: {
+    tripId: string;
+    destination: string;
+    draftedAt: string | null;
+    canRedraft: boolean;
+    blockedReason: string | null;
+  };
 }) {
   if (rows.length === 0) {
     return (
@@ -32,11 +41,21 @@ export function Schedule({
   }
   return (
     <div>
-      {aiDrafted && (
+      {aiDrafted && aiRail ? (
+        <AIDraftRail
+          tripId={aiRail.tripId}
+          destination={aiRail.destination}
+          surface="schedule"
+          draftedAt={aiRail.draftedAt}
+          isAdmin={!!isAdmin}
+          canRedraft={aiRail.canRedraft}
+          blockedReason={aiRail.blockedReason}
+        />
+      ) : aiDrafted ? (
         <div className="flex justify-end mb-2">
           <AIDraftBadge />
         </div>
-      )}
+      ) : null}
       <div className="border border-line">
       {rows.map((row, i) => (
         <div
