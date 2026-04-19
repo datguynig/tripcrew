@@ -162,9 +162,9 @@ export function BookingsList({
               key={b.id}
               className={`group grid ${
                 showReroll
-                  ? "grid-cols-[24px_28px_1fr_180px_36px] max-[640px]:grid-cols-[24px_28px_1fr_36px]"
-                  : "grid-cols-[28px_1fr_180px_36px] max-[640px]:grid-cols-[28px_1fr_36px]"
-              } items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 ${
+                  ? "grid-cols-[24px_28px_1fr_180px_36px] max-[520px]:grid-cols-[24px_28px_1fr_36px]"
+                  : "grid-cols-[28px_1fr_180px_36px] max-[520px]:grid-cols-[28px_1fr_36px]"
+              } items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 max-[400px]:gap-3 ${
                 b.done ? "opacity-50" : ""
               }`}
             >
@@ -199,7 +199,7 @@ export function BookingsList({
               <select
                 value={b.assignee_id ?? ""}
                 onChange={(e) => handleAssign(b.id, e.target.value || null)}
-                className="max-[640px]:hidden bg-bg-2 border border-line text-fg px-3 py-2 text-[11px] rounded-md cursor-pointer font-mono tracking-[0.05em] uppercase w-full hover:border-line-2 focus:outline focus:outline-1 focus:outline-accent focus:-outline-offset-1"
+                className="max-[520px]:hidden bg-bg-2 border border-line text-fg px-3 py-2 text-[11px] rounded-md cursor-pointer font-mono tracking-[0.05em] uppercase w-full hover:border-line-2 focus:outline focus:outline-1 focus:outline-accent focus:-outline-offset-1"
               >
                 <option value="">Unassigned</option>
                 {crew.map((c) => (

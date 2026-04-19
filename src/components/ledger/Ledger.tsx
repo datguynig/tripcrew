@@ -149,21 +149,21 @@ export function Ledger({
 
   return (
     <>
-      <div className="grid grid-cols-3 max-[640px]:grid-cols-1 border border-line mb-7">
-        <div className="p-[22px] px-6 border-r border-line max-[640px]:border-r-0 max-[640px]:border-b last:border-r-0 max-[640px]:last:border-b-0">
+      <div className="grid grid-cols-3 max-[780px]:grid-cols-1 border border-line mb-7">
+        <div className="p-[22px] px-6 border-r border-line max-[780px]:border-r-0 max-[780px]:border-b last:border-r-0 max-[780px]:last:border-b-0">
           <div className="label-sm-wide text-fg-3 mb-[10px]">
             Total pooled
           </div>
-          <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
+          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
             <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(total).toLocaleString()}
           </div>
         </div>
-        <div className="p-[22px] px-6 border-r border-line max-[640px]:border-r-0 max-[640px]:border-b last:border-r-0 max-[640px]:last:border-b-0">
+        <div className="p-[22px] px-6 border-r border-line max-[780px]:border-r-0 max-[780px]:border-b last:border-r-0 max-[780px]:last:border-b-0">
           <div className="label-sm-wide text-fg-3 mb-[10px]">
             Even split
           </div>
-          <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
+          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
             <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(perPerson).toLocaleString()}
           </div>
@@ -172,14 +172,14 @@ export function Ledger({
           <div className="label-sm-wide text-fg-3 mb-[10px]">
             You&apos;ve covered
           </div>
-          <div className="text-4xl font-medium tracking-[-0.03em] leading-none tabular-nums">
+          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
             <span className="text-fg-3 text-lg font-normal">{symbol}</span>
             {Math.round(myTotal).toLocaleString()}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_160px_auto] max-[640px]:grid-cols-1 gap-2 mb-5">
+      <div className="grid grid-cols-[1fr_160px_auto] max-[520px]:grid-cols-1 gap-2 mb-5">
         <input
           type="text"
           value={desc}

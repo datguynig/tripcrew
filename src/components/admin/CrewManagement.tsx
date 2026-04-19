@@ -77,7 +77,7 @@ export function CrewManagement({ tripId, currentUserId, members }: Props) {
         return (
           <li
             key={m.user_id}
-            className="flex items-center justify-between gap-3 py-3"
+            className="flex items-center justify-between gap-3 py-3 max-[520px]:flex-col max-[520px]:items-start"
           >
             <div className="min-w-0">
               <div className="text-[15px] font-medium flex items-center gap-2">
@@ -88,7 +88,7 @@ export function CrewManagement({ tripId, currentUserId, members }: Props) {
                 {isAdmin ? "Admin" : "Member"}
               </Badge>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 max-[520px]:w-full max-[520px]:justify-end">
               {isSelf ? (
                 <Badge tone="muted">No self-actions</Badge>
               ) : (

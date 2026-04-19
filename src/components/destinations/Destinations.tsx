@@ -515,7 +515,7 @@ export function Destinations({
                 key={c.id}
                 className="grid grid-cols-[1fr_220px_160px_36px] max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5"
               >
-                <div className="flex gap-3 items-start">
+                <div className="flex gap-3 items-start max-[400px]:flex-col max-[400px]:gap-2">
                   {c.longitude !== null && c.latitude !== null && (
                     <StaticMap
                       longitude={c.longitude}

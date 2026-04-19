@@ -103,7 +103,7 @@ export function TripSwitcher({ trips }: Props) {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-[calc(100%+10px)] z-50 min-w-[320px] max-w-[420px] bg-bg-2 border border-line rounded-md shadow-lg py-2"
+          className="absolute left-0 top-[calc(100%+10px)] z-50 min-w-[280px] max-w-[420px] bg-bg-2 border border-line rounded-md shadow-lg py-2"
         >
           {trips.length === 0 && (
             <div className="px-4 py-3 text-[13px] text-fg-2">
