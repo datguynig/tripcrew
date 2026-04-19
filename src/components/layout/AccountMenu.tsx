@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Badge } from "@/components/ui/Badge";
 import { getInitials } from "@/lib/initials";
 import type { Profile } from "@/lib/types";
 
@@ -75,10 +74,6 @@ export function AccountMenu({ profile }: Props) {
           aria-label="Account"
           className="absolute right-0 top-[calc(100%+10px)] z-50 min-w-[240px] max-w-[calc(100vw-20px)] bg-bg-2 border border-line rounded-md shadow-lg py-2"
         >
-          <Badge tone="muted" size="sm" className="block px-4 pt-2 pb-1">
-            Account
-          </Badge>
-
           <Link
             href="/account"
             role="menuitem"
