@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
 import { AIDraftRail } from "@/components/overview/AIDraftRail";
 import { InlineEdit } from "@/components/ui/InlineEdit";
@@ -41,6 +41,13 @@ export function SpecGrid({
   const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+  // Drop the optimistic overlay once the server's revalidated cells
+  // land. Same reasoning as Schedule — avoids a visible flicker back
+  // to the stale prop between optimistic-clear and RSC re-render.
+  useEffect(() => {
+    setOptimistic(null);
+  }, [cells]);
+
   const displayed: SpecItem[] =
     optimistic ??
     (cells.length > 0
@@ -79,7 +86,6 @@ export function SpecGrid({
       toast.error(res.error);
       return false;
     }
-    setOptimistic(null);
     return true;
   };
 

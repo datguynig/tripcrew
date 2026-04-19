@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
 import { AIDraftRail } from "@/components/overview/AIDraftRail";
 import { InlineEdit } from "@/components/ui/InlineEdit";
@@ -61,6 +61,13 @@ export function Schedule({
   const [dragFrom, setDragFrom] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<number | null>(null);
 
+  // Clear the optimistic overlay once the server's revalidated rows
+  // land. Doing this in the action handler instead would briefly flash
+  // the stale rows prop between optimistic-clear and RSC re-render.
+  useEffect(() => {
+    setOptimistic(null);
+  }, [rows]);
+
   const displayed = optimistic ?? rows;
 
   const commitRow = async (
@@ -76,7 +83,6 @@ export function Schedule({
       toast.error(res.error);
       return false;
     }
-    setOptimistic(null);
     return true;
   };
 
@@ -91,9 +97,7 @@ export function Schedule({
     if (res?.error) {
       setOptimistic(prev);
       toast.error(res.error);
-      return;
     }
-    setOptimistic(null);
   };
 
   const addDay = async () => {
@@ -114,7 +118,6 @@ export function Schedule({
       toast.error(res.error);
       return;
     }
-    setOptimistic(null);
     toast.reversible({
       message: `Removed "${removed.heading || `day ${i + 1}`}"`,
       actionLabel: "Undo",
