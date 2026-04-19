@@ -15,7 +15,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar profile={user.profile} trips={trips} />
-      <main className="flex-1 max-w-[1280px] mx-auto w-full px-7">
+      <main className="flex-1 max-w-[1280px] mx-auto w-full px-7 max-[520px]:px-5">
         {children}
       </main>
     </div>
