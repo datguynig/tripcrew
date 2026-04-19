@@ -14,6 +14,7 @@ import {
 } from "@/lib/ai";
 import { placesEnabled } from "@/lib/places";
 import { checkAiDraftRateLimit } from "@/lib/rateLimit";
+import { previewOf, recordDraftVersion } from "@/lib/aiVersions";
 import type { AiPreferences, Trip, TripMeta } from "@/lib/types";
 
 /**
@@ -215,6 +216,44 @@ export async function draftTripAction(input: {
   // A force-redraft replaces existing AI rows rather than stacking on
   // top of them. Manual rows (ai_drafted=false) are preserved.
   if (parsed.data.force) {
+    // Snapshot everything BEFORE wiping — gives the admin a full
+    // rollback option from AIDraftHistory.
+    const { data: currentActivities } = await service
+      .from("activities")
+      .select("title, meta, category, position, ai_drafted")
+      .eq("trip_id", trip.id)
+      .returns<
+        Array<{
+          title: string;
+          meta: string | null;
+          category: "day" | "night";
+          position: number;
+          ai_drafted: boolean;
+        }>
+      >();
+    const { data: currentBookings } = await service
+      .from("bookings")
+      .select("title, position, ai_drafted")
+      .eq("trip_id", trip.id)
+      .returns<
+        Array<{ title: string; position: number; ai_drafted: boolean }>
+      >();
+    const snapshot = {
+      hero_title: trip.hero_title,
+      hero_subtitle: trip.hero_subtitle,
+      spec_grid: trip.meta?.spec_grid ?? null,
+      schedule: trip.meta?.schedule ?? null,
+      activities: currentActivities ?? [],
+      bookings: currentBookings ?? [],
+    };
+    await recordDraftVersion(service, {
+      tripId: trip.id,
+      surface: "full",
+      content: snapshot,
+      preview: previewOf("full", snapshot),
+      userId: user.id,
+    });
+
     await service
       .from("activities")
       .delete()
@@ -496,11 +535,46 @@ export async function redraftSection(input: {
     },
   };
 
+  // Snapshot the pre-write state of just this surface so
+  // AIDraftHistory can restore it.
   if (result.surface === "spec_grid") {
+    const snap = { spec_grid: trip.meta?.spec_grid ?? [] };
+    await recordDraftVersion(service, {
+      tripId: trip.id,
+      surface: "spec_grid",
+      content: snap,
+      preview: previewOf("spec_grid", snap),
+      userId: user.id,
+    });
     nextMeta.spec_grid = result.value as SpecCell[];
   } else if (result.surface === "schedule") {
+    const snap = { schedule: trip.meta?.schedule ?? [] };
+    await recordDraftVersion(service, {
+      tripId: trip.id,
+      surface: "schedule",
+      content: snap,
+      preview: previewOf("schedule", snap),
+      userId: user.id,
+    });
     nextMeta.schedule = result.value as ScheduleRow[];
   } else if (result.surface === "activities") {
+    const snap = {
+      activities: (currentActivities ?? [])
+        .filter((a) => a.ai_drafted)
+        .map((a) => ({
+          title: a.title,
+          meta: a.meta,
+          category: a.category,
+          position: 0,
+        })),
+    };
+    await recordDraftVersion(service, {
+      tripId: trip.id,
+      surface: "activities",
+      content: snap,
+      preview: previewOf("activities", snap),
+      userId: user.id,
+    });
     await service
       .from("activities")
       .delete()
@@ -520,6 +594,18 @@ export async function redraftSection(input: {
       return { error: "Redraft generated but failed to save. Try again." };
     }
   } else {
+    const snap = {
+      bookings: (currentBookings ?? [])
+        .filter((b) => b.ai_drafted)
+        .map((b) => ({ title: b.title, position: 0 })),
+    };
+    await recordDraftVersion(service, {
+      tripId: trip.id,
+      surface: "bookings",
+      content: snap,
+      preview: previewOf("bookings", snap),
+      userId: user.id,
+    });
     await service
       .from("bookings")
       .delete()
@@ -776,6 +862,286 @@ export async function rerollRow(input: {
     surface: parsed.data.surface,
     newTitle: result.value.title,
   };
+}
+
+const listVersionsSchema = z.object({
+  tripId: z.string().uuid(),
+  surface: z.enum(["spec_grid", "schedule", "activities", "bookings", "full"]),
+});
+
+export async function listDraftVersions(input: {
+  tripId: string;
+  surface: "spec_grid" | "schedule" | "activities" | "bookings" | "full";
+}) {
+  const parsed = listVersionsSchema.safeParse(input);
+  if (!parsed.success) return { versions: [] };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { versions: [] };
+
+  const { data: member } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", parsed.data.tripId)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: "admin" | "member" }>();
+  if (member?.role !== "admin") return { versions: [] };
+
+  const { data } = await supabase
+    .from("ai_draft_versions")
+    .select("id, created_at, preview")
+    .eq("trip_id", parsed.data.tripId)
+    .eq("surface", parsed.data.surface)
+    .order("created_at", { ascending: false })
+    .limit(3)
+    .returns<Array<{ id: string; created_at: string; preview: string | null }>>();
+
+  return {
+    versions: (data ?? []).map((v) => ({
+      id: v.id,
+      createdAt: v.created_at,
+      preview: v.preview ?? "",
+    })),
+  };
+}
+
+const restoreVersionSchema = z.object({
+  versionId: z.string().uuid(),
+});
+
+export async function restoreDraftVersion(input: { versionId: string }) {
+  const parsed = restoreVersionSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const service = createServiceClient();
+  const { data: version } = await service
+    .from("ai_draft_versions")
+    .select("id, trip_id, surface, content")
+    .eq("id", parsed.data.versionId)
+    .maybeSingle<{
+      id: string;
+      trip_id: string;
+      surface: "spec_grid" | "schedule" | "activities" | "bookings" | "full";
+      content: Record<string, unknown>;
+    }>();
+  if (!version) return { error: "Version not found" };
+
+  const { data: member } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", version.trip_id)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: "admin" | "member" }>();
+  if (member?.role !== "admin") return { error: "Admins only" };
+
+  const { data: trip } = await service
+    .from("trips")
+    .select("slug, hero_title, hero_subtitle, meta")
+    .eq("id", version.trip_id)
+    .maybeSingle<{
+      slug: string;
+      hero_title: string | null;
+      hero_subtitle: string | null;
+      meta: TripMeta | null;
+    }>();
+  if (!trip) return { error: "Trip not found" };
+
+  // Snapshot the current state first so "restore" is itself undo-able.
+  const { data: curActs } = await service
+    .from("activities")
+    .select("title, meta, category, position, ai_drafted")
+    .eq("trip_id", version.trip_id);
+  const { data: curBooks } = await service
+    .from("bookings")
+    .select("title, position, ai_drafted")
+    .eq("trip_id", version.trip_id);
+
+  if (version.surface === "full") {
+    const currentFull = {
+      hero_title: trip.hero_title,
+      hero_subtitle: trip.hero_subtitle,
+      spec_grid: trip.meta?.spec_grid ?? null,
+      schedule: trip.meta?.schedule ?? null,
+      activities: curActs ?? [],
+      bookings: curBooks ?? [],
+    };
+    await recordDraftVersion(service, {
+      tripId: version.trip_id,
+      surface: "full",
+      content: currentFull,
+      preview: previewOf("full", currentFull),
+      userId: user.id,
+    });
+  } else {
+    const current =
+      version.surface === "spec_grid"
+        ? { spec_grid: trip.meta?.spec_grid ?? [] }
+        : version.surface === "schedule"
+          ? { schedule: trip.meta?.schedule ?? [] }
+          : version.surface === "activities"
+            ? {
+                activities: (curActs ?? [])
+                  .filter((a) => a.ai_drafted)
+                  .map((a) => ({
+                    title: a.title,
+                    meta: a.meta,
+                    category: a.category,
+                    position: 0,
+                  })),
+              }
+            : {
+                bookings: (curBooks ?? [])
+                  .filter((b) => b.ai_drafted)
+                  .map((b) => ({ title: b.title, position: 0 })),
+              };
+    await recordDraftVersion(service, {
+      tripId: version.trip_id,
+      surface: version.surface,
+      content: current,
+      preview: previewOf(version.surface, current),
+      userId: user.id,
+    });
+  }
+
+  // Apply restoration.
+  const c = version.content as Record<string, unknown>;
+  if (version.surface === "spec_grid") {
+    const nextMeta: TripMeta = {
+      ...(trip.meta ?? {}),
+      spec_grid: (c.spec_grid ?? []) as TripMeta["spec_grid"],
+    };
+    const { error } = await service
+      .from("trips")
+      .update({ meta: nextMeta })
+      .eq("id", version.trip_id);
+    if (error) return { error: "Could not restore." };
+  } else if (version.surface === "schedule") {
+    const nextMeta: TripMeta = {
+      ...(trip.meta ?? {}),
+      schedule: (c.schedule ?? []) as TripMeta["schedule"],
+    };
+    const { error } = await service
+      .from("trips")
+      .update({ meta: nextMeta })
+      .eq("id", version.trip_id);
+    if (error) return { error: "Could not restore." };
+  } else if (version.surface === "activities") {
+    await service
+      .from("activities")
+      .delete()
+      .eq("trip_id", version.trip_id)
+      .eq("ai_drafted", true);
+    const rows = ((c.activities ?? []) as Array<{
+      title: string;
+      meta: string | null;
+      category: "day" | "night";
+    }>).map((a, i) => ({
+      trip_id: version.trip_id,
+      title: a.title,
+      meta: a.meta ?? null,
+      category: a.category,
+      position: 1000 + i,
+      ai_drafted: true,
+    }));
+    if (rows.length > 0) {
+      const { error } = await service.from("activities").insert(rows);
+      if (error) return { error: "Could not restore." };
+    }
+  } else if (version.surface === "bookings") {
+    await service
+      .from("bookings")
+      .delete()
+      .eq("trip_id", version.trip_id)
+      .eq("ai_drafted", true);
+    const rows = ((c.bookings ?? []) as Array<{ title: string }>).map(
+      (b, i) => ({
+        trip_id: version.trip_id,
+        title: b.title,
+        position: 1000 + i,
+        created_by: user.id,
+        ai_drafted: true,
+      }),
+    );
+    if (rows.length > 0) {
+      const { error } = await service.from("bookings").insert(rows);
+      if (error) return { error: "Could not restore." };
+    }
+  } else {
+    // full: restore hero + meta, wipe + reinsert activities/bookings.
+    // Use `in` not `??` so a snapshot with spec_grid: null (legit empty
+    // pre-draft state) restores to empty, not to the current meta.
+    const hasSpecInSnap = "spec_grid" in c;
+    const hasScheduleInSnap = "schedule" in c;
+    const nextMeta: TripMeta = {
+      ...(trip.meta ?? {}),
+      spec_grid: (hasSpecInSnap
+        ? c.spec_grid
+        : trip.meta?.spec_grid) as TripMeta["spec_grid"],
+      schedule: (hasScheduleInSnap
+        ? c.schedule
+        : trip.meta?.schedule) as TripMeta["schedule"],
+    };
+    const { error: tripErr } = await service
+      .from("trips")
+      .update({
+        hero_title: (c.hero_title as string | null) ?? null,
+        hero_subtitle: (c.hero_subtitle as string | null) ?? null,
+        meta: nextMeta,
+      })
+      .eq("id", version.trip_id);
+    if (tripErr) return { error: "Could not restore." };
+    await service
+      .from("activities")
+      .delete()
+      .eq("trip_id", version.trip_id)
+      .eq("ai_drafted", true);
+    await service
+      .from("bookings")
+      .delete()
+      .eq("trip_id", version.trip_id)
+      .eq("ai_drafted", true);
+    const actRows = ((c.activities ?? []) as Array<{
+      title: string;
+      meta: string | null;
+      category: "day" | "night";
+    }>).map((a, i) => ({
+      trip_id: version.trip_id,
+      title: a.title,
+      meta: a.meta ?? null,
+      category: a.category,
+      position: 1000 + i,
+      ai_drafted: true,
+    }));
+    if (actRows.length > 0) {
+      await service.from("activities").insert(actRows);
+    }
+    const bookRows = ((c.bookings ?? []) as Array<{ title: string }>).map(
+      (b, i) => ({
+        trip_id: version.trip_id,
+        title: b.title,
+        position: 1000 + i,
+        created_by: user.id,
+        ai_drafted: true,
+      }),
+    );
+    if (bookRows.length > 0) {
+      await service.from("bookings").insert(bookRows);
+    }
+  }
+
+  revalidatePath(`/trips/${trip.slug}`);
+  revalidatePath(`/trips/${trip.slug}/shortlist`);
+  revalidatePath(`/trips/${trip.slug}/bookings`);
+  return { ok: true as const };
 }
 
 export async function getRedraftAvailability(tripId: string) {

@@ -6,6 +6,10 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { IdentitySection } from "@/components/admin/IdentitySection";
 import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
 import { SectionLeadsSection } from "@/components/admin/SectionLeadsSection";
+import { AdminRedraftSection } from "@/components/admin/AdminRedraftSection";
+import { getRedraftAvailability } from "@/lib/actions/aiDraft";
+import { aiEnabled as aiConfigured } from "@/lib/ai";
+import { placesEnabled } from "@/lib/places";
 import {
   CrewManagement,
   type AdminCrewMember,
@@ -52,6 +56,20 @@ export default async function AdminPage({
         },
       ];
     }) ?? [];
+
+  const showRedraft =
+    trip.ai_drafted_at !== null &&
+    user.profile.ai_enabled &&
+    aiConfigured() &&
+    placesEnabled() &&
+    !!trip.destination;
+  const redraftAvailability = showRedraft
+    ? await getRedraftAvailability(trip.id)
+    : null;
+  const { count: crewCount } = await supabase
+    .from("trip_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("trip_id", trip.id);
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -101,8 +119,32 @@ export default async function AdminPage({
           />
         </AdminCard>
 
+        {showRedraft && trip.destination && (
+          <AdminCard
+            code="D"
+            title="AI draft"
+            description="Redraft the entire trip. Wipes AI-generated hero, spec, schedule, activities, and bookings — keeps manual edits on non-AI rows. For surgical edits, use the rail on Overview instead."
+          >
+            <AdminRedraftSection
+              tripId={trip.id}
+              destination={trip.destination}
+              crewCount={crewCount ?? 0}
+              currency={trip.currency ?? "GBP"}
+              targetBudgetPp={trip.target_budget_pp}
+              existingPreferences={trip.meta?.ai_preferences ?? null}
+              lastDraftedAt={trip.ai_drafted_at}
+              canRedraft={redraftAvailability?.ok ?? false}
+              blockedReason={
+                redraftAvailability?.ok
+                  ? null
+                  : redraftAvailability?.reason ?? null
+              }
+            />
+          </AdminCard>
+        )}
+
         <AdminCard
-          code="D"
+          code={showRedraft ? "E" : "D"}
           title="Crew management"
           description="Promote, demote, remove members. Delete the trip."
         >

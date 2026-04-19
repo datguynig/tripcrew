@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/useToast";
 import { redraftSection } from "@/lib/actions/aiDraft";
 import { AIDraftProgress } from "./AIDraftProgress";
+import { AIDraftHistory } from "./AIDraftHistory";
 import type { DraftSurface } from "@/lib/ai";
 
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
   isAdmin: boolean;
   canRedraft: boolean;
   blockedReason: string | null;
+  versionsCount?: number;
 };
 
 export function AIDraftRail({
@@ -25,11 +27,13 @@ export function AIDraftRail({
   isAdmin,
   canRedraft,
   blockedReason,
+  versionsCount = 0,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
   const [generating, setGenerating] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const disabled = !canRedraft || pending || generating;
 
   const handleRedraft = () => {
@@ -49,7 +53,7 @@ export function AIDraftRail({
 
   return (
     <>
-      <div className="mb-2 flex items-center justify-between gap-3">
+      <div className="mb-2 relative flex items-center justify-between gap-3">
         <span
           className="inline-flex items-center gap-[5px] font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3"
           title={draftedAt ? `Drafted by AI · ${relTime(draftedAt)}` : "Drafted by AI"}
@@ -62,20 +66,42 @@ export function AIDraftRail({
         </span>
 
         {isAdmin && (
-          <button
-            type="button"
-            onClick={handleRedraft}
-            disabled={disabled}
-            title={canRedraft ? "Re-draft this section" : blockedReason ?? undefined}
-            aria-label={`Redraft ${humanSurface(surface)}`}
-            className={`font-mono text-[9px] tracking-[0.18em] uppercase transition-colors cursor-pointer disabled:cursor-not-allowed ${
-              !canRedraft
-                ? "text-fg-4"
-                : "text-fg-3 hover:text-accent"
-            }`}
-          >
-            <span aria-hidden="true">↻</span> redraft
-          </button>
+          <div className="flex items-center gap-5">
+            {versionsCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen((v) => !v)}
+                aria-haspopup="dialog"
+                aria-expanded={historyOpen}
+                aria-label={`Show previous ${humanSurface(surface)} drafts`}
+                className="font-mono text-[9px] tracking-[0.18em] uppercase text-fg-3 hover:text-fg transition-colors cursor-pointer tabular"
+              >
+                <span aria-hidden="true">↺</span> {versionsCount} prev
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={handleRedraft}
+              disabled={disabled}
+              title={canRedraft ? "Re-draft this section" : blockedReason ?? undefined}
+              aria-label={`Redraft ${humanSurface(surface)}`}
+              className={`font-mono text-[9px] tracking-[0.18em] uppercase transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                !canRedraft
+                  ? "text-fg-4"
+                  : "text-fg-3 hover:text-accent"
+              }`}
+            >
+              <span aria-hidden="true">↻</span> redraft
+            </button>
+          </div>
+        )}
+
+        {historyOpen && (
+          <AIDraftHistory
+            tripId={tripId}
+            surface={surface}
+            onClose={() => setHistoryOpen(false)}
+          />
         )}
       </div>
 

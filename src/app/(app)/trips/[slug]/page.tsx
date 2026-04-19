@@ -74,16 +74,32 @@ export default async function TripOverview({
           blockedReason: availability?.ok ? null : availability?.reason ?? null,
         }
       : undefined;
+
+  const versionCounts = aiRailBase
+    ? await (async () => {
+        const { data } = await supabase
+          .from("ai_draft_versions")
+          .select("surface")
+          .eq("trip_id", trip.id)
+          .returns<Array<{ surface: string }>>();
+        const counts: Record<string, number> = {};
+        for (const r of data ?? []) counts[r.surface] = (counts[r.surface] ?? 0) + 1;
+        return counts;
+      })()
+    : {};
+
   const aiRailSpec = aiRailBase
     ? {
         ...aiRailBase,
         draftedAt: surfaceDraftedAt.spec_grid ?? trip.ai_drafted_at,
+        versionsCount: versionCounts.spec_grid ?? 0,
       }
     : undefined;
   const aiRailSchedule = aiRailBase
     ? {
         ...aiRailBase,
         draftedAt: surfaceDraftedAt.schedule ?? trip.ai_drafted_at,
+        versionsCount: versionCounts.schedule ?? 0,
       }
     : undefined;
 

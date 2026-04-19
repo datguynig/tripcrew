@@ -17,6 +17,7 @@ type AiRail = {
   draftedAt: string | null;
   canRedraft: boolean;
   blockedReason: string | null;
+  versionsCount?: number;
 };
 
 type Props = {
@@ -100,6 +101,7 @@ export function SpecGrid({
           isAdmin={!!isAdmin}
           canRedraft={aiRail.canRedraft}
           blockedReason={aiRail.blockedReason}
+          versionsCount={aiRail.versionsCount ?? 0}
         />
       ) : aiDrafted ? (
         <div className="flex justify-end mb-2">
