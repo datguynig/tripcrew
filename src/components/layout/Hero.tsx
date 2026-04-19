@@ -139,7 +139,7 @@ export function Hero({
         </div>
       )}
 
-      <div className="mt-14 grid grid-cols-4 max-[720px]:grid-cols-2 border-t border-line">
+      <div className="mt-14 grid grid-cols-4 max-[780px]:grid-cols-2 max-[400px]:grid-cols-1 border-t border-line">
         <StatCell
           label="T-Minus"
           value={days !== null ? days.toString() : "—"}
@@ -188,7 +188,7 @@ function StatCell({
   progress?: number | null;
 }) {
   return (
-    <div className="p-6 border-r border-line last:border-r-0 max-[720px]:[&:nth-child(2n)]:border-r-0 max-[720px]:[&:nth-child(-n+2)]:border-b max-[720px]:[&:nth-child(-n+2)]:border-line">
+    <div className="p-6 border-r border-line last:border-r-0 max-[780px]:[&:nth-child(2n)]:border-r-0 max-[780px]:[&:nth-child(-n+2)]:border-b max-[780px]:[&:nth-child(-n+2)]:border-line max-[400px]:!border-r-0 max-[400px]:border-b max-[400px]:last:border-b-0">
       <div className="label-sm-wide text-fg-3 mb-2.5">{label}</div>
       <div className="flex items-baseline">
         <span className="display-md tabular">{value}</span>

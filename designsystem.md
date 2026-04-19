@@ -184,12 +184,13 @@ Predefined animations in [globals.css](src/app/globals.css):
 ### 3.1 Grid
 
 - **Max width**: 1280px. Main content is `max-w-[1280px] mx-auto`.
-- **Horizontal padding**: `px-7` (28px). Applied in the app layout, not in individual pages.
+- **Horizontal padding**: `px-7` (28px) desktop; `px-5` (20px) at `≤ 520px`. Applied in the app layout, not in individual pages.
 - **Form max width**: `max-w-[560px]`. Single-column forms always. Pairing fields horizontally in a 2-col grid is allowed *only* when the two fields are a semantic pair (start/end dates). Never pair a single field with an empty cell (learned, painfully).
 
 ### 3.2 Breakpoints
 
 ```
+≤ 400px     narrow mobile; chrome that's still tight after the 520 break
 default     single column, stacked, full-width cards
 ≥ 520px     two-column form grids allowed
 ≥ 780px     stat cells can go 4-wide; vote rows 3-col
@@ -197,6 +198,8 @@ default     single column, stacked, full-width cards
 ```
 
 We use `max-[Npx]:` Tailwind arbitrary breakpoints rather than default sm/md/lg. This is deliberate — the layout breaks at data-driven widths, not browser conventions.
+
+Reach for `max-[400px]:` only when the 520 break still leaves content squeezed — hero stat grid collapsing from 2-up to 1-up, section-header code label stacking above the title, destination-card map stacking above the title.
 
 ### 3.3 Stickiness
 

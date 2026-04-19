@@ -85,7 +85,7 @@ export function CrewList({
       {rows.map((row, i) => (
         <div
           key={row.user_id}
-          className={`grid grid-cols-[80px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5 ${
+          className={`grid grid-cols-[40px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-4 max-[520px]:grid-cols-[32px_1fr] max-[520px]:px-5 max-[520px]:[&>:last-child]:col-span-2 max-[520px]:[&>:last-child]:mt-1 ${
             row.user_id === currentUserId ? "bg-[var(--color-accent-dim)]" : ""
           }`}
         >
@@ -110,7 +110,7 @@ export function CrewList({
       {Array.from({ length: fill }).map((_, i) => (
         <div
           key={`slot-${i}`}
-          className="grid grid-cols-[80px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5 text-fg-3"
+          className="grid grid-cols-[40px_1fr_auto] items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-4 max-[520px]:grid-cols-[32px_1fr] max-[520px]:px-5 max-[520px]:[&>:last-child]:col-span-2 max-[520px]:[&>:last-child]:mt-1 text-fg-3"
         >
           <span
             aria-hidden
