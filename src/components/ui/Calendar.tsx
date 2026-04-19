@@ -132,7 +132,7 @@ export function Calendar({
           type="button"
           onClick={prev}
           aria-label="Previous month"
-          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 rounded cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 active:bg-bg-3 active:scale-[0.96] transition-colors rounded cursor-pointer"
         >
           ‹
         </button>
@@ -143,7 +143,7 @@ export function Calendar({
           type="button"
           onClick={next}
           aria-label="Next month"
-          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 rounded cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 active:bg-bg-3 active:scale-[0.96] transition-colors rounded cursor-pointer"
         >
           ›
         </button>
@@ -205,7 +205,7 @@ export function Calendar({
             <button
               type="button"
               onClick={onClear}
-              className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 hover:text-fg cursor-pointer"
+              className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 hover:text-fg active:text-fg-2 transition-colors cursor-pointer"
             >
               Clear
             </button>
@@ -219,7 +219,7 @@ export function Calendar({
                 const t = new Date();
                 onSelect(toIso(t.getFullYear(), t.getMonth(), t.getDate()));
               }}
-              className="font-mono text-[10px] tracking-[0.12em] uppercase text-accent hover:text-fg cursor-pointer"
+              className="font-mono text-[10px] tracking-[0.12em] uppercase text-accent hover:text-fg active:opacity-80 transition-colors cursor-pointer"
             >
               Today
             </button>

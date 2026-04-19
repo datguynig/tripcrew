@@ -80,7 +80,7 @@ function PasswordForm({
           type="email"
           autoFocus
           placeholder="you@domain.com"
-          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 focus:border-accent transition-colors"
+          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 hover:border-fg-3 focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
       </Field>
       <Field
@@ -95,7 +95,7 @@ function PasswordForm({
           type="password"
           minLength={8}
           placeholder="Password"
-          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 focus:border-accent transition-colors"
+          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 hover:border-fg-3 focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
       </Field>
       <Button
@@ -138,7 +138,7 @@ function MagicLinkForm({ next }: { next: string | null }) {
           type="email"
           autoFocus
           placeholder="you@domain.com"
-          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 focus:border-accent transition-colors"
+          className="bg-transparent border-0 border-b-[1.5px] border-fg-4 py-[14px] text-[22px] font-medium tracking-[-0.02em] text-fg outline-none placeholder:text-fg-3 hover:border-fg-3 focus:border-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         />
       </Field>
       <Button
@@ -166,7 +166,7 @@ function ModeSwitcher({
         <button
           type="button"
           onClick={() => onChange("signin")}
-          className="hover:text-fg transition-colors cursor-pointer"
+          className="hover:text-fg active:text-fg-2 transition-colors cursor-pointer"
         >
           Sign in with password
         </button>
@@ -175,7 +175,7 @@ function ModeSwitcher({
         <button
           type="button"
           onClick={() => onChange("signup")}
-          className="hover:text-fg transition-colors cursor-pointer"
+          className="hover:text-fg active:text-fg-2 transition-colors cursor-pointer"
         >
           Create account
         </button>
@@ -184,7 +184,7 @@ function ModeSwitcher({
         <button
           type="button"
           onClick={() => onChange("magic")}
-          className="hover:text-fg transition-colors cursor-pointer"
+          className="hover:text-fg active:text-fg-2 transition-colors cursor-pointer"
         >
           Email me a link
         </button>

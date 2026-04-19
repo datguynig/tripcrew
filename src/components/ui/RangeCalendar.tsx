@@ -138,7 +138,7 @@ export function RangeCalendar({
           type="button"
           onClick={prev}
           aria-label="Previous month"
-          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 rounded cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 active:bg-bg-3 active:scale-[0.96] transition-colors rounded cursor-pointer"
         >
           ‹
         </button>
@@ -154,7 +154,7 @@ export function RangeCalendar({
           type="button"
           onClick={next}
           aria-label="Next month"
-          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 rounded cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center text-fg-2 hover:text-fg hover:bg-bg-3 active:bg-bg-3 active:scale-[0.96] transition-colors rounded cursor-pointer"
         >
           ›
         </button>
@@ -191,7 +191,7 @@ export function RangeCalendar({
         <button
           type="button"
           onClick={() => onChange({ start: null, end: null })}
-          className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 hover:text-fg cursor-pointer"
+          className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 hover:text-fg active:text-fg-2 transition-colors cursor-pointer"
         >
           Clear
         </button>

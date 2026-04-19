@@ -85,13 +85,13 @@ export function MoneyInput({
       <input type="hidden" name={amountName} value={submitted} />
       <input type="hidden" name={currencyName} value={currency} />
 
-      <div className="flex items-stretch bg-bg-2 border border-line rounded-md focus-within:border-line-2 transition-colors overflow-hidden">
+      <div className="flex items-stretch bg-bg-2 border border-line rounded-md hover:border-line-2 focus-within:border-line-2 transition-colors overflow-hidden">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-haspopup="listbox"
           aria-expanded={open}
-          className="flex items-center gap-2 px-3 border-r border-line text-[13px] font-mono tracking-[0.05em] uppercase text-fg-2 hover:bg-bg-3 hover:text-fg transition-colors cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-3 border-r border-line text-[13px] font-mono tracking-[0.05em] uppercase text-fg-2 hover:bg-bg-3 hover:text-fg active:bg-bg-3 transition-colors cursor-pointer shrink-0"
         >
           <span className="w-[18px] text-center">{symbol}</span>
           <span className="text-fg-3">{currency}</span>
@@ -119,7 +119,7 @@ export function MoneyInput({
           placeholder={placeholder}
           aria-describedby={ariaDescribedBy}
           aria-invalid={ariaInvalid}
-          className="flex-1 bg-transparent px-[14px] py-[11px] text-[15px] tabular outline-none placeholder:text-fg-3"
+          className="flex-1 bg-transparent px-[14px] py-[11px] text-[15px] tabular outline-none placeholder:text-fg-3 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -140,7 +140,7 @@ export function MoneyInput({
                   setCurrency(c.code);
                   setOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-bg-3 transition-colors cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-bg-3 active:bg-bg-3 transition-colors cursor-pointer ${
                   selected ? "bg-bg-3" : ""
                 }`}
               >
