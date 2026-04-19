@@ -28,14 +28,31 @@ type Props = {
   isAdmin?: boolean;
   tripId: string;
   tripSlug?: string;
+  startDate: string | null;
   aiDrafted?: boolean;
   aiRail?: AiRail;
 };
+
+function deriveDayLabel(index: number, startDate: string | null): string {
+  if (!startDate) return `Day ${index + 1}`;
+  const t = new Date(`${startDate}T00:00:00Z`);
+  if (Number.isNaN(t.getTime())) return `Day ${index + 1}`;
+  t.setUTCDate(t.getUTCDate() + index);
+  return t
+    .toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "2-digit",
+      month: "short",
+      timeZone: "UTC",
+    })
+    .toUpperCase();
+}
 
 export function Schedule({
   rows,
   isAdmin,
   tripId,
+  startDate,
   aiDrafted = false,
   aiRail,
 }: Props) {
@@ -203,17 +220,11 @@ export function Schedule({
                   >
                     {String(i + 1).padStart(2, "0")}
                   </div>
-                  <div className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent">
-                    <InlineEdit
-                      value={row.day_label}
-                      onCommit={(v) => commitRow(i, { day_label: v })}
-                      editable={!!isAdmin}
-                      as="span"
-                      maxLength={30}
-                      ariaLabel={`Edit day ${i + 1} label`}
-                      emptyLabel="Day"
-                      className="inline"
-                    />
+                  <div
+                    className="font-mono text-[11px] tracking-[0.15em] uppercase text-accent tabular select-none"
+                    title="Day slots are fixed; drag a row to reorder activities."
+                  >
+                    {deriveDayLabel(i, startDate)}
                   </div>
                 </div>
                 <div>

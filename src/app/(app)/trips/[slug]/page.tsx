@@ -158,6 +158,7 @@ export default async function TripOverview({
                 isAdmin={isAdmin}
                 tripId={trip.id}
                 tripSlug={trip.slug}
+                startDate={trip.start_date}
                 aiDrafted={aiDrafted}
                 aiRail={aiRailSchedule}
               />
