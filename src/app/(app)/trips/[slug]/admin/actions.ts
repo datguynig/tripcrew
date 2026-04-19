@@ -3,8 +3,43 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTripMember } from "@/lib/auth";
+import { createNotifications } from "@/lib/notifications";
+import type { NotificationPayload } from "@/lib/types";
+
+async function fanOutRoleChange(
+  tripId: string,
+  actorId: string,
+  targetUserId: string,
+  newRole: NonNullable<NotificationPayload["new_role"]>,
+) {
+  const service = createServiceClient();
+  const [{ data: actor }, { data: trip }] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", actorId)
+      .maybeSingle<{ name: string }>(),
+    service
+      .from("trips")
+      .select("name, slug")
+      .eq("id", tripId)
+      .maybeSingle<{ name: string; slug: string }>(),
+  ]);
+  await createNotifications({
+    tripId,
+    actorId,
+    kind: "role_changed",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: trip?.name,
+      trip_slug: trip?.slug,
+      new_role: newRole,
+    },
+    recipients: [targetUserId],
+  });
+}
 
 async function requireAdmin(
   tripId: string,
@@ -332,6 +367,12 @@ export async function promoteMember(
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }
+  await fanOutRoleChange(
+    parsed.data.tripId,
+    gate.userId,
+    parsed.data.userId,
+    "admin",
+  );
   return { ok: true };
 }
 
@@ -381,6 +422,12 @@ export async function demoteMember(
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }
+  await fanOutRoleChange(
+    parsed.data.tripId,
+    gate.userId,
+    parsed.data.userId,
+    "member",
+  );
   return { ok: true };
 }
 
@@ -434,6 +481,12 @@ export async function removeMember(
     revalidatePath(`/trips/${slug}/crew`);
     revalidatePath(`/trips/${slug}/admin`);
   }
+  await fanOutRoleChange(
+    parsed.data.tripId,
+    gate.userId,
+    parsed.data.userId,
+    "removed",
+  );
   return { ok: true };
 }
 

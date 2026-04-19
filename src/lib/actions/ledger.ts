@@ -2,7 +2,11 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
+import {
+  createNotifications,
+  tripMemberIdsExcept,
+} from "@/lib/notifications";
 
 const expenseSchema = z.object({
   tripId: z.string().uuid(),
@@ -46,6 +50,35 @@ export async function addExpense(input: {
   if (error) return { error: error.message };
 
   await revalidateTrip(parsed.data.tripId);
+
+  const service = createServiceClient();
+  const [{ data: actor }, { data: trip }, recipients] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle<{ name: string }>(),
+    service
+      .from("trips")
+      .select("name, slug, currency")
+      .eq("id", parsed.data.tripId)
+      .maybeSingle<{ name: string; slug: string; currency: string | null }>(),
+    tripMemberIdsExcept(parsed.data.tripId, user.id),
+  ]);
+  await createNotifications({
+    tripId: parsed.data.tripId,
+    actorId: user.id,
+    kind: "expense_added",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: trip?.name,
+      trip_slug: trip?.slug,
+      expense_description: parsed.data.description,
+      expense_amount: parsed.data.amount.toFixed(2),
+      expense_currency: trip?.currency ?? "",
+    },
+    recipients,
+  });
   return { ok: true };
 }
 

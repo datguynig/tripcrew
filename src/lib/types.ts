@@ -232,3 +232,35 @@ export type AiFeedback = {
   note: string | null;
   created_at: string;
 };
+
+export type NotificationKind =
+  | "crew_joined"
+  | "destination_locked"
+  | "trip_drafted"
+  | "expense_added"
+  | "role_changed"
+  | "candidate_proposed";
+
+export type NotificationPayload = {
+  actor_name?: string;
+  trip_name?: string;
+  trip_slug?: string;
+  destination?: string;
+  candidate_title?: string;
+  expense_description?: string;
+  expense_amount?: string;
+  expense_currency?: string;
+  new_role?: "admin" | "member" | "removed";
+};
+
+export type Notification = {
+  id: string;
+  user_id: string;
+  trip_id: string | null;
+  kind: NotificationKind;
+  actor_id: string | null;
+  entity_id: string | null;
+  payload: NotificationPayload;
+  read_at: string | null;
+  created_at: string;
+};

@@ -15,6 +15,10 @@ import {
 import { placesEnabled } from "@/lib/places";
 import { checkAiDraftRateLimit } from "@/lib/rateLimit";
 import { previewOf, recordDraftVersion } from "@/lib/aiVersions";
+import {
+  createNotifications,
+  tripMemberIdsExcept,
+} from "@/lib/notifications";
 import type { AiPreferences, Trip, TripMeta } from "@/lib/types";
 
 /**
@@ -348,6 +352,26 @@ export async function draftTripAction(input: {
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/shortlist`);
   revalidatePath(`/trips/${trip.slug}/bookings`);
+
+  const [{ data: actor }, recipients] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle<{ name: string }>(),
+    tripMemberIdsExcept(trip.id, user.id),
+  ]);
+  await createNotifications({
+    tripId: trip.id,
+    actorId: user.id,
+    kind: "trip_drafted",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: trip.name,
+      trip_slug: trip.slug,
+    },
+    recipients,
+  });
 
   return {
     ok: true as const,

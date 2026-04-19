@@ -3,6 +3,10 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import {
+  createNotifications,
+  tripMemberIdsExcept,
+} from "@/lib/notifications";
 
 async function revalidateTrip(tripId: string) {
   const service = createServiceClient();
@@ -69,7 +73,45 @@ export async function proposeCandidate(input: {
   if (error) return { error: error.message };
 
   await revalidateTrip(parsed.data.tripId);
+  await fanOutCandidateProposed(
+    parsed.data.tripId,
+    user.id,
+    parsed.data.title,
+  );
   return { ok: true };
+}
+
+async function fanOutCandidateProposed(
+  tripId: string,
+  actorId: string,
+  candidateTitle: string,
+) {
+  const service = createServiceClient();
+  const [{ data: actor }, { data: trip }, recipients] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", actorId)
+      .maybeSingle<{ name: string }>(),
+    service
+      .from("trips")
+      .select("name, slug")
+      .eq("id", tripId)
+      .maybeSingle<{ name: string; slug: string }>(),
+    tripMemberIdsExcept(tripId, actorId),
+  ]);
+  await createNotifications({
+    tripId,
+    actorId,
+    kind: "candidate_proposed",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: trip?.name,
+      trip_slug: trip?.slug,
+      candidate_title: candidateTitle,
+    },
+    recipients,
+  });
 }
 
 export async function removeCandidate(id: string) {
@@ -288,13 +330,34 @@ export async function lockDestination(tripId: string) {
     .update({ status: "locked", destination: winner.title })
     .eq("id", parsed.data)
     .eq("status", "planning")
-    .select("slug")
-    .maybeSingle<{ slug: string }>();
+    .select("slug, name")
+    .maybeSingle<{ slug: string; name: string }>();
   if (updErr) return { error: updErr.message };
   if (!trip) return { error: "Destination already locked" };
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/destinations`);
+
+  const [{ data: actor }, recipients] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle<{ name: string }>(),
+    tripMemberIdsExcept(parsed.data, user.id),
+  ]);
+  await createNotifications({
+    tripId: parsed.data,
+    actorId: user.id,
+    kind: "destination_locked",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: trip.name,
+      trip_slug: trip.slug,
+      destination: winner.title,
+    },
+    recipients,
+  });
   // No server-side redirect here — the client navigates after firing
   // the "undo" toast, so the toast registers before the route swap.
   return { ok: true as const, slug: trip.slug };

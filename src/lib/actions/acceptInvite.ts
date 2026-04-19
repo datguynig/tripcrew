@@ -3,6 +3,10 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import {
+  createNotifications,
+  tripMemberIdsExcept,
+} from "@/lib/notifications";
 
 type AcceptResult =
   | { kind: "ok"; slug: string }
@@ -102,6 +106,27 @@ export async function acceptInvite(token: string): Promise<AcceptResult> {
   revalidatePath(`/trips/${lookup.tripSlug}`);
   revalidatePath(`/trips/${lookup.tripSlug}/crew`);
   revalidatePath(`/trips/${lookup.tripSlug}/admin`);
+
+  const [{ data: actor }, recipients] = await Promise.all([
+    service
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle<{ name: string }>(),
+    tripMemberIdsExcept(lookup.tripId, user.id),
+  ]);
+  await createNotifications({
+    tripId: lookup.tripId,
+    actorId: user.id,
+    kind: "crew_joined",
+    payload: {
+      actor_name: actor?.name,
+      trip_name: lookup.tripName,
+      trip_slug: lookup.tripSlug,
+    },
+    recipients,
+  });
+
   return { kind: "ok", slug: lookup.tripSlug };
 }
 
