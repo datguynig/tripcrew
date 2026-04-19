@@ -134,7 +134,7 @@ export function NotificationsBell({
           ref={popoverRef}
           role="menu"
           aria-label="Activity"
-          className="absolute top-[calc(100%+6px)] right-0 w-[360px] bg-bg-2 border border-line rounded-md shadow-lg z-50 overflow-hidden max-[520px]:fixed max-[520px]:top-[62px] max-[520px]:right-5 max-[520px]:left-5 max-[520px]:w-auto"
+          className="absolute top-[calc(100%+6px)] right-0 w-[360px] bg-bg-2 border border-line rounded-md shadow-lg z-50 overflow-hidden max-[520px]:fixed max-[520px]:top-[66px] max-[520px]:right-5 max-[520px]:left-5 max-[520px]:w-auto"
         >
           <div className="px-5 py-4 border-b border-line flex items-center justify-between gap-3">
             <span className="label text-fg-2">Activity</span>
