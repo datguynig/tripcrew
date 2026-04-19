@@ -203,6 +203,20 @@ body {
   animation: section-enter 0.25s ease;
 }
 
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 .hero-radial {
   background:
     radial-gradient(ellipse at top, rgba(255, 76, 21, 0.08), transparent 50%),

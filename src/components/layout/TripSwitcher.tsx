@@ -80,7 +80,7 @@ export function TripSwitcher({ trips }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex items-center gap-[10px] font-mono text-[11px] tracking-[0.18em] uppercase text-fg hover:text-fg-2 transition-colors cursor-pointer"
+        className="flex items-center gap-[10px] label text-fg hover:text-fg-2 transition-colors cursor-pointer"
       >
         <span className="w-[7px] h-[7px] bg-accent rounded-full brand-dot" />
         <span className="truncate max-w-[280px]">{label}</span>

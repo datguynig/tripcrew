@@ -77,7 +77,7 @@ export function PriorCrewChips({ tripId, people }: Props) {
               <span className="text-[13px] font-medium tracking-[-0.01em] max-w-[160px] truncate">
                 {p.name}
               </span>
-              <span className="font-mono text-[9px] tracking-[0.15em] uppercase text-fg-3">
+              <span className="label-xs text-fg-3">
                 {isBusy ? "…" : "Invite"}
               </span>
             </button>

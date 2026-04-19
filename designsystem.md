@@ -173,6 +173,7 @@ Predefined animations in [globals.css](src/app/globals.css):
 
 - `.section-enter` — 0.25s opacity + translateY(6px → 0). Applied to every `<section>` on page load.
 - `.brand-pulse` — 2s infinite on the top-bar brand dot only.
+- `.animate-skeleton` — 2.4s infinite opacity pulse (1 → 0.55 → 1). Applied by the `<Skeleton>` primitive; don't hand-roll.
 
 **Don't animate** colour changes longer than 200ms, list reorders, layout thrash, or anything triggered by a route change.
 
@@ -350,7 +351,35 @@ Data rows use hairline dividers inside a border container:
 
 Mobile rows stack. Desktop uses `grid-cols-[...]` with named tracks. Never `flex justify-between` for a row that might wrap — the columns will misalign.
 
-### 4.11 State patterns
+### 4.11 Skeleton
+
+[components/ui/Skeleton.tsx](src/components/ui/Skeleton.tsx) — loading placeholder for content-sized regions.
+
+```tsx
+<Skeleton className="h-[96px]" />             // block (default)
+<Skeleton variant="line" className="w-[200px]" />   // thin text-row proxy
+```
+
+- **block** (default) — hairline-bordered rectangle with `bg-bg-3` fill. Use for cards, images, section chrome.
+- **line** — 14px-tall `bg-bg-3` bar, no border. Use as a text-row proxy.
+- Callers size via `className`. Wrap the containing region in `role="status" aria-label="Loading"` so assistive tech announces the wait.
+- Motion: custom `animate-skeleton` keyframe (2.4s, 1→0.55→1 opacity). Slower than Tailwind's default `animate-pulse` and scoped to this primitive; don't hand-roll.
+- **Don't use for inline micro-loading** — the pulsing-dot + mono-label idiom in §4.12 is the right call at <1-row scale.
+
+### 4.12 ProgressRail
+
+[components/ui/ProgressRail.tsx](src/components/ui/ProgressRail.tsx) — 2px partial-state rail. Sits under a numeric value or row to show "N of M."
+
+```tsx
+<ProgressRail value={0.6} label="Bookings progress" className="mt-3" />
+```
+
+- `value` is a fraction in `[0, 1]`; clamped automatically.
+- Renders with `role="progressbar"` + `aria-valuenow` for assistive tech; pass a human `label` via the prop.
+- `bg-line` track, `bg-accent` fill, `transition-[width] duration-300` — shifts smoothly when the underlying number changes.
+- Use anywhere a displayed value has a meaningful denominator: bookings done / total, votes cast / crew size, kitty paid / target.
+
+### 4.13 State patterns
 
 Principle #4 says every state is designed. This section names the six we recognise and the canonical implementation for each. A component isn't finished until all applicable states are drawn.
 
@@ -369,10 +398,11 @@ Principle #4 says every state is designed. This section names the six we recogni
 | --- | --- | --- |
 | Loading | On a button | Label swap: `{pending ? "Proposing…" : "Propose"}` |
 | Loading | Inline in a field | Pulsing 6px `bg-accent animate-pulse` dot in the trailing slot |
+| Loading | Page or known-shape region | [Skeleton](src/components/ui/Skeleton.tsx) — sketch the layout with dim blocks; wrap parent in `role="status" aria-label="Loading"` |
 | Empty | Whole block | `border border-line py-14 text-center` + mono caps `fg-3` copy + optional accent CTA link |
 | Error | Next to a field | `mt-[10px] text-err font-mono text-[11px] uppercase tracking-[0.08em]` |
 | Ideal | — | Just the component |
-| Partial | Under a numeric value | 2px hairline rail: `bg-line` track, `bg-accent` fill, `transition-[width] duration-300` (see `StatCell.progress`) |
+| Partial | Under a numeric value or row | [ProgressRail](src/components/ui/ProgressRail.tsx) — 2px `bg-line` track with `bg-accent` fill, animates via `transition-[width] duration-300` |
 | Disabled | On a primitive | `opacity-50 cursor-not-allowed`; never grey out surrounding chrome |
 
 **Rules:**
@@ -390,10 +420,12 @@ Principle #4 says every state is designed. This section names the six we recogni
 - **`toast.undo`** — reversible deletes, in place of a confirmation dialog.
 - **[Dialog](src/components/ui/Dialog.tsx)** — only for genuinely destructive, non-reversible actions.
 
-**Known gaps** (also tracked in §10):
+**Loading pattern decision:**
 
-- No canonical skeleton loader — the first real use defines it.
-- Partial-state language only exists on `StatCell`; rows and grids have no pattern yet.
+- **Skeleton** — content-sized regions with a known layout (pages, cards, image grids). Signals "your content is loading into this shape."
+- **Pulsing dot + label** — inline micro-loads (field blur, popover, list-end loaders). Signals "something is happening here briefly."
+
+Skeletons feel heavy in popovers and single-row contexts; the dot idiom feels sparse on full pages. Pick by scale.
 
 ---
 
@@ -493,9 +525,6 @@ Before merging a new component, confirm every row:
 Tracked gaps between this doc and the current codebase. Not blockers, but address when touching the area:
 
 - **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
-- **No canonical skeleton loader** (§4.11). The first real need defines the pattern.
-- **Partial-state rail only on StatCell** (§4.11). Rows and grids have no "partially filled" language yet.
-- **Two legitimate typography outliers**: [TripSwitcher](src/components/layout/TripSwitcher.tsx) uses `text-[11px] tracking-[0.18em]` (wider tracking for the brand line); [PriorCrewChips](src/components/invites/PriorCrewChips.tsx) uses `text-[9px] tracking-[0.15em]`. Both fall within §2.2's tracking rules but don't match a named utility. Leave as-is until there's a second use for either variant.
 
 ---
 

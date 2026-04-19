@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { currencySymbol } from "@/lib/currency";
 import { InlineEdit } from "@/components/ui/InlineEdit";
 import { InlineTextarea } from "@/components/ui/InlineTextarea";
+import { ProgressRail } from "@/components/ui/ProgressRail";
 import { updateHeroField } from "@/lib/actions/overviewInline";
 import { useToast } from "@/hooks/useToast";
 
@@ -198,18 +199,7 @@ function StatCell({
         )}
       </div>
       {progress !== null && (
-        <div
-          className="mt-3 h-[2px] bg-line overflow-hidden"
-          role="progressbar"
-          aria-valuenow={Math.round(progress * 100)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full bg-accent transition-[width] duration-300"
-            style={{ width: `${Math.min(100, Math.max(0, progress * 100))}%` }}
-          />
-        </div>
+        <ProgressRail value={progress} label={`${label} progress`} className="mt-3" />
       )}
       <div
         className={`body-sm text-fg-2 font-mono tracking-[0.05em] ${
