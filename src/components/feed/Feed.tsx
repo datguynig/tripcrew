@@ -13,9 +13,13 @@ import { useToast } from "@/hooks/useToast";
 
 import type { Post, PostLike } from "@/lib/types";
 import { DaySeparator } from "./DaySeparator";
+import { Gallery } from "./Gallery";
+import { Lightbox } from "./Lightbox";
 import { MessageBubble } from "./MessageBubble";
 import { MessageComposer, type ReplyTarget } from "./MessageComposer";
 import { dayLabel, isGrouped, needsDaySeparator } from "./feedUtils";
+
+type ViewMode = "timeline" | "gallery";
 
 type CrewMap = Record<string, string>;
 
@@ -57,6 +61,9 @@ export function Feed({
   const [likes, setLikes] = useState<PostLike[]>(initialLikes);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [isPosting, startTransition] = useTransition();
+  const [viewMode, setViewMode] = useState<ViewMode>("timeline");
+  const [lightboxPostId, setLightboxPostId] = useState<string | null>(null);
+  const [authorFilter, setAuthorFilter] = useState<string>("all");
   // Time-relative flags (canEdit, day labels rendered via sub-components)
   // depend on the local clock. Gate them behind a post-mount flag so the
   // server and first client render stay identical; real values show up
@@ -359,6 +366,86 @@ export function Feed({
     return m;
   }, [posts]);
 
+  const replyCountByParent = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const p of posts) {
+      if (!p.reply_to_post_id) continue;
+      m.set(p.reply_to_post_id, (m.get(p.reply_to_post_id) ?? 0) + 1);
+    }
+    return m;
+  }, [posts]);
+
+  const likeCountFor = useCallback(
+    (postId: string) => likeIndex.counts.get(postId) ?? 0,
+    [likeIndex],
+  );
+  const likedByMe = useCallback(
+    (postId: string) => likeIndex.mine.has(postId),
+    [likeIndex],
+  );
+  const replyCountFor = useCallback(
+    (postId: string) => replyCountByParent.get(postId) ?? 0,
+    [replyCountByParent],
+  );
+
+  // Timeline view takes a tick to mount its scroll container after a
+  // mode flip. One rAF fires before React commits state; use double rAF
+  // so the target bubble exists in the DOM before we try to scroll to it.
+  const scheduleScrollToPost = (postId: string) => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => handleScrollToPost(postId));
+    });
+  };
+
+  const handleGalleryViewInChat = (postId: string) => {
+    setLightboxPostId(null);
+    setViewMode("timeline");
+    scheduleScrollToPost(postId);
+  };
+
+  const handleGalleryReplyInChat = (postId: string) => {
+    const post = postsById.get(postId);
+    if (!post) {
+      toast.error("This post is no longer available");
+      setLightboxPostId(null);
+      return;
+    }
+    setLightboxPostId(null);
+    setViewMode("timeline");
+    handleReply(post);
+    scheduleScrollToPost(postId);
+  };
+
+  const mediaPosts = useMemo(
+    () =>
+      [...posts]
+        .filter((p) => p.image_url)
+        .sort(
+          (a, b) =>
+            new Date(b.created_at).getTime() -
+            new Date(a.created_at).getTime(),
+        ),
+    [posts],
+  );
+
+  const galleryAuthors = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const p of mediaPosts) {
+      if (!seen.has(p.author_id)) {
+        seen.set(p.author_id, authorsById[p.author_id] ?? "Unknown");
+      }
+    }
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+  }, [mediaPosts, authorsById]);
+
+  const filteredMedia = useMemo(
+    () =>
+      authorFilter === "all"
+        ? mediaPosts
+        : mediaPosts.filter((p) => p.author_id === authorFilter),
+    [mediaPosts, authorFilter],
+  );
+
   const rendered: React.ReactNode[] = [];
   {
     let prev: Post | null = null;
@@ -394,8 +481,8 @@ export function Feed({
           authorName={authorsById[p.author_id] ?? "Unknown"}
           isOwn={isOwn}
           grouped={isGrouped(p, prev)}
-          likeCount={likeIndex.counts.get(p.id) ?? 0}
-          liked={likeIndex.mine.has(p.id)}
+          likeCount={likeCountFor(p.id)}
+          liked={likedByMe(p.id)}
           canEdit={canEdit}
           replyPreview={replyPreview}
           onDelete={isOwn ? () => handleDelete(p.id) : undefined}
@@ -410,26 +497,94 @@ export function Feed({
   }
 
   return (
-    <div className="border border-line">
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="h-[min(70vh,720px)] overflow-y-auto px-5"
-      >
-        {posts.length === 0 ? (
-          <div className="h-full flex items-center justify-center label text-fg-3">
-            No messages yet · be the first
+    <>
+      <div className="border border-line">
+        <div
+          aria-label="Feed view"
+          className="flex items-center gap-1 border-b border-line px-5 pt-3 pb-4"
+        >
+          {(["timeline", "gallery"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={viewMode === m}
+              onClick={() => setViewMode(m)}
+              className={`relative label-sm-wide px-3 py-3 transition-colors cursor-pointer ${
+                viewMode === m ? "text-fg" : "text-fg-3 hover:text-fg-2"
+              }`}
+            >
+              {m === "timeline" ? "TIMELINE" : "GALLERY"}
+              {viewMode === m && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-3 right-3 -bottom-4 h-[2px] bg-accent"
+                />
+              )}
+            </button>
+          ))}
+          {viewMode === "gallery" && (
+            <span className="ml-auto label-xs text-fg-3 tabular">
+              {mediaPosts.length}{" "}
+              {mediaPosts.length === 1 ? "photo" : "photos"}
+            </span>
+          )}
+        </div>
+
+        {viewMode === "timeline" ? (
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="h-[min(70vh,720px)] overflow-y-auto px-5"
+          >
+            {posts.length === 0 ? (
+              <div className="h-full flex items-center justify-center label text-fg-3">
+                No messages yet · be the first
+              </div>
+            ) : (
+              rendered
+            )}
           </div>
         ) : (
-          rendered
+          <div className="h-[min(70vh,720px)] overflow-y-auto">
+            <Gallery
+              mediaPosts={filteredMedia}
+              unfilteredCount={mediaPosts.length}
+              authors={galleryAuthors}
+              authorFilter={authorFilter}
+              onChangeFilter={setAuthorFilter}
+              authorsById={authorsById}
+              likeCountFor={likeCountFor}
+              likedByMe={likedByMe}
+              replyCountFor={replyCountFor}
+              onToggleLike={handleToggleLike}
+              onOpenLightbox={setLightboxPostId}
+              onViewInChat={handleGalleryViewInChat}
+            />
+          </div>
         )}
+
+        <MessageComposer
+          sending={isPosting}
+          replyTarget={replyTarget}
+          onClearReply={() => setReplyTarget(null)}
+          onSend={handleSend}
+        />
       </div>
-      <MessageComposer
-        sending={isPosting}
-        replyTarget={replyTarget}
-        onClearReply={() => setReplyTarget(null)}
-        onSend={handleSend}
-      />
-    </div>
+
+      {lightboxPostId && (
+        <Lightbox
+          posts={filteredMedia}
+          currentPostId={lightboxPostId}
+          authorsById={authorsById}
+          likeCountFor={likeCountFor}
+          likedByMe={likedByMe}
+          replyCountFor={replyCountFor}
+          onClose={() => setLightboxPostId(null)}
+          onToggleLike={handleToggleLike}
+          onViewInChat={handleGalleryViewInChat}
+          onReplyInChat={handleGalleryReplyInChat}
+        />
+      )}
+    </>
   );
 }
