@@ -53,7 +53,7 @@ Avoid: other UI libraries, CSS-in-JS runtimes, client state libs (Zustand, Redux
 | `/trips/[slug]/shortlist` | Activity shortlist + voting |
 | `/trips/[slug]/bookings` | Shared bookings checklist |
 | `/trips/[slug]/ledger` | Shared expenses + per-person balances |
-| `/trips/[slug]/feed` | Trip posts |
+| `/trips/[slug]/feed` | Crew chat — messages, photos, likes, replies |
 | `/trips/[slug]/admin` | Admin-only trip configuration |
 | `/join/[token]` | Invite acceptance |
 | `/account` | User account settings |
@@ -74,7 +74,8 @@ Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/mig
 - `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`
 - `bookings` — checklist items; any member can edit/tick; rows track `ai_drafted`
 - `expenses` — `paid_by` + `amount`; only payer deletes own
-- `posts` — feed items; optional `image_url`
+- `posts` — crew-chat messages; optional `image_url`, optional `caption`, optional `reply_to_post_id` (quotes a parent), `edited_at` stamp when the author edits within the 5-min window
+- `post_likes` — `(post_id, user_id)` composite PK; reactions on crew-chat messages
 - `ai_usage` — cost telemetry per draft pass (provider, tokens, Places requests, USD)
 - `ai_feedback` — thumbs up/down + optional note per AI-drafted surface
 - `ai_draft_versions` — pre-write snapshots of AI-drafted surfaces (`spec_grid`, `schedule`, `activities`, `bookings`, `full`) for restore; admin-only RLS
@@ -90,7 +91,7 @@ Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Car
 
 Use [useRealtimeTable](src/hooks/useRealtimeTable.ts) for collaborative tables: initial fetch → subscribe to Postgres changes filtered by `trip_id` → reducer over INSERT/UPDATE/DELETE. Unsubscribe on unmount.
 
-Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `notifications`.
+Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `post_likes`, `notifications`.
 
 ## Server actions
 
@@ -112,7 +113,7 @@ Closed-beta feature. Once a trip admin locks a destination, an admin with `profi
 
 In-app realtime feed surfaced via the topbar bell. Fan-out happens inside the server actions that trigger events — one row per recipient inserted with the service-role client, then Supabase Realtime pushes to each user's bell.
 
-Six `kind` values (open text column; union enforced in [src/lib/types.ts](src/lib/types.ts)):
+Seven `kind` values (open text column; union enforced in [src/lib/types.ts](src/lib/types.ts)):
 
 - `crew_joined` — someone accepted an invite or was added to the trip
 - `destination_locked` — admin locked the winning destination
@@ -120,8 +121,22 @@ Six `kind` values (open text column; union enforced in [src/lib/types.ts](src/li
 - `expense_added` — expense logged to the ledger
 - `role_changed` — member promoted, demoted, or removed
 - `candidate_proposed` — new destination candidate proposed
+- `feed_message` — new crew-chat post (message, photo, or reply). Coalesced per `(recipient, trip, actor)` — a burst from one person collapses to one bell row carrying the most recent excerpt.
 
 Pointers: [src/lib/actions/notifications.ts](src/lib/actions/notifications.ts) (`listRecent`, `markAsRead`, `markAllRead`), migration [20260419220000_notifications.sql](supabase/migrations/20260419220000_notifications.sql). Unread-count query is backed by a partial index on `read_at is null` so the bell stays fast even with thousands of read rows. Mark-read writes use the service role — the SSR client verifies the user and the update is scoped to `user_id = auth.uid()` in the query (the RLS update policy was removed; see [20260419230000_notifications_tighten_rls.sql](supabase/migrations/20260419230000_notifications_tighten_rls.sql)).
+
+Coalescing: `createNotifications` takes `coalesceByActorAndTrip: true` to delete any prior unread rows for `(recipient, trip, actor, kind)` before inserting. Used by `feed_message` so a chatty crew member doesn't flood every other crew member's bell. Payload always reflects the most recent event.
+
+## Crew chat
+
+Per-trip realtime chat surfaced at `/trips/[slug]/feed`. Replaces WhatsApp-style coordination with a timeline that stays bound to the trip.
+
+- Posts table is the one source of truth for messages. Text, photo, reply-to, or any combination. `reply_to_post_id` quotes a parent (on delete set null — replies survive the parent being deleted). `edited_at` stamps edits; RLS and column grants allow updates only on `(caption, edited_at)` within 5 min of creation.
+- Likes live in `post_likes`, composite PK, silent (no notification). Optimistic toggle on click.
+- Realtime: [Feed.tsx](src/components/feed/Feed.tsx) subscribes once to `posts` (filtered by trip) + `post_likes` (client-filtered). The bubble body, footer, and reply-quote all derive from local state.
+- Notifications: every message fires a `feed_message` fanout to every other crew member, coalesced per actor. Clicking the bell row deep-links to `/trips/[slug]/feed#post-<id>` and the timeline hash-scrolls + flashes `bg-accent-dim` for 1.2s.
+- Composer: [MessageComposer.tsx](src/components/feed/MessageComposer.tsx). Auto-grow textarea, Enter = send, Shift+Enter = newline. "Add photo" is a `<label>` wrapping an `sr-only` file input (tab-focusable without custom key handlers). Reply-quote and image chips stack above the textarea.
+- Initial fetch in [feed/page.tsx](src/app/(app)/trips/[slug]/feed/page.tsx) caps at 200 rows. Infinite-scroll history is not wired yet.
 
 ## Running
 
@@ -149,3 +164,5 @@ Not built yet, not currently planned — picks for the next plan, or to fill spa
 - Multi-currency within one trip's ledger (currently: trip has one currency)
 - Receipt OCR, per-item splits, weighted splits
 - Activity creation by non-admin members (currently: activities are admin-seeded)
+- Infinite-scroll older chat history (currently: last 200 messages on load)
+- Per-user mute on the crew-chat bell (currently: every message fans out, coalesced but always delivered)

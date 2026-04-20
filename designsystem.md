@@ -382,7 +382,30 @@ Mobile rows stack. Desktop uses `grid-cols-[...]` with named tracks. Never `flex
 - `bg-line` track, `bg-accent` fill, `transition-[width] duration-300` — shifts smoothly when the underlying number changes.
 - Use anywhere a displayed value has a meaningful denominator: bookings done / total, votes cast / crew size, kitty paid / target.
 
-### 4.13 State patterns
+### 4.13 Crew-chat message bubble
+
+[components/feed/MessageBubble.tsx](src/components/feed/MessageBubble.tsx). An editorial dispatch row, not a speech bubble. Two variants (text + media) over one layout.
+
+- **Layout**: `grid grid-cols-[32px_1fr] gap-3`. Left gutter holds a 32×32 square initials chip; right column holds the dateline, body, and footer.
+- **Initials chip**: sharp (no radius), `label-xs` caps. `border-line bg-bg-2 text-fg-2` for others, `border-accent/40 text-accent` for the current user — the only `isOwn` cue.
+- **Dateline**: `subheading` name + `label-xs tabular fg-3` time + optional `(edited)` chip in `fg-3`.
+- **Body**: `text-[15px] text-fg leading-[1.5] whitespace-pre-wrap break-words`. Media variant wraps image + caption in a bordered `max-w-[480px]` container separated by a hairline.
+- **Grouping**: when the prior bubble is from the same author within 120s, drop the chip + dateline. Preserve the 32px gutter for text alignment; the gutter reveals the timestamp on hover.
+- **Footer** (`Like` / `REPLY` / `EDIT`): `opacity-0 group-hover:opacity-100 focus-within:opacity-100`. Inline SVG heart with `stroke="currentColor"` (14px, 1.5px stroke); fills and turns `text-accent` when liked. Other affordances are text labels, not icons — consistent with the type-as-hierarchy principle and avoids a cross-platform icon system.
+- **Reply quote**: rendered above the body with `border-l-2 border-accent pl-3` + 2-line truncation. Clicking scrolls to the parent bubble and flashes `bg-accent-dim` for 1.2s.
+- **Action reveal on focus** matches the hover reveal so keyboard users get the same affordances.
+
+### 4.14 Crew-chat composer
+
+[components/feed/MessageComposer.tsx](src/components/feed/MessageComposer.tsx). Structural flex row at the bottom of the chat container, not `position: sticky`.
+
+- **Shell**: `border-t border-line bg-bg/90 backdrop-blur-md px-5 py-4`. Top hairline divides composer from the timeline above.
+- **Chip stack** above the textarea when a reply target or image is attached. Reply chip first (accent left-border, `label-xs fg-3` header + `body-sm fg-2 truncate` excerpt); image chip second (56×42 thumbnail + filename + size).
+- **Textarea**: `INPUT_SM` with `min-h-[44px] max-h-[180px] resize-none`, auto-grow via `scrollHeight`. Enter sends, Shift+Enter newlines.
+- **Attach photo** is a `<label>` wrapping an `sr-only` file input — keyboard-focusable without custom key handlers; the label carries `focus-within` styling for the focus ring.
+- **Send** reuses the `Button` primitive; label swaps through `Uploading… → Sending… → Send`.
+
+### 4.15 State patterns
 
 Principle #4 says every state is designed. This section names the six we recognise and the canonical implementation for each. A component isn't finished until all applicable states are drawn.
 
