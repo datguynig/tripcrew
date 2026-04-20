@@ -48,3 +48,7 @@ next-env.d.ts
 /playwright/.cache/
 /tests/.auth/
 /tests/screenshots/
+
+# local tooling
+/.claude/
+/.codex

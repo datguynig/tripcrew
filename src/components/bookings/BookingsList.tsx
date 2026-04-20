@@ -199,6 +199,7 @@ export function BookingsList({
               <select
                 value={b.assignee_id ?? ""}
                 onChange={(e) => handleAssign(b.id, e.target.value || null)}
+                aria-label={`Assignee for ${b.title}`}
                 className="max-[520px]:hidden bg-bg-2 border border-line text-fg px-3 py-2 text-[11px] rounded-md cursor-pointer font-mono tracking-[0.05em] uppercase w-full hover:border-line-2 focus:outline focus:outline-1 focus:outline-accent focus:-outline-offset-1"
               >
                 <option value="">Unassigned</option>

@@ -140,7 +140,7 @@ Single scale, 4-based. **Tailwind's default scale is our scale.** Avoid arbitrar
 - **Between content blocks** inside a section, use `mt-8` or `mt-10`, never random values.
 - **Pills / chips**: `py-[6px] px-[12px]` is an exception (tighter than the scale for visual balance with short copy).
 
-**Exception — input padding:** the input chrome uses `px-[14px] py-[11px]`. This lands between scale `3` (12px) and `4` (16px) for the right optical weight against our 13–15px text. Treat it as a canonical token, not a one-off. Defined in multiple components — eventual consolidation planned.
+**Exception — input padding:** the input chrome uses `px-[14px] py-[11px]`. This lands between scale `3` (12px) and `4` (16px) for the right optical weight against our 13–15px text. Treat it as a canonical token, not a one-off. Exported as `INPUT_PADDING` from [src/lib/styles.ts](src/lib/styles.ts) and composed into every input / picker-trigger constant there; never inline the magic numbers.
 
 ### 2.4 Borders & radii
 
@@ -284,7 +284,7 @@ placeholder:text-fg-3 w-full
 
 ### 4.5 Stat cell
 
-Hero stats pattern (four cells across, `border-r` hairlines). The **inner padding is symmetric** (`p-6` or `py-6 px-6`), **not** `py-6 pr-6 pl-0` — that was a bug and is being fixed.
+Hero stats pattern (four cells across, `border-r` hairlines). The **inner padding is symmetric** (`p-6` or `py-6 px-6`). Never asymmetric — the borders do the column rhythm, not negative-space tricks.
 
 ```tsx
 <div className="p-6 border-r border-line last:border-r-0">
@@ -469,12 +469,11 @@ Non-negotiables:
 - Error messages are associated to the field via `aria-describedby`.
 - Modal dialogs trap focus.
 
-**Known gaps**:
+**Roles on popovers** are intentional, not inconsistent: picker-style popovers (DatePicker, DateRangePicker, DateTimePicker, AIDraftPreferences, AIDraftHistory) use `role="dialog"`; option lists (currency picker, DestinationSearch, AirportSearch) use `role="listbox"`; action menus (TripSwitcher, AccountMenu, NotificationsBell) use `role="menu"`. Match the role to the interaction model, not the visual.
 
-- Popovers lack `role="dialog"` in some cases (DatePicker does, currency picker is a `role="listbox"`).
-- No skip-to-content link yet.
+**Audited against axe-core** — every authed route passes with zero violations. See [tests/a11y.spec.ts](tests/a11y.spec.ts).
 
-Axe is running across the main authed routes in [tests/a11y.spec.ts](tests/a11y.spec.ts) (WCAG 2.1 AA). Treat the two items above as the remaining manual gaps, not the full audit backlog.
+**Skip-to-content** link in [src/app/(app)/layout.tsx](src/app/(app)/layout.tsx) targets `<main id="main-content">`; visually hidden until keyboard focus lands on it, then surfaces as an editorial chip above the top-bar z-index.
 
 ---
 
@@ -528,7 +527,7 @@ Before merging a new component, confirm every row:
 
 Tracked gaps between this doc and the current codebase. Not blockers, but address when touching the area:
 
-- **Inline input classes**: Calendar cells, custom button-like inputs (picker triggers) use bespoke styling. That's intentional — they're not text inputs. Everything that IS a text input or textarea should import from `@/lib/styles`.
+- **Calendar cells** use bespoke per-cell styling (grid backgrounds, hover rings). That's intentional — they're not inputs and a shared `INPUT*` constant would fight the 6-column grid chrome. Everything else that presents as input chrome imports from [src/lib/styles.ts](src/lib/styles.ts) — `INPUT` / `INPUT_SM` / `INPUT_MONO` for text inputs, `INPUT_TRIGGER` for picker buttons, `INPUT_PADDING` for composites where the wrapper owns the border (e.g. MoneyInput).
 
 ---
 

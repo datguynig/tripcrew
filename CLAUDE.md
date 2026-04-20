@@ -84,7 +84,7 @@ Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/mig
 
 ## Primitives
 
-Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Card`, `Field`, `Dialog`, `DatePicker`, `DateRangePicker`, `DateTimePicker`, `Calendar`, `RangeCalendar`, `MoneyInput`, `InlineEdit`, `InlineMoneyEdit`, `InlineTextarea`, `ProgressRail`, `Skeleton`, `Toaster`. Shared input classes live in [src/lib/styles.ts](src/lib/styles.ts) (`INPUT`, `INPUT_SM`, `INPUT_MONO`).
+Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Card`, `Field`, `Dialog`, `DatePicker`, `DateRangePicker`, `DateTimePicker`, `Calendar`, `RangeCalendar`, `MoneyInput`, `InlineEdit`, `InlineMoneyEdit`, `InlineTextarea`, `ProgressRail`, `Skeleton`, `Toaster`. Shared input classes live in [src/lib/styles.ts](src/lib/styles.ts) (`INPUT`, `INPUT_SM`, `INPUT_MONO`, `INPUT_TRIGGER` for picker buttons, `INPUT_PADDING` for composites).
 
 ## Realtime
 

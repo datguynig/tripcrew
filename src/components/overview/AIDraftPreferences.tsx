@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { INPUT } from "@/lib/styles";
 import { AirportSearch } from "./AirportSearch";
 import type {
   AiBudgetTier,
@@ -259,7 +260,7 @@ export function AIDraftPreferences({
                   setBudgetCustom(n === "" ? "" : Number(n));
                 }}
                 placeholder="e.g. 1500"
-                className="bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md focus:border-line-2 outline-none transition-colors placeholder:text-fg-3 tabular"
+                className={`${INPUT} tabular`}
               />
             )}
           </section>

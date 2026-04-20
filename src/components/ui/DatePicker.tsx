@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { INPUT_TRIGGER } from "@/lib/styles";
 import { Calendar, formatDisplay } from "./Calendar";
 
 type Props = {
@@ -73,9 +74,7 @@ export function DatePicker({
         aria-expanded={open}
         aria-describedby={ariaDescribedBy}
         aria-invalid={ariaInvalid}
-        className={`w-full flex items-center justify-between gap-3 bg-bg-2 border border-line px-[14px] py-[11px] text-[15px] rounded-md hover:border-line-2 focus:border-line-2 outline-none transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default ${
-          isEmpty ? "text-fg-3" : "text-fg"
-        }`}
+        className={`${INPUT_TRIGGER} ${isEmpty ? "text-fg-3" : "text-fg"}`}
       >
         <span className="truncate">{displayText}</span>
         <svg

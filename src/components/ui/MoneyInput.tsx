@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CURRENCIES, currencySymbol } from "@/lib/currency";
+import { INPUT_PADDING } from "@/lib/styles";
 
 function formatAmount(raw: string): string {
   if (!raw) return "";
@@ -119,7 +120,7 @@ export function MoneyInput({
           placeholder={placeholder}
           aria-describedby={ariaDescribedBy}
           aria-invalid={ariaInvalid}
-          className="flex-1 bg-transparent px-[14px] py-[11px] text-[15px] tabular outline-none placeholder:text-fg-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`flex-1 bg-transparent ${INPUT_PADDING} text-[15px] tabular outline-none placeholder:text-fg-3 disabled:opacity-50 disabled:cursor-not-allowed`}
         />
       </div>
 
