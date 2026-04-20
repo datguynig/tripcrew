@@ -17,6 +17,9 @@ const devOrigins = [
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: devOrigins,
+  turbopack: {
+    root: process.cwd(),
+  },
   experimental: {
     serverActions: {
       allowedOrigins: devOrigins,
