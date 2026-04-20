@@ -8,6 +8,7 @@ import {
   editPost,
   togglePostLike,
 } from "@/lib/actions/feed";
+import { markFeedRead } from "@/lib/actions/notifications";
 import { useToast } from "@/hooks/useToast";
 
 import type { Post, PostLike } from "@/lib/types";
@@ -65,6 +66,30 @@ export function Feed({
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
+  const markReadTimerRef = useRef<number | null>(null);
+
+  // Drain any unread feed_message notifications for this trip. Called
+  // on mount, on visibility-return, and (debounced) on incoming realtime
+  // inserts. The bell should not light up for messages the user is
+  // already reading live.
+  const scheduleMarkRead = useCallback(
+    (immediate = false) => {
+      if (immediate) {
+        if (markReadTimerRef.current !== null) {
+          window.clearTimeout(markReadTimerRef.current);
+          markReadTimerRef.current = null;
+        }
+        void markFeedRead(tripId);
+        return;
+      }
+      if (markReadTimerRef.current !== null) return;
+      markReadTimerRef.current = window.setTimeout(() => {
+        markReadTimerRef.current = null;
+        void markFeedRead(tripId);
+      }, 1000);
+    },
+    [tripId],
+  );
 
   useEffect(() => {
     setPosts([...initial].sort(ascByCreatedAt));
@@ -73,6 +98,21 @@ export function Feed({
   useEffect(() => {
     setLikes(initialLikes);
   }, [initialLikes]);
+
+  useEffect(() => {
+    scheduleMarkRead(true);
+    const onVis = () => {
+      if (document.visibilityState === "visible") scheduleMarkRead(true);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      if (markReadTimerRef.current !== null) {
+        window.clearTimeout(markReadTimerRef.current);
+        markReadTimerRef.current = null;
+      }
+    };
+  }, [scheduleMarkRead]);
 
   useEffect(() => {
     const scrollToHashPost = () => {
@@ -118,6 +158,10 @@ export function Feed({
             filter: `trip_id=eq.${tripId}`,
           },
           (payload) => {
+            if (payload.eventType === "INSERT") {
+              const row = payload.new as Post;
+              if (row.author_id !== currentUserId) scheduleMarkRead();
+            }
             setPosts((prev) => {
               if (payload.eventType === "INSERT") {
                 const row = payload.new as Post;
@@ -173,7 +217,7 @@ export function Feed({
     return () => {
       if (channel) supabase.removeChannel(channel);
     };
-  }, [tripId]);
+  }, [tripId, currentUserId, scheduleMarkRead]);
 
   useEffect(() => {
     const el = scrollRef.current;
