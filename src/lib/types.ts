@@ -150,6 +150,14 @@ export type Post = {
   caption: string | null;
   author_id: string;
   created_at: string;
+  reply_to_post_id: string | null;
+  edited_at: string | null;
+};
+
+export type PostLike = {
+  post_id: string;
+  user_id: string;
+  created_at: string;
 };
 
 export type DestinationCandidate = {
@@ -239,7 +247,8 @@ export type NotificationKind =
   | "trip_drafted"
   | "expense_added"
   | "role_changed"
-  | "candidate_proposed";
+  | "candidate_proposed"
+  | "feed_message";
 
 export type NotificationPayload = {
   actor_name?: string;
@@ -251,6 +260,11 @@ export type NotificationPayload = {
   expense_amount?: string;
   expense_currency?: string;
   new_role?: "admin" | "member" | "removed";
+  // feed_message
+  post_id?: string;
+  reply_to_post_id?: string | null;
+  reply_to_author_id?: string | null;
+  excerpt?: string;
 };
 
 export type Notification = {

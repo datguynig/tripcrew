@@ -8,6 +8,11 @@ type Params = {
   entityId?: string | null;
   payload?: NotificationPayload;
   recipients: string[];
+  // When set, chat-volume kinds (currently feed_message) delete any
+  // prior unread rows in the same (recipient, trip, actor, kind) tuple
+  // before inserting. Net effect: one bell row per talker per trip,
+  // always carrying the most recent payload.
+  coalesceByActorAndTrip?: boolean;
 };
 
 /**
@@ -32,6 +37,21 @@ export async function createNotifications(params: Params): Promise<void> {
   }
 
   const service = createServiceClient();
+
+  if (params.coalesceByActorAndTrip && params.tripId) {
+    const { error: delErr } = await service
+      .from("notifications")
+      .delete()
+      .in("user_id", recipients)
+      .eq("trip_id", params.tripId)
+      .eq("kind", params.kind)
+      .eq("actor_id", params.actorId)
+      .is("read_at", null);
+    if (delErr) {
+      console.error("[notifications] coalesce delete failed:", delErr);
+    }
+  }
+
   const rows = recipients.map((userId) => ({
     user_id: userId,
     trip_id: params.tripId,
