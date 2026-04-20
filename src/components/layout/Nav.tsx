@@ -45,7 +45,9 @@ export function Nav({
                 key={tab.path}
                 href={href}
                 className={`relative py-4 mr-7 pr-5 flex items-baseline gap-[10px] text-[13px] font-medium whitespace-nowrap tracking-[-0.01em] transition-colors ${
-                  active ? "text-fg" : "text-fg-3 hover:text-fg"
+                  active
+                    ? "text-fg"
+                    : "text-fg-3 hover:text-fg active:text-fg"
                 }`}
               >
                 <span

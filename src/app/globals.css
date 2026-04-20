@@ -72,6 +72,17 @@ body {
     margin: 0;
   }
 
+  /* iOS Safari auto-zooms any focused input whose font-size < 16px,
+     scaling the whole viewport and breaking layout. Bump inputs to
+     16px at mobile widths only — desktop keeps the 13–15px scale. */
+  @media (max-width: 520px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px;
+    }
+  }
+
   /* Focus ring — accent outline with offset, only on keyboard focus
      (`:focus-visible`) so mouse clicks don't show the ring. See
      designsystem.md §6. Remove the browser default so our ring
