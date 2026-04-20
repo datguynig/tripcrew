@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0b;
+  --color-bg-2: #131315;
+  --color-bg-3: #1c1c1f;
+  --color-fg: #f0f0f0;
+  --color-fg-2: #a8a8ad;
+  --color-fg-3: #8c8c92; /* 5.0–5.8:1 on bg/bg-2/bg-3 — passes WCAG AA small text */
+  --color-fg-4: #3e3e42; /* decorative only; aria-hidden expected */
+  --color-accent: #ff4c15;
+  --color-accent-dim: rgba(255, 76, 21, 0.12);
+  --color-ok: #5fe388;
+  --color-warn: #f5c451;
+  --color-err: #f0556c;
+  --color-line: rgba(255, 255, 255, 0.08);
+  --color-line-2: rgba(255, 255, 255, 0.14);
+
+  --font-sans: var(--font-sans), "Inter Tight", sans-serif;
+  --font-mono: var(--font-mono), "JetBrains Mono", monospace;
+
+  --tracking-tightest: -0.055em;
+  --tracking-tighter: -0.04em;
+  --tracking-tight: -0.02em;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html,
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+@layer base {
+  button,
+  input,
+  textarea,
+  select {
+    font-family: inherit;
+    color: inherit;
+  }
+
+  /* Hide the native number input spinner arrows — they look jarring
+     against the dark theme and we rely on inputMode="numeric" + Zod
+     validation for the constraint. */
+  input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Focus ring — accent outline with offset, only on keyboard focus
+     (`:focus-visible`) so mouse clicks don't show the ring. See
+     designsystem.md §6. Remove the browser default so our ring
+     doesn't compound with it. */
+  *:focus {
+    outline: none;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  [role="menuitem"]:focus-visible,
+  [role="option"]:focus-visible {
+    outline-offset: 3px;
+  }
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline-offset: 1px;
+  }
+}
+
+@layer components {
+  /* Typography utilities — canonical named styles from
+     designsystem.md §2.2. Prefer these over raw arbitrary-value
+     classes so the type scale stays consistent and a single edit
+     here propagates everywhere. */
+  .label-xs {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label-sm {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .label-sm-wide {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .body-xs {
+    font-size: 12px;
+  }
+  .body-sm {
+    font-size: 13px;
+  }
+  .subheading {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+  .heading {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .title {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .display-sm {
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .display-md {
+    font-size: 48px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .display-lg {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 0.95;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes brand-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.85);
+  }
+}
+
+.brand-dot {
+  animation: brand-pulse 2s infinite;
+}
+
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-enter {
+  animation: section-enter 0.25s ease;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.hero-radial {
+  background:
+    radial-gradient(ellipse at top, rgba(255, 76, 21, 0.08), transparent 50%),
+    var(--color-bg);
+}
+
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.nav-scroll {
+  scrollbar-width: none;
+  /* touch-action: pan-x lets horizontal swipes scroll the tabs while
+     vertical swipes bubble up to the page, so the nav doesn't
+     capture attempted page scrolls on mobile. */
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+}

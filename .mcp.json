@@ -7,6 +7,10 @@
       "env": {
         "API_TOKEN": "1GTqmeGcRa22CzaAlWY56zX3S3BW4OxqHsjNnvIHab2f3200"
       }
+    },
+    "vercel": {
+      "type": "http",
+      "url": "https://mcp.vercel.com"
     }
   }
 }

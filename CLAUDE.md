@@ -1,324 +1,151 @@
-# Stockholm Boys Trip — Build Brief
+# Tripcrew — Project Memory
 
-## Goal
+## What this is
 
-Build a web app for a 5-person group trip. Users sign in, appear on a crew roster, vote on activities, claim and tick off bookings, log shared expenses with auto-calculated balances, and post to a shared photo feed. Data is live across all users via Supabase realtime.
+Tripcrew is a Next.js + Supabase app for planning group trips with a shared crew. Multi-trip, role-based (`admin` / `member`), realtime-collaborative. Each trip moves through a `planning` → `locked` lifecycle: members propose and vote on destinations, an admin locks the winner, then the trip surfaces an overview with spec grid, schedule, crew, bookings, ledger, feed.
 
-The visual and structural reference is `prototype/stockholm_trip.html`. Copy UX, copy text, layout, and design system from it. Do not re-invent copy or information architecture.
+## Companion docs
 
-## Tech stack (locked)
+- [README.md](README.md) — setup, env vars, scripts
+- [designsystem.md](designsystem.md) — **authoritative** visual rules, tokens, type scale
+- [supabase/migrations/](supabase/migrations/) — **authoritative** schema
+- [docs/archive/CLAUDE_v2.md](docs/archive/CLAUDE_v2.md) — historical v1→v2 transition brief, kept for idea-mining
 
-- **Next.js 15** with App Router, TypeScript, React Server Components where sensible
-- **Supabase**: Postgres, Auth (email magic link), Realtime, Storage (for images later)
-- **Tailwind CSS** for styling, with a custom tokens layer that mirrors the prototype
-- **shadcn/ui** for base components where they fit, restyled to match the aesthetic
-- **Vercel** for deployment
-- **pnpm** as the package manager
-- **Zod** for schema validation on server actions and API inputs
+## Stack (locked)
 
-Avoid: other UI libraries, CSS-in-JS runtimes, state management libs (Zustand, Redux). Keep server state in the database and client state in React hooks.
+- **Next.js 16** App Router, RSC by default
+- **React 19**
+- **TypeScript** strict — no `any`; use `unknown` and narrow
+- **Tailwind CSS v4** with tokens in `src/app/globals.css` under `@theme`
+- **Supabase**: Postgres, Auth (email+password + magic link), Realtime, Storage
+- **Zod** for validation at server action + API boundaries
+- **Playwright + axe-core** for smoke + accessibility
+- **Mapbox Search Box** — optional, behind `NEXT_PUBLIC_MAPBOX_TOKEN`; falls back to plain text input
+- **pnpm**
 
-## Prerequisites (owner handles)
-
-Before running Claude Code, owner will have:
-1. A Supabase project created at supabase.com. Project URL and anon key stored in `.env.local` as `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-2. Service role key stored in `.env.local` as `SUPABASE_SERVICE_ROLE_KEY` for seeding.
-3. Vercel account connected to GitHub.
-4. A custom domain (optional, can use vercel.app subdomain for MVP).
-
-## Quickstart
-
-```bash
-# Scaffold
-pnpm create next-app@latest stockholm-trip --typescript --tailwind --app --src-dir --import-alias "@/*"
-cd stockholm-trip
-
-# Dependencies
-pnpm add @supabase/supabase-js @supabase/ssr zod date-fns
-pnpm add -D @types/node
-
-# shadcn setup
-pnpm dlx shadcn@latest init
-pnpm dlx shadcn@latest add button input textarea select dialog
-
-# Run Supabase schema
-# (owner will paste schema.sql into Supabase SQL editor and run it)
-
-# Seed the trip and activities
-pnpm tsx scripts/seed.ts
-
-# Dev
-pnpm dev
-```
-
-## Project structure
-
-```
-src/
-  app/
-    (auth)/
-      sign-in/page.tsx         # magic link form
-      callback/route.ts        # auth callback handler
-    (app)/
-      layout.tsx               # authed layout with topbar + nav
-      page.tsx                 # overview
-      crew/page.tsx
-      shortlist/page.tsx
-      bookings/page.tsx
-      ledger/page.tsx
-      feed/page.tsx
-    layout.tsx                 # root, fonts, metadata
-    globals.css                # Tailwind + design tokens
-  components/
-    layout/
-      TopBar.tsx
-      Nav.tsx
-      Hero.tsx
-    ui/                        # shadcn components
-    overview/
-      SpecGrid.tsx
-      Schedule.tsx
-    crew/
-      CrewList.tsx
-    shortlist/
-      VoteRow.tsx
-      VoteFilters.tsx
-    bookings/
-      BookingRow.tsx
-      AddBooking.tsx
-    ledger/
-      LedgerStats.tsx
-      AddExpense.tsx
-      Balances.tsx
-    feed/
-      PostCard.tsx
-      NewPost.tsx
-  lib/
-    supabase/
-      client.ts                # browser client
-      server.ts                # server client (cookies)
-      middleware.ts            # session refresh
-    types.ts                   # shared TS types matching DB
-    utils.ts
-  hooks/
-    useRealtimeTable.ts        # generic realtime subscription hook
-    useCurrentUser.ts
-middleware.ts                  # auth guard
-scripts/
-  seed.ts                      # seeds trip + activities
-prototype/
-  stockholm_trip.html          # visual reference, do not delete
-schema.sql                     # initial DB schema
-```
-
-## Design system
-
-### Fonts
-
-Load via `next/font/google`:
-- `Inter Tight` weights 300, 400, 500, 600, 700 as `--font-sans`
-- `JetBrains Mono` weights 400, 500 as `--font-mono`
-
-Apply `Inter Tight` as the default. Use `JetBrains Mono` via `font-mono` class for all metadata, dates, codes, labels.
-
-### Tailwind tokens
-
-Extend `tailwind.config.ts`:
-
-```ts
-theme: {
-  extend: {
-    colors: {
-      bg: {
-        DEFAULT: '#0A0A0B',
-        2: '#131315',
-        3: '#1C1C1F',
-      },
-      fg: {
-        DEFAULT: '#F0F0F0',
-        2: '#A8A8AD',
-        3: '#6B6B70',
-        4: '#3E3E42',
-      },
-      accent: {
-        DEFAULT: '#FF4C15',
-        dim: 'rgba(255, 76, 21, 0.12)',
-      },
-      line: {
-        DEFAULT: 'rgba(255, 255, 255, 0.08)',
-        2: 'rgba(255, 255, 255, 0.14)',
-      },
-      ok: '#5FE388',
-      warn: '#F5C451',
-      err: '#FF5C5C',
-    },
-    fontFamily: {
-      sans: ['var(--font-sans)', 'sans-serif'],
-      mono: ['var(--font-mono)', 'monospace'],
-    },
-    letterSpacing: {
-      tightest: '-0.055em',
-      tighter: '-0.04em',
-      tight: '-0.02em',
-    },
-  },
-},
-```
-
-### Aesthetic principles
-
-- Black canvas, off-white text, single accent. No gradients except the hero radial glow on the sign-in screen.
-- Grid-based layout with hairline dividers (`border-line`). No shadows.
-- Display type is tight-tracked and heavy. Metadata is all-caps mono with wide tracking (`tracking-[0.15em]`).
-- Numbers are tabular (`font-variant-numeric: tabular-nums`) in the ledger and stats.
-- Layout is max-width 1280px, 28px horizontal padding.
-- Top bar and nav are sticky with `backdrop-blur-md` on semi-transparent background.
-
-### Components to match exactly
-
-Inspect the prototype for pixel-accurate reference:
-- **Hero**: `clamp(64px, 13vw, 180px)` display, `.` period in accent color
-- **Stat cells**: big number with small unit, mono label above, mono sub-caption below, hairline dividers
-- **Section header**: title left aligned with "§ 0X" code on the right, lead paragraph below title
-- **Vote row**: three columns on desktop (info, bar chart, buttons), stacks on mobile under 780px
-- **Booking row**: checkbox, title, assignee dropdown, delete icon
-- **Ledger row**: date, description + paid by, amount, delete icon
-
-## Data model
-
-See `schema.sql`. Summary of tables:
-
-- `profiles` — user display data (name, joined_at). One row per auth user. Backed by `auth.users`.
-- `trips` — trip records. MVP uses a single trip with slug `stockholm-2026`.
-- `trip_members` — many-to-many between profiles and trips.
-- `activities` — shortlist items, seeded per trip.
-- `votes` — user votes on activities. Upsert on conflict.
-- `bookings` — checklist items. Any member can edit or tick any booking.
-- `expenses` — shared expenses. Any member can create. Only the payer can delete their own.
-- `posts` — feed items with optional image URL and caption.
-
-RLS policies enforce that users can only see and act on data for trips they are members of. Schema includes all policies.
-
-## Feature specification
-
-### 1. Auth
-
-- Sign in page at `/sign-in` accepts an email. Supabase sends a magic link.
-- On first sign-in, if no `profiles` row exists for the user, prompt for display name and create it.
-- Auto-add the user to the `stockholm-2026` trip as a member on sign-up.
-- Middleware redirects unauthenticated users to `/sign-in` for all `(app)` routes.
-- A "Switch" button in the top bar signs out and clears the session.
-
-### 2. Top bar + hero (shared layout)
-
-- Top bar: brand dot (pulsing accent), "Boys Trip · 001" label, right-side user chip with initials avatar and name.
-- Hero is on the overview page only. Shows title, meta line, subtitle, and 4-stat grid (T-Minus days, target budget, bookings progress, kitty total).
-- T-Minus is computed live from 23 July 2026.
-- Bookings and kitty stats query the DB and update when data changes.
-
-### 3. Overview (`/`)
-
-- Static-ish content. Renders:
-  - `SpecGrid`: 4 cells (Base, Flights, Per head, The rule) with values from constants.
-  - `Schedule`: 4 rows (Thu, Fri, Sat, Sun) with heading and body from constants.
-- All copy matches the prototype exactly. Store schedule and spec in a `constants/trip.ts` file.
-
-### 4. Crew (`/crew`)
-
-- Lists all members of the trip, ordered by `joined_at` ascending.
-- Shows index (01, 02...), name, "You" tag on the current user's row with accent tint background, join date in mono.
-- If roster has fewer than 5, show "Open slot" placeholder rows for the remainder.
-- Realtime: subscribe to `trip_members` inserts so the list updates live when someone joins.
-
-### 5. Shortlist (`/shortlist`)
-
-- Lists all activities for the trip.
-- Filter pills: All / Day / Night. Default All.
-- Each row: title, mono meta, vote distribution bar (yes/maybe/no with color segments), vote counts, and three buttons (YES / MEH / NO).
-- Clicking the user's current vote clears it (upsert to delete).
-- Ranking: activities sorted by score descending, where `score = yes*2 + maybe`.
-- Realtime: subscribe to `votes` changes.
-
-### 6. Bookings (`/bookings`)
-
-- List of bookings, pre-seeded with 9 defaults (see `schema.sql` seeds).
-- Add field at the top: text input + Add button. Enter key submits.
-- Each row: checkbox (filled accent color when done), title (strikethrough + dim when done), assignee select populated with crew, delete icon.
-- Any member can edit any booking. No author restriction on bookings.
-- Realtime: subscribe to `bookings` changes.
-
-### 7. Ledger (`/ledger`)
-
-- Three stat cards at the top: Total pooled, Even split, You've covered.
-- Add expense form: description, amount, Log button.
-- List of expenses in reverse chronological order: date in mono, description, paid by, amount, delete icon (only visible on your own expenses).
-- Balances section below the list: one row per crew member showing `paid - share`. Positive in green, negative in red, zero in dim gray. Caption below explains positive = owed back.
-- Realtime: subscribe to `expenses` changes.
-
-### 8. Feed (`/feed`)
-
-- Form at the top: image URL (optional), caption textarea, Post button.
-- Grid of posts below, newest first. Each card: optional image (4:3 aspect, object-cover, gracefully hide on 404), caption, author + date in mono footer.
-- Realtime: subscribe to `posts` changes.
-- Future: accept direct uploads via Supabase Storage. Not in MVP.
-
-## Realtime
-
-Use a single `useRealtimeTable<T>` hook that:
-1. Fetches initial data via the REST API.
-2. Subscribes to Postgres changes on the given table filtered by `trip_id`.
-3. Updates local state on INSERT, UPDATE, DELETE.
-
-Debounce re-renders where useful. Unsubscribe on unmount.
-
-## Build order
-
-Phase each step as a separate commit. Do not start the next phase until the previous works end-to-end.
-
-1. **Scaffold**: Next.js app, Tailwind config with tokens, fonts loaded, root layout with background color and base typography set.
-2. **Supabase wiring**: client + server helpers, middleware, auth callback route.
-3. **Schema**: run `schema.sql` against the project. Seed the single trip and its activities via `scripts/seed.ts`.
-4. **Sign-in flow**: magic link, callback, profile creation on first login, auto-add to trip.
-5. **Layout**: top bar, nav, sticky behavior, user chip with initials.
-6. **Overview**: hero + spec grid + schedule. Pull booked/kitty stats from DB.
-7. **Crew**: list + realtime + open-slot placeholders.
-8. **Shortlist**: vote rows, filters, realtime, ranking logic.
-9. **Bookings**: CRUD + realtime + assignee select.
-10. **Ledger**: stats + add expense + list + balances + realtime.
-11. **Feed**: post + list + realtime.
-12. **Polish**: loading states, empty states, error toasts, mobile checks.
-13. **Deploy**: push to GitHub, connect Vercel, set env vars, verify prod.
+Avoid: other UI libraries, CSS-in-JS runtimes, client state libs (Zustand, Redux), shadcn (primitives are hand-rolled in [src/components/ui/](src/components/ui/)).
 
 ## Conventions
 
-- Server components by default. Client components only where interactivity is required (`'use client'` at top).
-- Data fetching via Supabase server client in RSCs for initial load. Client realtime subscriptions layer on top for live updates.
-- Mutations via server actions (`'use server'`) where possible. Validate inputs with Zod.
-- Errors: log to console server-side, toast client-side via a simple toast component.
-- Naming: `PascalCase` for components, `camelCase` for functions and variables, `kebab-case` for file names except component files which match the component name.
-- No any types. If a type is unknown, use `unknown` and narrow.
-- No comments explaining what code does. Comments only for why something non-obvious is done.
-- Copy from the prototype verbatim. Do not rewrite section titles or lead paragraphs.
+- **Server components by default.** Add `"use client"` only when interactivity forces it.
+- **Initial data** via Supabase server client in RSCs; layer realtime subscriptions on top in client components.
+- **Mutations** via Next.js server actions (`"use server"`), validated with Zod.
+- **Naming**: PascalCase components, camelCase funcs/vars, kebab-case non-component files; component files match component name.
+- **No comments explaining WHAT code does** — names do that. Only comment non-obvious WHY (hidden invariants, workarounds, surprising behavior).
+- **Errors**: log server-side console; surface client-side via the `Toaster` primitive.
+- **Tokens over hex**: colors and spacing always via Tailwind tokens defined in `@theme`. See [designsystem.md](designsystem.md) §2.
+- **Primitives live in** [src/components/ui/](src/components/ui/) — feature code composes around them, never hand-rolls a Button/Field/Dialog.
+- **Force-dynamic on authed routes** — add `export const dynamic = "force-dynamic"` to avoid `notFound()` caching under RSC.
 
-## Definition of done (MVP)
+## Routes
 
-- All five tabs render correctly on desktop and mobile.
-- Magic link auth works end-to-end on production.
-- Two browsers signed in as different users see each other's votes, bookings, and expenses update live without refresh.
-- Lighthouse performance score above 90 on the overview page.
-- No console errors.
-- Deployed to a public URL.
+| Path | Purpose |
+| --- | --- |
+| `/sign-in` | Email+password, sign-up, or magic-link request |
+| `/callback` | Supabase auth callback |
+| `/profile` | First-login display-name capture |
+| `/sign-out` | Clears session |
+| `/` | Trip dashboard (list of user's trips) |
+| `/trips/new` | Create trip |
+| `/trips/[slug]` | Overview (redirects to `/destinations` when `status === "planning"`) |
+| `/trips/[slug]/destinations` | Propose + vote on candidates; admin locks winner |
+| `/trips/[slug]/crew` | Members + invite links |
+| `/trips/[slug]/shortlist` | Activity shortlist + voting |
+| `/trips/[slug]/bookings` | Shared bookings checklist |
+| `/trips/[slug]/ledger` | Shared expenses + per-person balances |
+| `/trips/[slug]/feed` | Trip posts |
+| `/trips/[slug]/admin` | Admin-only trip configuration |
+| `/join/[token]` | Invite acceptance |
+| `/account` | User account settings |
+| `/ai-usage` | AI cost dashboard (gated by `AI_BETA_OWNER_EMAIL`) |
 
-## Out of scope for MVP
+Middleware redirects unauthed users on `(app)` routes to `/sign-in`.
 
-- Direct image uploads (use pasted URLs for now).
-- Push notifications.
-- Multi-trip support (single hardcoded `stockholm-2026` trip).
-- Admin panel.
-- Custom activity creation by users (activities are seeded only).
-- Receipt upload, per-item split, non-even split math.
+## Data model
 
-## Reference files
+Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/migrations/](supabase/migrations/) for DDL):
 
-- `prototype/stockholm_trip.html` — visual and structural reference
-- `schema.sql` — initial database schema, RLS policies, and seed data
+- `profiles` — one row per auth user; `ai_enabled` gates the closed-beta AI draft feature
+- `trips` — status enum (`planning` | `locked`); holds `hero_title`, `hero_subtitle`, `city_label`, `dates_label`, `target_budget_pp`, `target_crew_size`, `currency`, `vote_deadline`, `start_date`, `end_date`, `ai_drafted_at`, and a `meta` jsonb (`spec_grid`, `schedule`, `section_leads`)
+- `trip_members` — `(trip_id, user_id, role)`
+- `trip_invites` — tokenized invite links; email optional
+- `destination_candidates` — proposals; optional Mapbox `mapbox_id`, `longitude`, `latitude`, `country`
+- `destination_votes` — yes/maybe/no per candidate per user
+- `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`
+- `bookings` — checklist items; any member can edit/tick; rows track `ai_drafted`
+- `expenses` — `paid_by` + `amount`; only payer deletes own
+- `posts` — feed items; optional `image_url`
+- `ai_usage` — cost telemetry per draft pass (provider, tokens, Places requests, USD)
+- `ai_feedback` — thumbs up/down + optional note per AI-drafted surface
+- `ai_draft_versions` — pre-write snapshots of AI-drafted surfaces (`spec_grid`, `schedule`, `activities`, `bookings`, `full`) for restore; admin-only RLS
+- `notifications` — one row per (recipient, event); `kind` is open text, delivered via Supabase Realtime
+
+**RLS**: members only see and act on data for trips they belong to.
+
+## Primitives
+
+Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Card`, `Field`, `Dialog`, `DatePicker`, `DateRangePicker`, `DateTimePicker`, `Calendar`, `RangeCalendar`, `MoneyInput`, `InlineEdit`, `InlineMoneyEdit`, `InlineTextarea`, `ProgressRail`, `Skeleton`, `Toaster`. Shared input classes live in [src/lib/styles.ts](src/lib/styles.ts) (`INPUT`, `INPUT_SM`, `INPUT_MONO`).
+
+## Realtime
+
+Use [useRealtimeTable](src/hooks/useRealtimeTable.ts) for collaborative tables: initial fetch → subscribe to Postgres changes filtered by `trip_id` → reducer over INSERT/UPDATE/DELETE. Unsubscribe on unmount.
+
+Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `notifications`.
+
+## Server actions
+
+Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `aiDraft.ts`, `airports.ts`, `notifications.ts`, `overviewInline.ts`. Every action validates input with Zod before touching the DB.
+
+## AI draft ("Lock & draft")
+
+Closed-beta feature. Once a trip admin locks a destination, an admin with `profiles.ai_enabled = true` sees a single CTA that fires one bundled pass through Gemini 3 Flash Preview + Google Places to populate hero, spec grid, schedule, activities, and suggested bookings. Drafts land directly in the existing tables with `ai_drafted = true` markers (no accept/reject flow); users edit in place.
+
+- AI wrapper: [src/lib/ai.ts](src/lib/ai.ts) — Gemini via `@google/genai` with `searchPlaces` tool-use loop + Zod-validated JSON output. Swappable to Claude Haiku via the same `DraftResult` interface.
+- Places wrapper: [src/lib/places.ts](src/lib/places.ts) — Google Places (New) Text Search + Details, tight field mask for cost control.
+- Rate limit: [src/lib/rateLimit.ts](src/lib/rateLimit.ts) — DB-backed via `ai_usage` (2 drafts per trip per 24h, 1 per user per hour).
+- Gating: flip `profiles.ai_enabled` in Supabase Studio. No Stripe, no paywall, no subscription code yet.
+- Cost telemetry: `ai_usage` table; owner views `/ai-usage` (gated by `AI_BETA_OWNER_EMAIL` env).
+- Version history: every force-redraft and section-redraft snapshots the pre-write state into `ai_draft_versions` before overwriting. Admins see the last 3 snapshots per surface in a popover on the AIDraftRail and can restore one; restoring snapshots the current state first so restores are themselves reversible.
+- Env vars needed: `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `AI_BETA_OWNER_EMAIL`.
+
+## Notifications
+
+In-app realtime feed surfaced via the topbar bell. Fan-out happens inside the server actions that trigger events — one row per recipient inserted with the service-role client, then Supabase Realtime pushes to each user's bell.
+
+Six `kind` values (open text column; union enforced in [src/lib/types.ts](src/lib/types.ts)):
+
+- `crew_joined` — someone accepted an invite or was added to the trip
+- `destination_locked` — admin locked the winning destination
+- `trip_drafted` — admin ran Lock & draft
+- `expense_added` — expense logged to the ledger
+- `role_changed` — member promoted, demoted, or removed
+- `candidate_proposed` — new destination candidate proposed
+
+Pointers: [src/lib/actions/notifications.ts](src/lib/actions/notifications.ts) (`listRecent`, `markAsRead`, `markAllRead`), migration [20260419220000_notifications.sql](supabase/migrations/20260419220000_notifications.sql). Unread-count query is backed by a partial index on `read_at is null` so the bell stays fast even with thousands of read rows. Mark-read writes use the service role — the SSR client verifies the user and the update is scoped to `user_id = auth.uid()` in the query (the RLS update policy was removed; see [20260419230000_notifications_tighten_rls.sql](supabase/migrations/20260419230000_notifications_tighten_rls.sql)).
+
+## Running
+
+```bash
+pnpm install
+# Fill .env.local (see README)
+pnpm dev
+```
+
+## Testing
+
+```bash
+pnpm test:setup   # idempotent Playwright user bootstrap
+pnpm test          # smoke + a11y suites
+pnpm test:report   # HTML report
+```
+
+Smoke covers main authed routes; a11y sweeps the same surfaces with axe-core.
+
+## Features for future consideration
+
+Not built yet, not currently planned — picks for the next plan, or to fill space between plans.
+
+- Push notifications (in-app notifications already ship — see §Notifications)
+- Multi-currency within one trip's ledger (currently: trip has one currency)
+- Receipt OCR, per-item splits, weighted splits
+- Activity creation by non-admin members (currently: activities are admin-seeded)
