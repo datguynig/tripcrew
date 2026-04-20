@@ -112,13 +112,29 @@ export async function addPost(input: {
     .maybeSingle<{ id: string }>();
   if (error || !inserted) return { error: error?.message ?? "Post failed" };
 
-  const recipients = await tripMemberIdsExcept(parsed.data.tripId, user.id);
+  const [{ data: actor }, { data: trip }, recipients] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", user.id)
+      .maybeSingle<{ name: string | null }>(),
+    supabase
+      .from("trips")
+      .select("name, slug")
+      .eq("id", parsed.data.tripId)
+      .maybeSingle<{ name: string; slug: string }>(),
+    tripMemberIdsExcept(parsed.data.tripId, user.id),
+  ]);
+
   await createNotifications({
     tripId: parsed.data.tripId,
     actorId: user.id,
     kind: "feed_message",
     entityId: inserted.id,
     payload: {
+      actor_name: actor?.name ?? undefined,
+      trip_name: trip?.name,
+      trip_slug: trip?.slug,
       post_id: inserted.id,
       reply_to_post_id: parsed.data.replyToPostId,
       reply_to_author_id: replyToAuthorId,

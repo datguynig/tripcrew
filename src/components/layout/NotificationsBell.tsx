@@ -255,6 +255,12 @@ function deepLinkFor(n: Notification): string | null {
       return `/trips/${slug}/crew`;
     case "expense_added":
       return `/trips/${slug}/ledger`;
+    case "feed_message": {
+      const postId = n.payload?.post_id ?? n.entity_id;
+      return postId
+        ? `/trips/${slug}/feed#post-${postId}`
+        : `/trips/${slug}/feed`;
+    }
     default:
       return `/trips/${slug}`;
   }
@@ -281,6 +287,25 @@ function describe(n: Notification): string {
       if (n.payload?.new_role === "removed")
         return `You were removed from ${trip}.`;
       return `Your role changed on ${trip}.`;
+    case "feed_message": {
+      const excerpt = n.payload?.excerpt ?? "";
+      const repliedToMe =
+        n.payload?.reply_to_post_id &&
+        n.payload?.reply_to_author_id === n.user_id;
+      if (repliedToMe) {
+        return excerpt
+          ? `${actor} replied to you: "${excerpt}"`
+          : `${actor} replied to you.`;
+      }
+      if (n.payload?.reply_to_post_id) {
+        return excerpt
+          ? `${actor} replied in the crew chat: "${excerpt}"`
+          : `${actor} replied in the crew chat.`;
+      }
+      return excerpt
+        ? `${actor} in the crew chat: "${excerpt}"`
+        : `${actor} posted in the crew chat.`;
+    }
     default:
       return "New activity.";
   }

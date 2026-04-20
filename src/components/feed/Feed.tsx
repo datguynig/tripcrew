@@ -69,8 +69,25 @@ export function Feed({
   }, [initialLikes]);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    const scrollToHashPost = () => {
+      if (typeof window === "undefined") return false;
+      const hash = window.location.hash;
+      if (!hash.startsWith("#post-")) return false;
+      const el = document.getElementById(hash.slice(1));
+      if (!el) return false;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("bg-accent-dim");
+      setTimeout(() => el.classList.remove("bg-accent-dim"), 1200);
+      return true;
+    };
+
+    if (!scrollToHashPost()) {
+      const el = scrollRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }
+
+    window.addEventListener("hashchange", scrollToHashPost);
+    return () => window.removeEventListener("hashchange", scrollToHashPost);
   }, []);
 
   useEffect(() => {
