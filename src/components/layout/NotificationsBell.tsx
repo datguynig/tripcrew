@@ -13,6 +13,8 @@ type Props = {
   loading: boolean;
   onMarkAsRead: (id: string) => void;
   onMarkAllRead: () => void;
+  isFeedMuted: (tripId: string) => boolean;
+  onToggleFeedMute: (tripId: string) => void;
 };
 
 export function NotificationsBell({
@@ -21,6 +23,8 @@ export function NotificationsBell({
   loading,
   onMarkAsRead,
   onMarkAllRead,
+  isFeedMuted,
+  onToggleFeedMute,
 }: Props) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -172,6 +176,16 @@ export function NotificationsBell({
                     notification={n}
                     isFirst={idx === 0 && unreadCount === 0}
                     onClick={() => handleItemClick(n, deepLinkFor(n))}
+                    muted={
+                      n.kind === "feed_message" && n.trip_id
+                        ? isFeedMuted(n.trip_id)
+                        : false
+                    }
+                    onToggleMute={
+                      n.kind === "feed_message" && n.trip_id
+                        ? () => onToggleFeedMute(n.trip_id as string)
+                        : undefined
+                    }
                   />
                 ))}
               </ul>
@@ -187,25 +201,40 @@ function NotificationItem({
   notification,
   isFirst,
   onClick,
+  muted,
+  onToggleMute,
 }: {
   notification: Notification;
   isFirst: boolean;
   onClick: () => void;
+  muted: boolean;
+  onToggleMute?: () => void;
 }) {
   const unread = notification.read_at === null;
   const focusAttr = isFirst ? { "data-popover-focus": "first" } : {};
+  const isFeedMessage = notification.kind === "feed_message";
   return (
-    <li role="menuitem">
+    <li
+      role="none"
+      className={`relative group border-b border-line last:border-b-0 transition-opacity ${
+        muted ? "opacity-60" : ""
+      }`}
+    >
       <button
         type="button"
+        role="menuitem"
         onClick={onClick}
         {...focusAttr}
-        className="w-full grid grid-cols-[auto_1fr_6px] gap-3 items-start px-5 py-3 text-left hover:bg-bg-3 transition-colors cursor-pointer border-b border-line last:border-b-0"
+        className="w-full grid grid-cols-[auto_1fr_6px] gap-3 items-start px-5 py-3 text-left hover:bg-bg-3 transition-colors cursor-pointer"
       >
         <span className="label-xs text-fg-3 tabular min-w-[32px] pt-[3px]">
           {formatRelative(notification.created_at)}
         </span>
-        <span className="text-[13px] leading-[1.45] text-fg line-clamp-2">
+        <span
+          className={`text-[13px] leading-[1.45] line-clamp-2 ${
+            muted ? "text-fg-2" : "text-fg"
+          } ${isFeedMessage ? "pr-16" : ""}`}
+        >
           {describe(notification)}
         </span>
         <span aria-hidden className="w-[6px] h-[6px] mt-[7px] shrink-0">
@@ -214,6 +243,28 @@ function NotificationItem({
           )}
         </span>
       </button>
+      {isFeedMessage && onToggleMute && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleMute();
+          }}
+          aria-pressed={muted}
+          aria-label={
+            muted
+              ? "Unmute crew chat for this trip"
+              : "Mute crew chat for this trip"
+          }
+          className={`absolute bottom-[10px] right-5 label-xs transition-opacity cursor-pointer ${
+            muted
+              ? "opacity-100 text-accent"
+              : "opacity-0 group-hover:opacity-100 focus-within:opacity-100 text-fg-3 hover:text-fg focus-visible:text-fg"
+          }`}
+        >
+          {muted ? "MUTED" : "MUTE"}
+        </button>
+      )}
     </li>
   );
 }

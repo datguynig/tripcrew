@@ -21,7 +21,11 @@ export default async function TripLayout({
 
   return (
     <>
-      <Nav slug={trip.slug} isAdmin={member.role === "admin"} />
+      <Nav
+        slug={trip.slug}
+        tripId={trip.id}
+        isAdmin={member.role === "admin"}
+      />
       {children}
     </>
   );

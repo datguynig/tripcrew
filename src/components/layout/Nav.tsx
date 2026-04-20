@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const TABS = [
   { code: "00", label: "Destinations", path: "/destinations" },
@@ -13,8 +14,18 @@ const TABS = [
   { code: "06", label: "Feed", path: "/feed" },
 ] as const;
 
-export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
+export function Nav({
+  slug,
+  isAdmin,
+  tripId,
+}: {
+  slug: string;
+  isAdmin: boolean;
+  tripId: string;
+}) {
   const pathname = usePathname();
+  const { feedUnreadByTrip } = useNotifications();
+  const feedUnread = feedUnreadByTrip[tripId] ?? 0;
   const base = `/trips/${slug}`;
   const tabs = isAdmin
     ? [...TABS, { code: "07", label: "Admin", path: "/admin" } as const]
@@ -28,6 +39,7 @@ export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
             const href = `${base}${tab.path}`;
             const active =
               tab.path === "" ? pathname === href : pathname.startsWith(href);
+            const isFeedTab = tab.path === "/feed";
             return (
               <Link
                 key={tab.path}
@@ -45,6 +57,16 @@ export function Nav({ slug, isAdmin }: { slug: string; isAdmin: boolean }) {
                   {tab.code}
                 </span>
                 <span>{tab.label}</span>
+                {isFeedTab && (
+                  <span
+                    aria-label={
+                      feedUnread > 0 ? `${feedUnread} unread` : undefined
+                    }
+                    className="font-mono text-[10px] tracking-[0.1em] text-accent tabular min-w-[18px] text-right"
+                  >
+                    {feedUnread > 0 ? feedUnread : ""}
+                  </span>
+                )}
                 {active && (
                   <span className="absolute -bottom-px left-0 right-5 h-[2px] bg-accent" />
                 )}

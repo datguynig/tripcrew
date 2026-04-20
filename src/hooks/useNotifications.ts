@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   listRecent,
@@ -51,6 +51,21 @@ export function useNotifications() {
 
   // Realtime subscription — filtered to own user_id at the Postgres
   // layer so we don't receive other users' rows.
+  //
+  // Channel name includes a per-instance random suffix because
+  // useNotifications is mounted in multiple components (Nav,
+  // TripSwitcher, NotificationsBellMount). Supabase's client caches
+  // channels by name, so a shared name would reuse an already-
+  // subscribed channel and throw when the second instance calls
+  // `.on()` after `.subscribe()`.
+  const instanceIdRef = useRef<string>("");
+  if (instanceIdRef.current === "") {
+    instanceIdRef.current =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2);
+  }
+
   useEffect(() => {
     const supabase = createClient();
     let channel: ReturnType<typeof supabase.channel> | null = null;
@@ -62,7 +77,7 @@ export function useNotifications() {
       if (!user) return;
 
       channel = supabase
-        .channel(`rt:notifications:${user.id}`)
+        .channel(`rt:notifications:${user.id}:${instanceIdRef.current}`)
         .on(
           "postgres_changes",
           {
@@ -159,11 +174,26 @@ export function useNotifications() {
     });
   };
 
+  // Per-trip unread count for feed_message kind. Coalescing in the
+  // server action keeps this at ~1 row per actor-trip, so the last-20
+  // window nearly always catches the full picture.
+  const feedUnreadByTrip = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const n of notifications) {
+      if (n.kind !== "feed_message") continue;
+      if (n.read_at !== null) continue;
+      if (!n.trip_id) continue;
+      m[n.trip_id] = (m[n.trip_id] ?? 0) + 1;
+    }
+    return m;
+  }, [notifications]);
+
   return {
     notifications,
     unreadCount,
     loading,
     onMarkAsRead,
     onMarkAllRead,
+    feedUnreadByTrip,
   };
 }

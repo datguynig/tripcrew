@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { useNotifications } from "@/hooks/useNotifications";
 import type { Trip, TripRole } from "@/lib/types";
 
 type SwitcherTrip = Trip & { role: TripRole };
@@ -34,6 +35,7 @@ export function TripSwitcher({ trips }: Props) {
   const currentSlug = matchSlugFromPath(pathname);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { feedUnreadByTrip } = useNotifications();
 
   const current = trips.find((t) => t.slug === currentSlug) ?? null;
 
@@ -115,16 +117,19 @@ export function TripSwitcher({ trips }: Props) {
             label="Active"
             rows={grouped.active}
             currentSlug={currentSlug}
+            feedUnreadByTrip={feedUnreadByTrip}
           />
           <GroupList
             label="Planning"
             rows={grouped.planning}
             currentSlug={currentSlug}
+            feedUnreadByTrip={feedUnreadByTrip}
           />
           <GroupList
             label="Past"
             rows={grouped.past}
             currentSlug={currentSlug}
+            feedUnreadByTrip={feedUnreadByTrip}
           />
 
           <div className="border-t border-line mt-1 pt-1">
@@ -148,10 +153,12 @@ function GroupList({
   label,
   rows,
   currentSlug,
+  feedUnreadByTrip,
 }: {
   label: string;
   rows: SwitcherTrip[];
   currentSlug: string | null;
+  feedUnreadByTrip: Record<string, number>;
 }) {
   if (rows.length === 0) return null;
   return (
@@ -164,6 +171,7 @@ function GroupList({
         const subtitle =
           trip.destination ??
           (trip.status === "planning" ? "Planning" : "No destination");
+        const unread = feedUnreadByTrip[trip.id] ?? 0;
         return (
           <Link
             key={trip.id}
@@ -186,6 +194,14 @@ function GroupList({
                 {subtitle}
               </span>
             </span>
+            {unread > 0 && (
+              <span
+                aria-label={`${unread} unread`}
+                className="shrink-0 min-w-[22px] h-[18px] px-[6px] inline-flex items-center justify-center border border-accent/50 text-accent font-mono text-[10px] tracking-[0.08em] tabular"
+              >
+                {unread > 9 ? "9+" : unread}
+              </span>
+            )}
             {trip.role === "admin" && (
               <Badge tone="muted" size="sm" className="shrink-0">
                 Admin
