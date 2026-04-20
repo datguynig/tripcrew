@@ -147,6 +147,10 @@ Core entities used by the current app include:
 - `expenses`
 - `posts`
 - `trip_invites`
+- `notifications`
+- `ai_usage`
+- `ai_feedback`
+- `ai_draft_versions`
 
 Trip membership is role-based (`admin` or `member`), and most tables are protected by RLS so members only access data for trips they belong to.
 

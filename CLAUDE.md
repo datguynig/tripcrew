@@ -57,6 +57,7 @@ Avoid: other UI libraries, CSS-in-JS runtimes, client state libs (Zustand, Redux
 | `/trips/[slug]/admin` | Admin-only trip configuration |
 | `/join/[token]` | Invite acceptance |
 | `/account` | User account settings |
+| `/ai-usage` | AI cost dashboard (gated by `AI_BETA_OWNER_EMAIL`) |
 
 Middleware redirects unauthed users on `(app)` routes to `/sign-in`.
 
@@ -76,22 +77,24 @@ Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/mig
 - `posts` — feed items; optional `image_url`
 - `ai_usage` — cost telemetry per draft pass (provider, tokens, Places requests, USD)
 - `ai_feedback` — thumbs up/down + optional note per AI-drafted surface
+- `ai_draft_versions` — pre-write snapshots of AI-drafted surfaces (`spec_grid`, `schedule`, `activities`, `bookings`, `full`) for restore; admin-only RLS
+- `notifications` — one row per (recipient, event); `kind` is open text, delivered via Supabase Realtime
 
 **RLS**: members only see and act on data for trips they belong to.
 
 ## Primitives
 
-Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Card`, `Field`, `Dialog`, `DatePicker`, `DateTimePicker`, `Calendar`, `MoneyInput`, `Toaster`. Shared input classes live in [src/lib/styles.ts](src/lib/styles.ts) (`INPUT`, `INPUT_SM`, `INPUT_MONO`).
+Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Card`, `Field`, `Dialog`, `DatePicker`, `DateRangePicker`, `DateTimePicker`, `Calendar`, `RangeCalendar`, `MoneyInput`, `InlineEdit`, `InlineMoneyEdit`, `InlineTextarea`, `ProgressRail`, `Skeleton`, `Toaster`. Shared input classes live in [src/lib/styles.ts](src/lib/styles.ts) (`INPUT`, `INPUT_SM`, `INPUT_MONO`).
 
 ## Realtime
 
 Use [useRealtimeTable](src/hooks/useRealtimeTable.ts) for collaborative tables: initial fetch → subscribe to Postgres changes filtered by `trip_id` → reducer over INSERT/UPDATE/DELETE. Unsubscribe on unmount.
 
-Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`.
+Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `notifications`.
 
 ## Server actions
 
-Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `aiDraft.ts`. Every action validates input with Zod before touching the DB.
+Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `aiDraft.ts`, `airports.ts`, `notifications.ts`, `overviewInline.ts`. Every action validates input with Zod before touching the DB.
 
 ## AI draft ("Lock & draft")
 
@@ -102,7 +105,23 @@ Closed-beta feature. Once a trip admin locks a destination, an admin with `profi
 - Rate limit: [src/lib/rateLimit.ts](src/lib/rateLimit.ts) — DB-backed via `ai_usage` (2 drafts per trip per 24h, 1 per user per hour).
 - Gating: flip `profiles.ai_enabled` in Supabase Studio. No Stripe, no paywall, no subscription code yet.
 - Cost telemetry: `ai_usage` table; owner views `/ai-usage` (gated by `AI_BETA_OWNER_EMAIL` env).
+- Version history: every force-redraft and section-redraft snapshots the pre-write state into `ai_draft_versions` before overwriting. Admins see the last 3 snapshots per surface in a popover on the AIDraftRail and can restore one; restoring snapshots the current state first so restores are themselves reversible.
 - Env vars needed: `GEMINI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `AI_BETA_OWNER_EMAIL`.
+
+## Notifications
+
+In-app realtime feed surfaced via the topbar bell. Fan-out happens inside the server actions that trigger events — one row per recipient inserted with the service-role client, then Supabase Realtime pushes to each user's bell.
+
+Six `kind` values (open text column; union enforced in [src/lib/types.ts](src/lib/types.ts)):
+
+- `crew_joined` — someone accepted an invite or was added to the trip
+- `destination_locked` — admin locked the winning destination
+- `trip_drafted` — admin ran Lock & draft
+- `expense_added` — expense logged to the ledger
+- `role_changed` — member promoted, demoted, or removed
+- `candidate_proposed` — new destination candidate proposed
+
+Pointers: [src/lib/actions/notifications.ts](src/lib/actions/notifications.ts) (`listRecent`, `markAsRead`, `markAllRead`), migration [20260419220000_notifications.sql](supabase/migrations/20260419220000_notifications.sql). Unread-count query is backed by a partial index on `read_at is null` so the bell stays fast even with thousands of read rows. Mark-read writes use the service role — the SSR client verifies the user and the update is scoped to `user_id = auth.uid()` in the query (the RLS update policy was removed; see [20260419230000_notifications_tighten_rls.sql](supabase/migrations/20260419230000_notifications_tighten_rls.sql)).
 
 ## Running
 
@@ -126,8 +145,7 @@ Smoke covers main authed routes; a11y sweeps the same surfaces with axe-core.
 
 Not built yet, not currently planned — picks for the next plan, or to fill space between plans.
 
-- Direct image uploads for feed posts (currently: paste URLs)
-- Push notifications
+- Push notifications (in-app notifications already ship — see §Notifications)
 - Multi-currency within one trip's ledger (currently: trip has one currency)
 - Receipt OCR, per-item splits, weighted splits
 - Activity creation by non-admin members (currently: activities are admin-seeded)

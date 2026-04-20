@@ -473,7 +473,8 @@ Non-negotiables:
 
 - Popovers lack `role="dialog"` in some cases (DatePicker does, currency picker is a `role="listbox"`).
 - No skip-to-content link yet.
-- Axe audit not yet run.
+
+Axe is running across the main authed routes in [tests/a11y.spec.ts](tests/a11y.spec.ts) (WCAG 2.1 AA). Treat the two items above as the remaining manual gaps, not the full audit backlog.
 
 ---
 
