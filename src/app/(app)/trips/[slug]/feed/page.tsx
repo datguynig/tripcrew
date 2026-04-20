@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Feed } from "@/components/feed/Feed";
-import type { Post } from "@/lib/types";
+import type { Post, PostLike } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +35,15 @@ export default async function FeedPage({
       .eq("trip_id", trip.id),
   ]);
 
+  const postIds = (posts ?? []).map((p) => p.id);
+  const { data: likes } = postIds.length
+    ? await supabase
+        .from("post_likes")
+        .select("post_id, user_id, created_at")
+        .in("post_id", postIds)
+        .returns<PostLike[]>()
+    : { data: [] as PostLike[] };
+
   const authorsById: Record<string, string> = {};
   for (const row of members ?? []) {
     const profile = Array.isArray(row.profiles)
@@ -58,6 +67,7 @@ export default async function FeedPage({
       />
       <Feed
         initial={posts ?? []}
+        initialLikes={likes ?? []}
         authorsById={authorsById}
         tripId={trip.id}
         currentUserId={user.id}
