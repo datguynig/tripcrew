@@ -56,6 +56,12 @@ export function Feed({
   const [likes, setLikes] = useState<PostLike[]>(initialLikes);
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [isPosting, startTransition] = useTransition();
+  // Time-relative flags (canEdit, day labels rendered via sub-components)
+  // depend on the local clock. Gate them behind a post-mount flag so the
+  // server and first client render stay identical; real values show up
+  // on the second render after hydration.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const atBottomRef = useRef(true);
@@ -92,70 +98,80 @@ export function Feed({
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel(`rt:feed:${tripId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "posts",
-          filter: `trip_id=eq.${tripId}`,
-        },
-        (payload) => {
-          setPosts((prev) => {
-            if (payload.eventType === "INSERT") {
-              const row = payload.new as Post;
-              if (prev.some((p) => p.id === row.id)) return prev;
-              return [...prev, row];
-            }
-            if (payload.eventType === "UPDATE") {
-              const row = payload.new as Post;
-              return prev.map((p) => (p.id === row.id ? row : p));
-            }
-            if (payload.eventType === "DELETE") {
-              const row = payload.old as { id?: string };
-              return prev.filter((p) => p.id !== row.id);
-            }
-            return prev;
-          });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "post_likes" },
-        (payload) => {
-          setLikes((prev) => {
-            if (payload.eventType === "INSERT") {
-              const row = payload.new as PostLike;
-              if (
-                prev.some(
-                  (l) =>
-                    l.post_id === row.post_id && l.user_id === row.user_id,
-                )
-              ) {
-                return prev;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    // Await auth before subscribing so the realtime websocket carries a
+    // JWT. Without it, Postgres Changes silently drops RLS-gated events
+    // for this listener — the bell works because its own hook uses the
+    // same pattern, but this one was missing it.
+    void (async () => {
+      await supabase.auth.getUser();
+
+      channel = supabase
+        .channel(`rt:feed:${tripId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "posts",
+            filter: `trip_id=eq.${tripId}`,
+          },
+          (payload) => {
+            setPosts((prev) => {
+              if (payload.eventType === "INSERT") {
+                const row = payload.new as Post;
+                if (prev.some((p) => p.id === row.id)) return prev;
+                return [...prev, row];
               }
-              return [...prev, row];
-            }
-            if (payload.eventType === "DELETE") {
-              const row = payload.old as {
-                post_id?: string;
-                user_id?: string;
-              };
-              return prev.filter(
-                (l) =>
-                  !(l.post_id === row.post_id && l.user_id === row.user_id),
-              );
-            }
-            return prev;
-          });
-        },
-      )
-      .subscribe();
+              if (payload.eventType === "UPDATE") {
+                const row = payload.new as Post;
+                return prev.map((p) => (p.id === row.id ? row : p));
+              }
+              if (payload.eventType === "DELETE") {
+                const row = payload.old as { id?: string };
+                return prev.filter((p) => p.id !== row.id);
+              }
+              return prev;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "post_likes" },
+          (payload) => {
+            setLikes((prev) => {
+              if (payload.eventType === "INSERT") {
+                const row = payload.new as PostLike;
+                if (
+                  prev.some(
+                    (l) =>
+                      l.post_id === row.post_id && l.user_id === row.user_id,
+                  )
+                ) {
+                  return prev;
+                }
+                return [...prev, row];
+              }
+              if (payload.eventType === "DELETE") {
+                const row = payload.old as {
+                  post_id?: string;
+                  user_id?: string;
+                };
+                return prev.filter(
+                  (l) =>
+                    !(l.post_id === row.post_id && l.user_id === row.user_id),
+                );
+              }
+              return prev;
+            });
+          },
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [tripId]);
 
@@ -311,6 +327,7 @@ export function Feed({
       }
       const isOwn = p.author_id === currentUserId;
       const canEdit =
+        mounted &&
         isOwn &&
         p.caption !== null &&
         now - Date.parse(p.created_at) < EDIT_WINDOW_MS;

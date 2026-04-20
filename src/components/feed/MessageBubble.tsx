@@ -266,6 +266,7 @@ export function MessageBubble({
       {grouped ? (
         <div
           aria-hidden="true"
+          suppressHydrationWarning
           className="label-xs text-fg-3 tabular text-right pt-[3px] opacity-0 group-hover:opacity-100 transition-opacity self-start"
         >
           {timeLabel(post.created_at)}
@@ -287,7 +288,7 @@ export function MessageBubble({
         {!grouped && (
           <div className="flex items-baseline gap-2 mb-[6px]">
             <span className="subheading text-fg">{authorName}</span>
-            <span className="label-xs text-fg-3 tabular">
+            <span className="label-xs text-fg-3 tabular" suppressHydrationWarning>
               {timeLabel(post.created_at)}
             </span>
             {post.edited_at && !post.image_url && post.caption && (
