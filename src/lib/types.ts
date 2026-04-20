@@ -267,6 +267,13 @@ export type NotificationPayload = {
   excerpt?: string;
 };
 
+export type TripNotificationPrefs = {
+  trip_id: string;
+  user_id: string;
+  feed_muted: boolean;
+  updated_at: string;
+};
+
 export type Notification = {
   id: string;
   user_id: string;

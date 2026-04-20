@@ -85,3 +85,25 @@ export async function tripMemberIdsExcept(
     .returns<Array<{ user_id: string }>>();
   return (data ?? []).map((r) => r.user_id).filter((id) => id !== actorId);
 }
+
+/**
+ * Strip out recipients who have `feed_muted = true` for this trip. Only
+ * used by chat-volume fan-out (`feed_message`); other kinds don't
+ * respect the mute because they're low-volume trip events, not chatter.
+ */
+export async function filterMutedFeedRecipients(
+  tripId: string,
+  recipients: string[],
+): Promise<string[]> {
+  if (recipients.length === 0) return recipients;
+  const service = createServiceClient();
+  const { data } = await service
+    .from("trip_notification_prefs")
+    .select("user_id")
+    .eq("trip_id", tripId)
+    .eq("feed_muted", true)
+    .in("user_id", recipients)
+    .returns<Array<{ user_id: string }>>();
+  const muted = new Set((data ?? []).map((r) => r.user_id));
+  return recipients.filter((id) => !muted.has(id));
+}

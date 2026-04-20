@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import {
   createNotifications,
+  filterMutedFeedRecipients,
   tripMemberIdsExcept,
 } from "@/lib/notifications";
 
@@ -112,7 +113,7 @@ export async function addPost(input: {
     .maybeSingle<{ id: string }>();
   if (error || !inserted) return { error: error?.message ?? "Post failed" };
 
-  const [{ data: actor }, { data: trip }, recipients] = await Promise.all([
+  const [{ data: actor }, { data: trip }, allMembers] = await Promise.all([
     supabase
       .from("profiles")
       .select("name")
@@ -125,6 +126,11 @@ export async function addPost(input: {
       .maybeSingle<{ name: string; slug: string }>(),
     tripMemberIdsExcept(parsed.data.tripId, user.id),
   ]);
+
+  const recipients = await filterMutedFeedRecipients(
+    parsed.data.tripId,
+    allMembers,
+  );
 
   await createNotifications({
     tripId: parsed.data.tripId,
