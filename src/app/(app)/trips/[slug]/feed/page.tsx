@@ -22,9 +22,12 @@ export default async function FeedPage({
   const [{ data: posts }, { data: members }] = await Promise.all([
     supabase
       .from("posts")
-      .select("id, trip_id, image_url, caption, author_id, created_at")
+      .select(
+        "id, trip_id, image_url, caption, author_id, created_at, reply_to_post_id, edited_at",
+      )
       .eq("trip_id", trip.id)
       .order("created_at", { ascending: false })
+      .limit(200)
       .returns<Post[]>(),
     supabase
       .from("trip_members")
