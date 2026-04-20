@@ -57,14 +57,12 @@ export function Nav({
                   {tab.code}
                 </span>
                 <span>{tab.label}</span>
-                {isFeedTab && (
+                {isFeedTab && feedUnread > 0 && (
                   <span
-                    aria-label={
-                      feedUnread > 0 ? `${feedUnread} unread` : undefined
-                    }
-                    className="font-mono text-[10px] tracking-[0.1em] text-accent tabular min-w-[18px] text-right"
+                    aria-label={`${feedUnread} unread`}
+                    className="font-mono text-[10px] tracking-[0.1em] text-accent tabular"
                   >
-                    {feedUnread > 0 ? feedUnread : ""}
+                    {feedUnread}
                   </span>
                 )}
                 {active && (
