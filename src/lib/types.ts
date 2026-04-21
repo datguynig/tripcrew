@@ -64,12 +64,28 @@ export type TripDraftSurface =
   | "activities"
   | "bookings";
 
+export type PolaroidSourceType =
+  | "destination"
+  | "activity"
+  | "post"
+  | "upload";
+
+export type PolaroidOverride = {
+  index: number;
+  imageUrl: string;
+  caption?: string | null;
+  subcaption?: string | null;
+  sourceType: PolaroidSourceType;
+  sourceId?: string | null;
+};
+
 export type TripMeta = {
   spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
   section_leads?: SectionLeads;
   ai_preferences?: AiPreferences;
   surface_drafted_at?: Partial<Record<TripDraftSurface, string>>;
+  polaroid_slots?: PolaroidOverride[];
 };
 
 export type Trip = {
@@ -95,6 +111,7 @@ export type Trip = {
   ai_drafted_at: string | null;
   hero_image_url: string | null;
   hero_image_attribution: string | null;
+  hero_image_user_url: string | null;
   hero_tint: string | null;
   created_at: string;
 };

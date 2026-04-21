@@ -80,32 +80,29 @@ export function useNotifications() {
   // Realtime subscription — filtered to own user_id at the Postgres
   // layer so we don't receive other users' rows.
   //
-  // Channel name includes a per-instance random suffix because
-  // useNotifications is mounted in multiple components (Nav,
-  // TripSwitcher, NotificationsBellMount). Supabase's client caches
-  // channels by name, so a shared name would reuse an already-
-  // subscribed channel and throw when the second instance calls
-  // `.on()` after `.subscribe()`.
-  const instanceIdRef = useRef<string>("");
-  if (instanceIdRef.current === "") {
-    instanceIdRef.current =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
-  }
-
+  // Channel name regenerated per-effect-run so HMR re-mounts and
+  // StrictMode double-mounts never collide on Supabase's client-side
+  // channel cache. Cached entries can persist briefly after
+  // `removeChannel` (server cleanup is async); reusing a cached
+  // subscribed channel throws "cannot add callbacks after subscribe".
+  // The timestamp + random suffix makes every channel name unique.
   useEffect(() => {
     const supabase = createClient();
+    const channelId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     void (async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || cancelled) return;
 
       channel = supabase
-        .channel(`rt:notifications:${user.id}:${instanceIdRef.current}`)
+        .channel(`rt:notifications:${user.id}:${channelId}`)
         .on(
           "postgres_changes",
           {
@@ -157,6 +154,7 @@ export function useNotifications() {
     })();
 
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
   }, []);

@@ -4,7 +4,12 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTripMember } from "@/lib/auth";
-import type { ScheduleItem, SpecItem, TripMeta } from "@/lib/types";
+import type {
+  PolaroidOverride,
+  ScheduleItem,
+  SpecItem,
+  TripMeta,
+} from "@/lib/types";
 
 async function gate(tripId: string) {
   const user = await getCurrentUser();
@@ -67,6 +72,83 @@ export async function updateHeroField(input: {
 
   if (error || !trip) return { error: "Could not save." };
   revalidateOverview(trip.slug);
+  return { ok: true as const };
+}
+
+const polaroidSlotSchema = z.object({
+  tripId: z.string().uuid(),
+  index: z.number().int().min(0).max(4),
+  override: z
+    .object({
+      imageUrl: z.string().url(),
+      caption: z.string().trim().max(60).nullable().optional(),
+      subcaption: z.string().trim().max(60).nullable().optional(),
+      sourceType: z.enum(["destination", "activity", "post", "upload"]),
+      sourceId: z.string().nullable().optional(),
+    })
+    .nullable(),
+});
+
+export async function setPolaroidSlot(input: {
+  tripId: string;
+  index: number;
+  override: {
+    imageUrl: string;
+    caption?: string | null;
+    subcaption?: string | null;
+    sourceType: "destination" | "activity" | "post" | "upload";
+    sourceId?: string | null;
+  } | null;
+}) {
+  const parsed = polaroidSlotSchema.safeParse(input);
+  if (!parsed.success) return { error: "Invalid input." };
+
+  const g = await gate(parsed.data.tripId);
+  if (!g.ok) return { error: g.error };
+
+  if (parsed.data.override) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const allowedPrefixes = [
+      `${supabaseUrl}/storage/v1/object/public/trip-hero-images/`,
+      `${supabaseUrl}/storage/v1/object/public/post-images/`,
+      `${supabaseUrl}/storage/v1/object/public/place-photos/`,
+    ];
+    const inAllowed = allowedPrefixes.some((p) =>
+      parsed.data.override!.imageUrl.startsWith(p),
+    );
+    if (!inAllowed) {
+      return { error: "Image must live in a TripCrew storage bucket." };
+    }
+  }
+
+  const { supabase, data } = await readTrip(parsed.data.tripId);
+  if (!data) return { error: "Trip not found." };
+
+  const existing = data.meta?.polaroid_slots ?? [];
+  const withoutIndex = existing.filter((s) => s.index !== parsed.data.index);
+  const nextSlots: PolaroidOverride[] = parsed.data.override
+    ? [
+        ...withoutIndex,
+        {
+          index: parsed.data.index,
+          imageUrl: parsed.data.override.imageUrl,
+          caption: parsed.data.override.caption ?? null,
+          subcaption: parsed.data.override.subcaption ?? null,
+          sourceType: parsed.data.override.sourceType,
+          sourceId: parsed.data.override.sourceId ?? null,
+        },
+      ]
+    : withoutIndex;
+
+  const nextMeta: TripMeta = { ...(data.meta ?? {}), polaroid_slots: nextSlots };
+
+  const { error } = await supabase
+    .from("trips")
+    .update({ meta: nextMeta })
+    .eq("id", parsed.data.tripId);
+  if (error) return { error: "Could not save." };
+
+  revalidateOverview(data.slug);
   return { ok: true as const };
 }
 

@@ -365,6 +365,89 @@ async function backfillTintsForExistingHeroes(supabase: SupabaseClient) {
   return ok;
 }
 
+async function backfillActivities(supabase: SupabaseClient) {
+  // Activities don't carry coords; we derive them from the winning
+  // destination candidate per trip. One Places search + one photo
+  // fetch per activity. Skips rows already enriched.
+  const { data: rows, error } = await supabase
+    .from("activities")
+    .select("id, trip_id, title")
+    .is("photo_url", null);
+  if (error) throw error;
+  if (!rows || rows.length === 0) {
+    console.log("Activities: none to backfill");
+    return 0;
+  }
+  console.log(`Activities: enriching ${rows.length}`);
+
+  const coordCache = new Map<
+    string,
+    { latitude: number; longitude: number } | null
+  >();
+  const coordsFor = async (tripId: string) => {
+    if (coordCache.has(tripId)) return coordCache.get(tripId) ?? null;
+    const { data: trip } = await supabase
+      .from("trips")
+      .select("destination")
+      .eq("id", tripId)
+      .maybeSingle<{ destination: string | null }>();
+    if (!trip?.destination) {
+      coordCache.set(tripId, null);
+      return null;
+    }
+    const { data: cand } = await supabase
+      .from("destination_candidates")
+      .select("latitude, longitude")
+      .eq("trip_id", tripId)
+      .eq("title", trip.destination)
+      .not("latitude", "is", null)
+      .not("longitude", "is", null)
+      .maybeSingle<{ latitude: number; longitude: number }>();
+    const coords = cand
+      ? { latitude: cand.latitude, longitude: cand.longitude }
+      : null;
+    coordCache.set(tripId, coords);
+    return coords;
+  };
+
+  let ok = 0;
+  for (const row of rows) {
+    const coords = await coordsFor(row.trip_id as string);
+    if (!coords) {
+      console.log(`  ${row.title} — trip has no destination coords`);
+      continue;
+    }
+    const result = await enrich(
+      supabase,
+      row.title,
+      coords.latitude,
+      coords.longitude,
+      25_000,
+    );
+    if (!result.photoUrl) {
+      console.log(`  ${row.title} — no photo available`);
+      continue;
+    }
+    const { error: updErr } = await supabase
+      .from("activities")
+      .update({
+        photo_url: result.photoUrl,
+        photo_attribution: result.photoAttribution,
+        rating: result.rating,
+        price_level: result.priceLevel,
+        website_url: result.website,
+      })
+      .eq("id", row.id);
+    if (updErr) {
+      console.error(`  ${row.title} — update failed: ${updErr.message}`);
+      continue;
+    }
+    ok++;
+    console.log(`  ${row.title} ✓`);
+  }
+  return ok;
+}
+
 async function main() {
   const supabase = createClient(SUPABASE_URL!, SERVICE_KEY!);
   console.log("Backfilling candidate photos…");
@@ -376,8 +459,11 @@ async function main() {
   console.log("Backfilling tints for already-enriched heroes…");
   const tintsBackfilled = await backfillTintsForExistingHeroes(supabase);
   console.log("");
+  console.log("Backfilling activity photos…");
+  const activitiesEnriched = await backfillActivities(supabase);
+  console.log("");
   console.log(
-    `Done · candidates ${candidatesEnriched} · heroes ${heroesEnriched} · tints ${tintsBackfilled}`,
+    `Done · candidates ${candidatesEnriched} · heroes ${heroesEnriched} · tints ${tintsBackfilled} · activities ${activitiesEnriched}`,
   );
   const cost = textSearchCount * 0.032 + photoCount * 0.007;
   console.log(

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { currencySymbol } from "@/lib/currency";
 import { InlineEdit } from "@/components/ui/InlineEdit";
@@ -30,6 +31,9 @@ type Props = {
   currency: string | null;
   tripId: string;
   isAdmin: boolean;
+  // Right-column slot — polaroid stack lives here. Pass null to render
+  // a text-only hero (no right column at all).
+  media?: ReactNode;
 };
 
 export function Hero({
@@ -48,6 +52,7 @@ export function Hero({
   currency,
   tripId,
   isAdmin,
+  media,
 }: Props) {
   const toast = useToast();
   const symbol = currencySymbol(currency);
@@ -73,8 +78,8 @@ export function Hero({
     return true;
   };
 
-  return (
-    <div className="pt-[70px] pb-[60px] border-b border-line relative">
+  const textBlock = (
+    <div className="flex flex-col">
       <div className="flex flex-wrap gap-x-7 gap-y-2 mb-10 label text-fg-3">
         <span>
           LOC / <b className="text-fg font-medium">{cityLabel}</b>
@@ -138,8 +143,23 @@ export function Hero({
           />
         </div>
       )}
+    </div>
+  );
 
-      <div className="mt-14 grid grid-cols-4 max-[780px]:grid-cols-2 max-[400px]:grid-cols-1 border-t border-line">
+  return (
+    <>
+      <section className="pt-[70px] pb-[60px] border-b border-line">
+        {media ? (
+          <div className="grid grid-cols-[1fr_480px] max-[1100px]:grid-cols-[1fr_400px] max-[900px]:grid-cols-1 gap-12 max-[900px]:gap-10 items-end">
+            {textBlock}
+            <div className="min-w-0">{media}</div>
+          </div>
+        ) : (
+          textBlock
+        )}
+      </section>
+
+      <div className="grid grid-cols-4 max-[780px]:grid-cols-2 max-[400px]:grid-cols-1 border-b border-line">
         <StatCell
           label="T-Minus"
           value={days !== null ? days.toString() : "—"}
@@ -160,9 +180,7 @@ export function Hero({
           label="Bookings"
           value={bookingsTotal > 0 ? `${bookingsDone}/${bookingsTotal}` : "—"}
           sub={bookingsTotal > 0 ? "Locked in" : "Nothing to book yet"}
-          progress={
-            bookingsTotal > 0 ? bookingsDone / bookingsTotal : null
-          }
+          progress={bookingsTotal > 0 ? bookingsDone / bookingsTotal : null}
         />
         <StatCell
           label="Kitty"
@@ -170,7 +188,7 @@ export function Hero({
           sub="Pooled to date"
         />
       </div>
-    </div>
+    </>
   );
 }
 
