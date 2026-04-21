@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { DestinationSearch } from "@/components/destinations/DestinationSearch";
-import { StaticMap } from "@/components/destinations/StaticMap";
 import { useToast } from "@/hooks/useToast";
 
 type Props = {
@@ -503,121 +502,173 @@ export function Destinations({
           No candidates · propose one
         </div>
       ) : (
-        <div className="border border-line">
+        <div className="grid grid-cols-2 max-[900px]:grid-cols-1 gap-4">
           {ranked.map((c, i) => {
             const cc = counts.get(c.id) ?? { yes: 0, maybe: 0, no: 0 };
             const total = cc.yes + cc.maybe + cc.no;
             const mine = myVote.get(c.id);
             const canRemove = isAdmin || c.proposed_by === currentUserId;
-            const leader = i === 0;
+            const isLeading = i === 0 && total > 0;
+            const hasCoords = c.longitude !== null && c.latitude !== null;
+            const awaitingPhoto =
+              !c.photo_url &&
+              hasCoords &&
+              Date.now() - new Date(c.created_at).getTime() < 30_000;
             return (
-              <div
+              <article
                 key={c.id}
-                className="grid grid-cols-[1fr_220px_160px_36px] max-[780px]:grid-cols-1 items-center py-[18px] px-6 border-b border-line last:border-b-0 gap-5"
+                className="relative flex flex-col bg-bg-2/70 backdrop-blur-md border border-line group"
               >
-                <div className="flex gap-3 items-start max-[400px]:flex-col max-[400px]:gap-2">
-                  {c.longitude !== null && c.latitude !== null && (
-                    <StaticMap
-                      longitude={c.longitude}
-                      latitude={c.latitude}
-                      width={88}
-                      height={62}
-                      zoom={4}
-                      alt={`Map of ${c.title}`}
-                      className="shrink-0"
+                <div className="relative aspect-[16/9] bg-bg-3 overflow-hidden">
+                  {c.photo_url ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={c.photo_url}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="block w-full h-full object-cover"
+                    />
+                  ) : awaitingPhoto ? (
+                    <div
+                      className="w-full h-full bg-bg-3 animate-pulse"
+                      aria-hidden
+                    />
+                  ) : hasCoords ? (
+                    <MapFallback
+                      longitude={c.longitude!}
+                      latitude={c.latitude!}
+                      title={c.title}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="label-xs text-fg-3">No preview</span>
+                    </div>
+                  )}
+
+                  {c.photo_url && (c.photo_attribution || isLeading) && (
+                    <div
+                      aria-hidden
+                      className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bg/80 via-bg/40 to-transparent pointer-events-none"
                     />
                   )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {leader && total > 0 && (
-                        <Badge tone="accent" size="sm">Leading</Badge>
-                      )}
-                      <div className="text-[17px] font-medium tracking-[-0.015em]">
-                        {c.title}
+
+                  {isLeading && (
+                    <span
+                      aria-hidden
+                      className="absolute top-[10px] left-[10px] font-mono text-[10px] tracking-[0.16em] bg-accent text-[#140400] px-2 py-[3px]"
+                    >
+                      LEADING
+                    </span>
+                  )}
+
+                  {c.photo_url && c.photo_attribution && (
+                    <span
+                      title={`Photo: ${c.photo_attribution}`}
+                      className="absolute bottom-[10px] right-[10px] max-w-[calc(100%-20px)] label-xs text-fg-2 tracking-[0.08em] pointer-events-none truncate text-right"
+                    >
+                      Photo · {c.photo_attribution}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-4 p-5 flex-1">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <h3 className="text-[22px] font-medium tracking-[-0.02em] leading-[1.1] flex-1 min-w-0 break-words">
+                      {c.title}
+                    </h3>
+                    {c.country && (
+                      <span className="shrink-0 mt-[6px] label-xs tracking-[0.14em] text-fg-3 border border-line px-[8px] py-[3px]">
+                        {c.country}
+                      </span>
+                    )}
+                  </div>
+
+                  {c.note && (
+                    <p className="text-[13px] text-fg-2 leading-[1.5] line-clamp-2">
+                      {c.note}
+                    </p>
+                  )}
+
+                  <div className="mt-auto pt-4 border-t border-line flex flex-col gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <div className="flex h-[3px] flex-1 min-w-[120px] bg-bg-3 overflow-hidden">
+                        {total > 0 && (
+                          <>
+                            <div
+                              className="bg-ok"
+                              style={{ width: `${(cc.yes / total) * 100}%` }}
+                            />
+                            <div
+                              className="bg-warn"
+                              style={{ width: `${(cc.maybe / total) * 100}%` }}
+                            />
+                            <div
+                              className="bg-err"
+                              style={{ width: `${(cc.no / total) * 100}%` }}
+                            />
+                          </>
+                        )}
                       </div>
-                      {c.country && (
-                        <Badge tone="muted" size="sm">
-                          {c.country}
-                        </Badge>
-                      )}
+                      <div className="font-mono text-[10px] tracking-[0.08em] text-fg-3 tabular flex gap-[10px] shrink-0">
+                        <span>
+                          <b className="text-fg font-medium mr-[3px]">
+                            {cc.yes}
+                          </b>
+                          YES
+                        </span>
+                        <span>
+                          <b className="text-fg font-medium mr-[3px]">
+                            {cc.maybe}
+                          </b>
+                          MEH
+                        </span>
+                        <span>
+                          <b className="text-fg font-medium mr-[3px]">
+                            {cc.no}
+                          </b>
+                          NO
+                        </span>
+                      </div>
                     </div>
-                    {c.note && (
-                      <div className="text-[13px] text-fg-2 leading-[1.45]">
-                        {c.note}
-                      </div>
-                    )}
+
+                    <div className="flex gap-[6px]">
+                      <VoteBtn
+                        active={mine === "yes"}
+                        tone="yes"
+                        onClick={() => handleVote(c.id, "yes")}
+                      >
+                        YES
+                      </VoteBtn>
+                      <VoteBtn
+                        active={mine === "maybe"}
+                        tone="maybe"
+                        onClick={() => handleVote(c.id, "maybe")}
+                      >
+                        MEH
+                      </VoteBtn>
+                      <VoteBtn
+                        active={mine === "no"}
+                        tone="no"
+                        onClick={() => handleVote(c.id, "no")}
+                      >
+                        NO
+                      </VoteBtn>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex h-1 bg-bg-3 rounded-full overflow-hidden">
-                    {total > 0 && (
-                      <>
-                        <div
-                          className="bg-ok"
-                          style={{ width: `${(cc.yes / total) * 100}%` }}
-                        />
-                        <div
-                          className="bg-warn"
-                          style={{ width: `${(cc.maybe / total) * 100}%` }}
-                        />
-                        <div
-                          className="bg-err"
-                          style={{ width: `${(cc.no / total) * 100}%` }}
-                        />
-                      </>
-                    )}
-                  </div>
-                  <div className="flex gap-3 mt-2 font-mono text-[10px] tracking-[0.08em] text-fg-3">
-                    <span>
-                      <b className="text-fg font-medium mr-1">{cc.yes}</b>YES
-                    </span>
-                    <span>
-                      <b className="text-fg font-medium mr-1">{cc.maybe}</b>MEH
-                    </span>
-                    <span>
-                      <b className="text-fg font-medium mr-1">{cc.no}</b>NO
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-1 justify-self-end max-[780px]:justify-self-start">
-                  <VoteBtn
-                    active={mine === "yes"}
-                    tone="yes"
-                    onClick={() => handleVote(c.id, "yes")}
-                  >
-                    YES
-                  </VoteBtn>
-                  <VoteBtn
-                    active={mine === "maybe"}
-                    tone="maybe"
-                    onClick={() => handleVote(c.id, "maybe")}
-                  >
-                    MEH
-                  </VoteBtn>
-                  <VoteBtn
-                    active={mine === "no"}
-                    tone="no"
-                    onClick={() => handleVote(c.id, "no")}
-                  >
-                    NO
-                  </VoteBtn>
-                </div>
-
-                {canRemove ? (
-                  <Button
-                    variant="icon"
+                {canRemove && (
+                  <button
+                    type="button"
                     onClick={() => handleRemove(c.id)}
-                    aria-label="Remove candidate"
-                    className="hover:text-err max-[780px]:justify-self-start"
+                    aria-label={`Remove ${c.title}`}
+                    className="absolute top-[8px] right-[8px] w-7 h-7 flex items-center justify-center text-fg-3 bg-bg/70 backdrop-blur-sm hover:text-err transition-colors cursor-pointer opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-[780px]:opacity-80"
                   >
                     ✕
-                  </Button>
-                ) : (
-                  <div className="max-[780px]:hidden" />
+                  </button>
                 )}
-              </div>
+              </article>
             );
           })}
         </div>
@@ -644,6 +695,37 @@ export function Destinations({
         </div>
       )}
     </>
+  );
+}
+
+function MapFallback({
+  longitude,
+  latitude,
+  title,
+}: {
+  longitude: number;
+  latitude: number;
+  title: string;
+}) {
+  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  if (!token) {
+    return (
+      <div className="w-full h-full flex items-center justify-center">
+        <span className="label-xs text-fg-3">No preview</span>
+      </div>
+    );
+  }
+  const pin = `pin-s+FF4C15(${longitude},${latitude})`;
+  const viewport = `${longitude},${latitude},4,0`;
+  const src = `https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/${pin}/${viewport}/368x207@2x?access_token=${token}`;
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={src}
+      alt={`Map of ${title}`}
+      loading="lazy"
+      className="block w-full h-full object-cover opacity-80"
+    />
   );
 }
 

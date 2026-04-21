@@ -30,7 +30,7 @@ export default async function DestinationsPage({
   const { data: candidates } = await supabase
     .from("destination_candidates")
     .select(
-      "id, trip_id, title, note, proposed_by, position, created_at, mapbox_id, longitude, latitude, country",
+      "id, trip_id, title, note, proposed_by, position, created_at, mapbox_id, longitude, latitude, country, photo_url, photo_attribution",
     )
     .eq("trip_id", trip.id)
     .order("position", { ascending: true })

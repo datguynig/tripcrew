@@ -2,11 +2,13 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   createNotifications,
   tripMemberIdsExcept,
 } from "@/lib/notifications";
+import { enrichPlace } from "@/lib/placeEnrichment";
 
 async function revalidateTrip(tripId: string) {
   const service = createServiceClient();
@@ -59,17 +61,21 @@ export async function proposeCandidate(input: {
 
   const position = (last?.position ?? 0) + 1;
 
-  const { error } = await supabase.from("destination_candidates").insert({
-    trip_id: parsed.data.tripId,
-    title: parsed.data.title,
-    note: parsed.data.note || null,
-    proposed_by: user.id,
-    position,
-    mapbox_id: parsed.data.mapboxId ?? null,
-    longitude: parsed.data.longitude ?? null,
-    latitude: parsed.data.latitude ?? null,
-    country: parsed.data.country ?? null,
-  });
+  const { data: inserted, error } = await supabase
+    .from("destination_candidates")
+    .insert({
+      trip_id: parsed.data.tripId,
+      title: parsed.data.title,
+      note: parsed.data.note || null,
+      proposed_by: user.id,
+      position,
+      mapbox_id: parsed.data.mapboxId ?? null,
+      longitude: parsed.data.longitude ?? null,
+      latitude: parsed.data.latitude ?? null,
+      country: parsed.data.country ?? null,
+    })
+    .select("id")
+    .maybeSingle<{ id: string }>();
   if (error) return { error: error.message };
 
   await revalidateTrip(parsed.data.tripId);
@@ -78,6 +84,39 @@ export async function proposeCandidate(input: {
     user.id,
     parsed.data.title,
   );
+
+  // Fire-and-forget place enrichment. Runs after the response is
+  // sent (Vercel waitUntil), so propose stays snappy. Realtime
+  // delivers the photo_url update to the clients.
+  if (
+    inserted?.id &&
+    parsed.data.latitude !== null &&
+    parsed.data.latitude !== undefined &&
+    parsed.data.longitude !== null &&
+    parsed.data.longitude !== undefined
+  ) {
+    const candidateId = inserted.id;
+    const latitude = parsed.data.latitude;
+    const longitude = parsed.data.longitude;
+    after(async () => {
+      const result = await enrichPlace({
+        name: parsed.data.title,
+        latitude,
+        longitude,
+        radiusMeters: 50_000,
+      });
+      if (!result.photoUrl) return;
+      const service = createServiceClient();
+      await service
+        .from("destination_candidates")
+        .update({
+          photo_url: result.photoUrl,
+          photo_attribution: result.photoAttribution,
+        })
+        .eq("id", candidateId);
+    });
+  }
+
   return { ok: true };
 }
 
@@ -229,6 +268,9 @@ export async function unlockDestination(
         destination: null,
         hero_title: null,
         hero_subtitle: null,
+        hero_image_url: null,
+        hero_image_attribution: null,
+        hero_tint: null,
         ai_drafted_at: null,
         meta,
       })
@@ -261,7 +303,13 @@ export async function unlockDestination(
 
   const { data: trip, error } = await service
     .from("trips")
-    .update({ status: "planning", destination: null })
+    .update({
+      status: "planning",
+      destination: null,
+      hero_image_url: null,
+      hero_image_attribution: null,
+      hero_tint: null,
+    })
     .eq("id", parsed.data.tripId)
     .eq("status", "locked")
     .select("slug")
@@ -295,7 +343,9 @@ export async function lockDestination(tripId: string) {
   const service = createServiceClient();
   const { data: candidates } = await service
     .from("destination_candidates")
-    .select("id, title, position")
+    .select(
+      "id, title, position, latitude, longitude, photo_url, photo_attribution",
+    )
     .eq("trip_id", parsed.data)
     .order("position", { ascending: true });
 
@@ -325,9 +375,53 @@ export async function lockDestination(tripId: string) {
 
   const winner = scored[0];
 
+  // Enrich synchronously if the winner wasn't enriched at propose
+  // time (e.g. proposed before this feature shipped, or enrichment
+  // failed). Locking is a deliberate admin moment — small delay is
+  // acceptable to get the hero image into the overview on first load.
+  // Tint extraction rides the same buffer; always runs on lock so
+  // pre-enriched candidates (which don't carry a tint) still get
+  // an atmosphere.
+  let heroUrl = winner.photo_url;
+  let heroAttribution = winner.photo_attribution;
+  let heroTint: string | null = null;
+  if (
+    !heroUrl &&
+    winner.latitude !== null &&
+    winner.longitude !== null
+  ) {
+    const result = await enrichPlace({
+      name: winner.title,
+      latitude: winner.latitude,
+      longitude: winner.longitude,
+      radiusMeters: 50_000,
+    });
+    heroUrl = result.photoUrl;
+    heroAttribution = result.photoAttribution;
+    heroTint = result.tint;
+  } else if (
+    heroUrl &&
+    winner.latitude !== null &&
+    winner.longitude !== null
+  ) {
+    const result = await enrichPlace({
+      name: winner.title,
+      latitude: winner.latitude,
+      longitude: winner.longitude,
+      radiusMeters: 50_000,
+    });
+    heroTint = result.tint;
+  }
+
   const { data: trip, error: updErr } = await service
     .from("trips")
-    .update({ status: "locked", destination: winner.title })
+    .update({
+      status: "locked",
+      destination: winner.title,
+      hero_image_url: heroUrl,
+      hero_image_attribution: heroAttribution,
+      hero_tint: heroTint,
+    })
     .eq("id", parsed.data)
     .eq("status", "planning")
     .select("slug, name")

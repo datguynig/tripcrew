@@ -93,6 +93,9 @@ export type Trip = {
   // yet been migrated in. Display helpers default to GBP when absent.
   currency: string | null;
   ai_drafted_at: string | null;
+  hero_image_url: string | null;
+  hero_image_attribution: string | null;
+  hero_tint: string | null;
   created_at: string;
 };
 
@@ -112,6 +115,11 @@ export type Activity = {
   category: "day" | "night";
   position: number;
   ai_drafted: boolean;
+  photo_url: string | null;
+  photo_attribution: string | null;
+  rating: number | null;
+  price_level: number | null;
+  website_url: string | null;
   created_at: string;
 };
 
@@ -172,6 +180,8 @@ export type DestinationCandidate = {
   longitude: number | null;
   latitude: number | null;
   country: string | null;
+  photo_url: string | null;
+  photo_attribution: string | null;
 };
 
 export type DestinationVote = {

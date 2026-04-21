@@ -66,12 +66,12 @@ Middleware redirects unauthed users on `(app)` routes to `/sign-in`.
 Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/migrations/](supabase/migrations/) for DDL):
 
 - `profiles` — one row per auth user; `ai_enabled` gates the closed-beta AI draft feature
-- `trips` — status enum (`planning` | `locked`); holds `hero_title`, `hero_subtitle`, `city_label`, `dates_label`, `target_budget_pp`, `target_crew_size`, `currency`, `vote_deadline`, `start_date`, `end_date`, `ai_drafted_at`, and a `meta` jsonb (`spec_grid`, `schedule`, `section_leads`)
+- `trips` — status enum (`planning` | `locked`); holds `hero_title`, `hero_subtitle`, `city_label`, `dates_label`, `target_budget_pp`, `target_crew_size`, `currency`, `vote_deadline`, `start_date`, `end_date`, `ai_drafted_at`, `hero_image_url` + `hero_image_attribution` (Google Places photo of the locked destination), `hero_tint` (dominant-colour `rgba(...)` used by `.trip-ambient`), and a `meta` jsonb (`spec_grid`, `schedule`, `section_leads`)
 - `trip_members` — `(trip_id, user_id, role)`
 - `trip_invites` — tokenized invite links; email optional
-- `destination_candidates` — proposals; optional Mapbox `mapbox_id`, `longitude`, `latitude`, `country`
+- `destination_candidates` — proposals; optional Mapbox `mapbox_id`, `longitude`, `latitude`, `country`; optional `photo_url` + `photo_attribution` (Places photo cached in the `place-photos` storage bucket, fetched fire-and-forget after propose)
 - `destination_votes` — yes/maybe/no per candidate per user
-- `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`
+- `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`, and carry optional `photo_url` / `photo_attribution` / `rating` / `price_level` / `website_url` from Places enrichment (Phase 4 of media rollout — not yet surfaced on the card UI)
 - `bookings` — checklist items; any member can edit/tick; rows track `ai_drafted`
 - `expenses` — `paid_by` + `amount`; only payer deletes own
 - `posts` — crew-chat messages; optional `image_url`, optional `caption`, optional `reply_to_post_id` (quotes a parent), `edited_at` stamp when the author edits within the 5-min window
@@ -82,6 +82,14 @@ Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/mig
 - `notifications` — one row per (recipient, event); `kind` is open text, delivered via Supabase Realtime
 
 **RLS**: members only see and act on data for trips they belong to.
+
+## Media enrichment
+
+Google Places Photo API powers destination imagery end-to-end. Flow: propose with Mapbox coords → `enrichPlace` (src/lib/placeEnrichment.ts) searches Places near those coords → downloads the top result's first photo into the `place-photos` Supabase Storage bucket → persists URL + photographer attribution on the row. Tint extraction via `sharp.stats().dominant` runs on the same buffer (free), stored on `trips.hero_tint` at lock-time. Backfill via `pnpm backfill:media` is idempotent.
+
+**Per-trip ambient.** `.trip-ambient` on the trip layout wrapper (src/app/(app)/trips/[slug]/layout.tsx) renders a soft radial wash at the top of the viewport, coloured from `trips.hero_tint` via the `--trip-tint` CSS var. Fallback to accent coral for planning trips. See designsystem.md §4.17.
+
+**Glass is selective, not default.** Only sticky chrome (TopBar, Nav, MessageComposer) and the destination candidate cards use `bg-X/Y backdrop-blur-md`. Everything else stays flat `bg-bg-2` per the editorial-brutalist baseline. See designsystem.md §4.16.
 
 ## Primitives
 

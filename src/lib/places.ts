@@ -18,11 +18,15 @@
  * category. See https://developers.google.com/maps/billing-and-pricing/new-sku
  */
 
-const SEARCH_TEXT_URL = "https://places.googleapis.com/v1/places:searchText";
-const PLACES_BASE = "https://places.googleapis.com/v1/places";
+const API_ROOT = "https://places.googleapis.com/v1";
+const SEARCH_TEXT_URL = `${API_ROOT}/places:searchText`;
+const PLACES_BASE = `${API_ROOT}/places`;
 
 // Tight field mask: only what the AI needs to ground itinerary items.
 // Adding a field bumps you into a higher SKU tier — change deliberately.
+// `places.photos.*` pulls the first-photo reference + author attribution
+// which we then resolve via fetchPlacePhoto below; the photo field adds
+// to the Text Search SKU tier (Pro Essentials).
 const SEARCH_FIELDS = [
   "places.id",
   "places.displayName",
@@ -32,6 +36,11 @@ const SEARCH_FIELDS = [
   "places.userRatingCount",
   "places.priceLevel",
   "places.primaryTypeDisplayName",
+  "places.photos.name",
+  "places.photos.widthPx",
+  "places.photos.heightPx",
+  "places.photos.authorAttributions.displayName",
+  "places.websiteUri",
 ].join(",");
 
 const DETAIL_FIELDS = [
@@ -48,6 +57,15 @@ const DETAIL_FIELDS = [
   "primaryTypeDisplayName",
 ].join(",");
 
+export type PlacePhotoRef = {
+  // Opaque resource name, e.g. "places/ChIJ.../photos/AeeoHcK..." —
+  // pass verbatim to fetchPlacePhoto to resolve a redirect URL.
+  name: string;
+  widthPx: number | null;
+  heightPx: number | null;
+  authorAttribution: string | null;
+};
+
 export type PlaceResult = {
   id: string;
   name: string;
@@ -58,11 +76,12 @@ export type PlaceResult = {
   userRatingCount: number | null;
   priceLevel: string | null;
   primaryType: string | null;
+  website: string | null;
+  photos: PlacePhotoRef[];
 };
 
 export type PlaceDetails = PlaceResult & {
   openingHours: string[] | null;
-  website: string | null;
   phone: string | null;
 };
 
@@ -73,6 +92,13 @@ function apiKey() {
 export function placesEnabled(): boolean {
   return apiKey().length > 0;
 }
+
+type RawPhoto = {
+  name?: string;
+  widthPx?: number;
+  heightPx?: number;
+  authorAttributions?: Array<{ displayName?: string }>;
+};
 
 type RawPlace = {
   id?: string;
@@ -86,7 +112,20 @@ type RawPlace = {
   regularOpeningHours?: { weekdayDescriptions?: string[] };
   websiteUri?: string;
   internationalPhoneNumber?: string;
+  photos?: RawPhoto[];
 };
+
+function mapPhotos(raw: RawPhoto[] | undefined): PlacePhotoRef[] {
+  if (!raw || raw.length === 0) return [];
+  return raw
+    .filter((p): p is RawPhoto & { name: string } => Boolean(p.name))
+    .map((p) => ({
+      name: p.name,
+      widthPx: p.widthPx ?? null,
+      heightPx: p.heightPx ?? null,
+      authorAttribution: p.authorAttributions?.[0]?.displayName ?? null,
+    }));
+}
 
 function mapPlace(p: RawPlace): PlaceResult {
   return {
@@ -99,6 +138,8 @@ function mapPlace(p: RawPlace): PlaceResult {
     userRatingCount: p.userRatingCount ?? null,
     priceLevel: p.priceLevel ?? null,
     primaryType: p.primaryTypeDisplayName?.text ?? null,
+    website: p.websiteUri ?? null,
+    photos: mapPhotos(p.photos),
   };
 }
 
@@ -106,7 +147,6 @@ function mapDetails(p: RawPlace): PlaceDetails {
   return {
     ...mapPlace(p),
     openingHours: p.regularOpeningHours?.weekdayDescriptions ?? null,
-    website: p.websiteUri ?? null,
     phone: p.internationalPhoneNumber ?? null,
   };
 }
@@ -199,6 +239,36 @@ export async function searchAirports(
   if (!res.ok) return [];
   const data = (await res.json()) as { places?: RawPlace[] };
   return (data.places ?? []).map(mapPlace);
+}
+
+/**
+ * Resolve a Places photo reference into a short-lived HTTPS URL that
+ * actually serves the image bytes. Google's Photo API redirects to a
+ * CDN URL with a ~1-hour TTL; `skipHttpRedirect=true` returns the
+ * redirect target as JSON instead of a 302 so we can refetch and
+ * persist the payload to our own storage bucket.
+ *
+ * Returns null on failure — callers must tolerate a missing photo.
+ * Cost: Photos API is $7/1k requests (cheapest Places SKU).
+ */
+export async function fetchPlacePhoto(
+  photoName: string,
+  maxWidthPx = 1200,
+): Promise<string | null> {
+  const key = apiKey();
+  if (!key || !photoName) return null;
+
+  const url =
+    `${API_ROOT}/${photoName}/media` +
+    `?maxWidthPx=${maxWidthPx}&skipHttpRedirect=true`;
+
+  const res = await fetch(url, {
+    headers: { "X-Goog-Api-Key": key },
+  });
+
+  if (!res.ok) return null;
+  const data = (await res.json()) as { photoUri?: string };
+  return data.photoUri ?? null;
 }
 
 /**

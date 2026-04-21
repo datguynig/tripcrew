@@ -440,6 +440,51 @@ Principle #4 says every state is designed. This section names the six we recogni
 5. **Disabled means a precondition is unmet.** If you'd add a tooltip to explain why, the disable is lazy — surface the precondition instead.
 6. **One accent per state.** An accent empty-state CTA forbids any other accent on the same screen.
 
+---
+
+### 4.16 Elevation (selective glass)
+
+Glass is a **selective** treatment, not a default. The editorial-brutalist identity — hard edges, no shadows, flat `bg-bg-2` surfaces — is still the baseline. Only three surface roles use translucent + blur, always via Tailwind's native `bg-X/Y backdrop-blur-Z` (the one-time attempt at a `.surface-*` custom-property abstraction didn't render the translucent layer correctly, so we use Tailwind directly).
+
+| Where | Class | Why |
+| --- | --- | --- |
+| Sticky chrome — [TopBar](src/components/layout/TopBar.tsx), [Nav](src/components/layout/Nav.tsx) | `bg-bg/85 backdrop-blur-md` | Docked over scrolling content; blur keeps the title/feed visible underneath without losing the tab hierarchy. |
+| Crew-chat composer — [MessageComposer](src/components/feed/MessageComposer.tsx) | `bg-bg/90 backdrop-blur-md` | Same justification; slightly denser for legibility over photos. |
+| Destination candidate cards — [Destinations](src/components/destinations/Destinations.tsx) | `bg-bg-2/70 backdrop-blur-md` | Only card surface with glass — cards live over `.trip-ambient` radial, and the blur catches the per-trip tint. Requires the ambient to read properly; other card grids stay flat `bg-bg-2`. |
+
+Everywhere else stays opaque:
+
+- `<Card>` primitive — flat `bg-bg-2`
+- Dashboard trip cards — flat `bg-bg-2`
+- All popovers (AccountMenu, NotificationsBell, TripSwitcher) — flat `bg-bg-2`
+- Dialog content (incl. AIDraftPreferences, AIDraftProgress) — flat `bg-bg-2`
+- Overview spec cells, bookings, ledger, crew rows — flat
+
+**Rules:**
+
+1. **Don't reach for glass by default.** Flat surfaces compound into a confident editorial read. Transparency has to earn its place — if the blur isn't catching something meaningful behind it, it just looks washed out.
+2. **Hard edges stay.** Glass doesn't imply rounded corners. Cards stay sharp.
+3. **No shadows alongside.** Popovers still use `shadow-lg` for depth (the standing exception); glass surfaces don't stack another shadow on top.
+4. **Overlays are not surfaces.** Full-screen dimming (`fixed inset-0 bg-bg/60 backdrop-blur-sm`) stays ad-hoc — it's a scrim, not a content panel.
+
+### 4.17 Per-trip atmosphere
+
+`.trip-ambient` on the trip layout wrapper renders a soft radial wash at the top of the viewport, coloured by a CSS custom property `--trip-tint` set inline from `trips.hero_tint`. That column is populated at lock-time from the dominant colour of the hero photo (via `sharp.stats().dominant` at 10% alpha). Locked trips get a destination-appropriate tint; planning trips fall back to the accent coral, matching the original `.hero-radial`.
+
+```css
+.trip-ambient::before {
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 0%,
+    var(--trip-tint, rgba(255, 76, 21, 0.08)),
+    transparent 60%
+  );
+}
+```
+
+Intentionally low-intensity — the tint is what the destination cards' glass catches, not a feature you notice on its own.
+
+---
+
 **Affirming-feedback decision tree:**
 
 - **[Toast](src/components/ui/Toaster.tsx)** — success of user-initiated mutations; never passive events.

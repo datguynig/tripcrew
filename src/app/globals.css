@@ -184,6 +184,27 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Per-trip atmosphere — a soft radial wash at the top of the page
+   so glass surfaces have something to blur over. Colour is driven
+   by `--trip-tint` set inline on the trip layout wrapper from
+   trips.hero_tint. Planning trips (no hero yet) fall back to the
+   faint accent radial so every trip still gets atmosphere. */
+.trip-ambient {
+  position: relative;
+}
+.trip-ambient::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    ellipse 90% 70% at 50% 0%,
+    var(--trip-tint, rgba(255, 76, 21, 0.08)),
+    transparent 60%
+  );
+}
+
 @keyframes brand-pulse {
   0%,
   100% {
