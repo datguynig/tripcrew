@@ -17,6 +17,8 @@ export type UploadError =
   | "upload_failed"
   | "not_signed_in";
 
+export type UploadStage = "converting" | "resizing" | "uploading";
+
 export type UploadResult =
   | { ok: true; url: string }
   | { ok: false; error: UploadError; message: string };
@@ -57,7 +59,10 @@ async function resizeToJpeg(blob: Blob): Promise<Blob> {
   });
 }
 
-export async function uploadPostImage(file: File): Promise<UploadResult> {
+export async function uploadPostImage(
+  file: File,
+  onStage?: (stage: UploadStage) => void,
+): Promise<UploadResult> {
   if (file.size > MAX_BYTES) {
     return {
       ok: false,
@@ -76,6 +81,7 @@ export async function uploadPostImage(file: File): Promise<UploadResult> {
 
   let working: Blob;
   try {
+    if (heic) onStage?.("converting");
     working = heic ? await convertHeic(file) : file;
   } catch {
     return {
@@ -87,6 +93,7 @@ export async function uploadPostImage(file: File): Promise<UploadResult> {
 
   let resized: Blob;
   try {
+    onStage?.("resizing");
     resized = await resizeToJpeg(working);
   } catch {
     return {
@@ -104,6 +111,7 @@ export async function uploadPostImage(file: File): Promise<UploadResult> {
     return { ok: false, error: "not_signed_in", message: "Sign in first." };
   }
 
+  onStage?.("uploading");
   const path = `${user.id}/${crypto.randomUUID()}.jpg`;
   const { error: uploadError } = await supabase.storage
     .from("post-images")

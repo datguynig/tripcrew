@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
   listRecent,
@@ -25,6 +25,7 @@ export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Ref mirror of notifications so the realtime handler can read
   // current state without capturing stale closures or nesting
@@ -34,15 +35,42 @@ export function useNotifications() {
     notificationsRef.current = notifications;
   }, [notifications]);
 
-  // Initial fetch.
+  // Initial fetch — also used by the retry button when the bell surfaces
+  // a fetch error.
+  const fetchInitial = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { notifications: ns, unreadCount: uc } = await listRecent(20);
+      setNotifications(ns);
+      setUnreadCount(uc);
+    } catch (e) {
+      setError(
+        e instanceof Error ? e.message : "Couldn't load notifications",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const { notifications: ns, unreadCount: uc } = await listRecent(20);
-      if (cancelled) return;
-      setNotifications(ns);
-      setUnreadCount(uc);
-      setLoading(false);
+      setLoading(true);
+      setError(null);
+      try {
+        const { notifications: ns, unreadCount: uc } = await listRecent(20);
+        if (cancelled) return;
+        setNotifications(ns);
+        setUnreadCount(uc);
+      } catch (e) {
+        if (cancelled) return;
+        setError(
+          e instanceof Error ? e.message : "Couldn't load notifications",
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
@@ -192,8 +220,10 @@ export function useNotifications() {
     notifications,
     unreadCount,
     loading,
+    error,
     onMarkAsRead,
     onMarkAllRead,
+    onRetry: fetchInitial,
     feedUnreadByTrip,
   };
 }

@@ -43,6 +43,7 @@ export function Lightbox({
     ),
   );
   const [imageBroken, setImageBroken] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const imageTouchStart = useRef<{ x: number; y: number } | null>(null);
   const panelTouchStart = useRef<{ x: number; y: number } | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -52,9 +53,10 @@ export function Lightbox({
   const hasPrev = index > 0;
   const hasNext = index < posts.length - 1;
 
-  // Reset broken-image state whenever the viewed post changes.
+  // Reset image-load state whenever the viewed post changes.
   useEffect(() => {
     setImageBroken(false);
+    setImageLoaded(false);
   }, [post?.id]);
 
   // If posts re-flow (e.g. realtime DELETE) keep the current post anchored
@@ -188,14 +190,28 @@ export function Lightbox({
         className="relative flex-1 min-[781px]:h-full flex items-center justify-center min-h-0 group/img"
       >
         {!imageBroken ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={post.image_url as string}
-            alt={post.caption ?? ""}
-            draggable={false}
-            className="max-w-full max-h-full object-contain select-none"
-            onError={() => setImageBroken(true)}
-          />
+          <>
+            {!imageLoaded && (
+              <div
+                role="status"
+                aria-label="Loading photo"
+                className="absolute inset-0 flex items-center justify-center label text-fg-3"
+              >
+                <span className="w-[6px] h-[6px] rounded-full bg-accent animate-pulse" />
+              </div>
+            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={post.image_url as string}
+              alt={post.caption ?? ""}
+              draggable={false}
+              className={`max-w-full max-h-full object-contain select-none transition-opacity duration-200 ${
+                imageLoaded ? "opacity-100" : "opacity-0"
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageBroken(true)}
+            />
+          </>
         ) : (
           <div className="flex items-center justify-center label text-fg-3 px-6 py-10">
             Image unavailable

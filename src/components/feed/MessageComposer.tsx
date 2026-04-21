@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { INPUT_SM } from "@/lib/styles";
-import { uploadPostImage } from "@/lib/uploadImage";
+import { uploadPostImage, type UploadStage } from "@/lib/uploadImage";
 
 export type ReplyTarget = {
   postId: string;
@@ -35,6 +35,7 @@ export function MessageComposer({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadStage, setUploadStage] = useState<UploadStage | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -60,8 +61,10 @@ export function MessageComposer({
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewUrl(URL.createObjectURL(picked));
     setUploading(true);
-    const result = await uploadPostImage(picked);
+    setUploadStage(null);
+    const result = await uploadPostImage(picked, setUploadStage);
     setUploading(false);
+    setUploadStage(null);
     if (result.ok) {
       setUploadedUrl(result.url);
     } else {
@@ -74,9 +77,19 @@ export function MessageComposer({
     setFile(null);
     setPreviewUrl(null);
     setUploadedUrl(null);
+    setUploadStage(null);
     setUploadError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const uploadLabel =
+    uploadStage === "converting"
+      ? "Converting…"
+      : uploadStage === "resizing"
+        ? "Resizing…"
+        : uploadStage === "uploading"
+          ? "Uploading…"
+          : "Uploading…";
 
   const canSend =
     !uploading &&
@@ -94,7 +107,7 @@ export function MessageComposer({
     onSend({ imageUrl, caption: trimmed || null });
   };
 
-  const sendLabel = uploading ? "Uploading…" : sending ? "Sending…" : "Send";
+  const sendLabel = uploading ? uploadLabel : sending ? "Sending…" : "Send";
 
   return (
     <div className="border-t border-line bg-bg/90 backdrop-blur-md px-5 py-4">
@@ -134,7 +147,7 @@ export function MessageComposer({
                 <div className="flex-1 min-w-0">
                   <div className="label-sm text-fg-2 truncate">{file.name}</div>
                   <div className="label-sm text-fg-3">
-                    {uploading ? "Uploading…" : formatBytes(file.size)}
+                    {uploading ? uploadLabel : formatBytes(file.size)}
                   </div>
                 </div>
                 <button

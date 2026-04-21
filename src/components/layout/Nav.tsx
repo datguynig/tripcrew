@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -13,6 +13,12 @@ const TABS = [
   { code: "05", label: "Ledger", path: "/ledger" },
   { code: "06", label: "Feed", path: "/feed" },
 ] as const;
+
+type Tab = {
+  code: string;
+  label: string;
+  path: string;
+};
 
 export function Nav({
   slug,
@@ -27,9 +33,9 @@ export function Nav({
   const { feedUnreadByTrip } = useNotifications();
   const feedUnread = feedUnreadByTrip[tripId] ?? 0;
   const base = `/trips/${slug}`;
-  const tabs = isAdmin
-    ? [...TABS, { code: "07", label: "Admin", path: "/admin" } as const]
-    : TABS;
+  const tabs: Tab[] = isAdmin
+    ? [...TABS, { code: "07", label: "Admin", path: "/admin" }]
+    : [...TABS];
 
   return (
     <div className="sticky top-[60px] z-40 bg-bg/85 backdrop-blur-md border-b border-line">
@@ -50,31 +56,67 @@ export function Nav({
                     : "text-fg-3 hover:text-fg active:text-fg"
                 }`}
               >
-                <span
-                  aria-hidden
-                  className={`font-mono text-[10px] tracking-[0.1em] ${
-                    active ? "text-accent" : "text-fg-4"
-                  }`}
-                >
-                  {tab.code}
-                </span>
-                <span>{tab.label}</span>
-                {isFeedTab && feedUnread > 0 && (
-                  <span
-                    aria-label={`${feedUnread} unread`}
-                    className="font-mono text-[10px] tracking-[0.1em] text-accent tabular"
-                  >
-                    {feedUnread}
-                  </span>
-                )}
-                {active && (
-                  <span className="absolute -bottom-px left-0 right-5 h-[2px] bg-accent" />
-                )}
+                <TabContent
+                  tab={tab}
+                  active={active}
+                  isFeedTab={isFeedTab}
+                  feedUnread={feedUnread}
+                />
               </Link>
             );
           })}
         </nav>
       </div>
     </div>
+  );
+}
+
+function TabContent({
+  tab,
+  active,
+  isFeedTab,
+  feedUnread,
+}: {
+  tab: Tab;
+  active: boolean;
+  isFeedTab: boolean;
+  feedUnread: number;
+}) {
+  // `useLinkStatus` is valid inside Link descendants; returns pending=true
+  // while the route transition is in flight. Gives mobile users an
+  // indicator that their tap registered and something is happening,
+  // especially on slow connections.
+  const { pending } = useLinkStatus();
+  return (
+    <>
+      <span
+        aria-hidden
+        className={`font-mono text-[10px] tracking-[0.1em] ${
+          active ? "text-accent" : "text-fg-4"
+        }`}
+      >
+        {tab.code}
+      </span>
+      <span>{tab.label}</span>
+      {pending ? (
+        <span
+          aria-label="Loading"
+          className="w-[6px] h-[6px] rounded-full bg-accent animate-pulse"
+        />
+      ) : (
+        isFeedTab &&
+        feedUnread > 0 && (
+          <span
+            aria-label={`${feedUnread} unread`}
+            className="font-mono text-[10px] tracking-[0.1em] text-accent tabular"
+          >
+            {feedUnread}
+          </span>
+        )
+      )}
+      {active && (
+        <span className="absolute -bottom-px left-0 right-5 h-[2px] bg-accent" />
+      )}
+    </>
   );
 }

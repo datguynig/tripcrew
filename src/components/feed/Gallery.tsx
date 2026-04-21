@@ -182,16 +182,29 @@ function Thumb({
   onViewInChat,
 }: ThumbProps) {
   const [imageBroken, setImageBroken] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   return (
-    <div className="relative group bg-bg-2 aspect-[4/3] overflow-hidden">
+    <div className="relative group bg-bg-3 aspect-[4/3] overflow-hidden">
       {!imageBroken ? (
-        /* eslint-disable-next-line @next/next/no-img-element */
-        <img
-          src={post.image_url as string}
-          alt=""
-          className="w-full h-full object-cover block"
-          onError={() => setImageBroken(true)}
-        />
+        <>
+          {!imageLoaded && (
+            <div
+              className="absolute inset-0 bg-bg-3 animate-skeleton"
+              aria-hidden="true"
+            />
+          )}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.image_url as string}
+            alt=""
+            loading="lazy"
+            className={`w-full h-full object-cover block transition-opacity duration-200 ${
+              imageLoaded ? "opacity-100" : "opacity-0"
+            }`}
+            onLoad={() => setImageLoaded(true)}
+            onError={() => setImageBroken(true)}
+          />
+        </>
       ) : (
         <div
           className="w-full h-full flex items-center justify-center label text-fg-3 bg-bg-3"

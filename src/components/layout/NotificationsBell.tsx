@@ -11,8 +11,10 @@ type Props = {
   notifications: Notification[];
   unreadCount: number;
   loading: boolean;
+  error: string | null;
   onMarkAsRead: (id: string) => void;
   onMarkAllRead: () => void;
+  onRetry: () => Promise<void> | void;
   isFeedMuted: (tripId: string) => boolean;
   onToggleFeedMute: (tripId: string) => void;
 };
@@ -21,8 +23,10 @@ export function NotificationsBell({
   notifications,
   unreadCount,
   loading,
+  error,
   onMarkAsRead,
   onMarkAllRead,
+  onRetry,
   isFeedMuted,
   onToggleFeedMute,
 }: Props) {
@@ -163,6 +167,17 @@ export function NotificationsBell({
                     <Skeleton variant="line" className="flex-1 max-w-[240px]" />
                   </div>
                 ))}
+              </div>
+            ) : error ? (
+              <div className="py-8 px-5 text-center grid gap-3">
+                <div className="label-sm text-err">Couldn&apos;t load activity</div>
+                <button
+                  type="button"
+                  onClick={() => void onRetry()}
+                  className="label-sm-wide text-fg-3 hover:text-fg cursor-pointer"
+                >
+                  RETRY
+                </button>
               </div>
             ) : notifications.length === 0 ? (
               <div className="py-10 text-center label text-fg-3">
