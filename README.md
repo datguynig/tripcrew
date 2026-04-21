@@ -36,9 +36,13 @@ TripCrew is a Next.js + Supabase app for planning group trips with a shared crew
 - `/trips/[slug]/shortlist`: activity shortlist and voting
 - `/trips/[slug]/bookings`: shared bookings tracker
 - `/trips/[slug]/ledger`: shared expense ledger
-- `/trips/[slug]/feed`: trip posts
+- `/trips/[slug]/feed`: crew chat — messages, photos, replies, likes
 - `/trips/[slug]/admin`: admin-only trip configuration
 - `/join/[token]`: accept an invite link
+
+## Security
+
+Crew chat messages are **not end-to-end encrypted.** Posts live in Supabase Postgres (TLS in transit, standard at-rest encryption), and RLS restricts reads to trip members. Supabase infrastructure and anyone holding the service-role key can read message contents. Treat the chat as a shared workspace surface, not a private messenger.
 
 ## Repository shape
 

@@ -62,7 +62,10 @@ export function Feed({
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null);
   const [isPosting, startTransition] = useTransition();
   const [viewMode, setViewMode] = useState<ViewMode>("timeline");
-  const [lightboxPostId, setLightboxPostId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{
+    postId: string;
+    source: "gallery" | "timeline";
+  } | null>(null);
   const [authorFilter, setAuthorFilter] = useState<string>("all");
   // Time-relative flags (canEdit, day labels rendered via sub-components)
   // depend on the local clock. Gate them behind a post-mount flag so the
@@ -398,7 +401,7 @@ export function Feed({
   };
 
   const handleGalleryViewInChat = (postId: string) => {
-    setLightboxPostId(null);
+    setLightbox(null);
     setViewMode("timeline");
     scheduleScrollToPost(postId);
   };
@@ -407,10 +410,10 @@ export function Feed({
     const post = postsById.get(postId);
     if (!post) {
       toast.error("This post is no longer available");
-      setLightboxPostId(null);
+      setLightbox(null);
       return;
     }
-    setLightboxPostId(null);
+    setLightbox(null);
     setViewMode("timeline");
     handleReply(post);
     scheduleScrollToPost(postId);
@@ -490,6 +493,9 @@ export function Feed({
           onReply={() => handleReply(p)}
           onEditCommit={(next) => handleEdit(p.id, next)}
           onScrollToPost={handleScrollToPost}
+          onOpenLightbox={(id) =>
+            setLightbox({ postId: id, source: "timeline" })
+          }
         />,
       );
       prev = p;
@@ -557,7 +563,9 @@ export function Feed({
               likedByMe={likedByMe}
               replyCountFor={replyCountFor}
               onToggleLike={handleToggleLike}
-              onOpenLightbox={setLightboxPostId}
+              onOpenLightbox={(id) =>
+                setLightbox({ postId: id, source: "gallery" })
+              }
               onViewInChat={handleGalleryViewInChat}
             />
           </div>
@@ -571,15 +579,15 @@ export function Feed({
         />
       </div>
 
-      {lightboxPostId && (
+      {lightbox && (
         <Lightbox
-          posts={filteredMedia}
-          currentPostId={lightboxPostId}
+          posts={lightbox.source === "gallery" ? filteredMedia : mediaPosts}
+          currentPostId={lightbox.postId}
           authorsById={authorsById}
           likeCountFor={likeCountFor}
           likedByMe={likedByMe}
           replyCountFor={replyCountFor}
-          onClose={() => setLightboxPostId(null)}
+          onClose={() => setLightbox(null)}
           onToggleLike={handleToggleLike}
           onViewInChat={handleGalleryViewInChat}
           onReplyInChat={handleGalleryReplyInChat}

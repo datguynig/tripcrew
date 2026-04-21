@@ -138,6 +138,8 @@ Per-trip realtime chat surfaced at `/trips/[slug]/feed`. Replaces WhatsApp-style
 - Composer: [MessageComposer.tsx](src/components/feed/MessageComposer.tsx). Auto-grow textarea, Enter = send, Shift+Enter = newline. "Add photo" is a `<label>` wrapping an `sr-only` file input (tab-focusable without custom key handlers). Reply-quote and image chips stack above the textarea.
 - Initial fetch in [feed/page.tsx](src/app/(app)/trips/[slug]/feed/page.tsx) caps at 200 rows. Infinite-scroll history is not wired yet.
 
+**Security posture.** Messages are **not end-to-end encrypted.** Posts live in Supabase Postgres with TLS in transit and standard at-rest encryption; RLS restricts reads to trip members. Supabase infrastructure and anyone with the service-role key can read message contents. Don't use crew chat for sensitive data, and treat it as the same trust boundary as a shared Google Doc, not an E2E messenger.
+
 ## Running
 
 ```bash

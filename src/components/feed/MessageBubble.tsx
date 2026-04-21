@@ -19,6 +19,7 @@ type Props = {
   onReply: () => void;
   onEditCommit: (next: string) => Promise<boolean>;
   onScrollToPost: (postId: string) => void;
+  onOpenLightbox?: (postId: string) => void;
 };
 
 function Footer({
@@ -40,7 +41,7 @@ function Footer({
 }) {
   if (editing) return null;
   return (
-    <div className="flex gap-4 mt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+    <div className="flex gap-4 mt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity max-[780px]:opacity-80">
       <button
         type="button"
         aria-label={liked ? "Unlike message" : "Like message"}
@@ -112,6 +113,7 @@ export function MessageBubble({
   onReply,
   onEditCommit,
   onScrollToPost,
+  onOpenLightbox,
 }: Props) {
   const [imageBroken, setImageBroken] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -197,13 +199,30 @@ export function MessageBubble({
       )}
       {showImage && (
         <div className="max-w-[480px] border border-line bg-bg-2 overflow-hidden mt-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image_url as string}
-            alt=""
-            className="block w-full aspect-[4/3] object-cover bg-bg-3"
-            onError={() => setImageBroken(true)}
-          />
+          {onOpenLightbox ? (
+            <button
+              type="button"
+              onClick={() => onOpenLightbox(post.id)}
+              aria-label={`Open photo by ${authorName}`}
+              className="block w-full cursor-zoom-in"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={post.image_url as string}
+                alt=""
+                className="block w-full aspect-[4/3] object-cover bg-bg-3"
+                onError={() => setImageBroken(true)}
+              />
+            </button>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={post.image_url as string}
+              alt=""
+              className="block w-full aspect-[4/3] object-cover bg-bg-3"
+              onError={() => setImageBroken(true)}
+            />
+          )}
           {editing ? (
             <div className="px-4 py-3 border-t border-line">
               {editingTextarea}
