@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { RouteLoadingDot } from "./RouteLoadingDot";
 import { getInitials } from "@/lib/initials";
 import type { Profile } from "@/lib/types";
 
@@ -88,6 +89,7 @@ export function AccountMenu({ profile }: Props) {
                 {profile.name}
               </span>
             </span>
+            <RouteLoadingDot className="shrink-0" />
           </Link>
 
           <div className="border-t border-line mt-1 pt-1">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "@/components/ui/Badge";
+import { RouteLoadingDot } from "./RouteLoadingDot";
 import { useNotifications } from "@/hooks/useNotifications";
 import type { Trip, TripRole } from "@/lib/types";
 
@@ -136,11 +137,10 @@ export function TripSwitcher({ trips }: Props) {
             <Link
               href="/trips/new"
               role="menuitem"
-              className="flex items-center gap-3 px-4 py-[10px] text-[13px] text-accent hover:bg-bg-3 transition-colors"
+              className="flex items-center gap-3 px-4 py-[10px] text-[13px] text-accent hover:bg-bg-3 active:bg-bg-3 transition-colors"
             >
-              <span className="label">
-                + Create trip
-              </span>
+              <span className="label flex-1">+ Create trip</span>
+              <RouteLoadingDot />
             </Link>
           </div>
         </div>
@@ -177,7 +177,7 @@ function GroupList({
             key={trip.id}
             href={`/trips/${trip.slug}`}
             role="menuitem"
-            className={`flex items-center gap-3 px-4 py-[10px] hover:bg-bg-3 transition-colors ${
+            className={`flex items-center gap-3 px-4 py-[10px] hover:bg-bg-3 active:bg-bg-3 transition-colors ${
               isCurrent ? "bg-bg-3" : ""
             }`}
           >
@@ -194,6 +194,7 @@ function GroupList({
                 {subtitle}
               </span>
             </span>
+            <RouteLoadingDot className="shrink-0" />
             {unread > 0 && (
               <span
                 aria-label={`${unread} unread`}

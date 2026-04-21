@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getUserTrips } from "@/lib/auth";
 import { Badge } from "@/components/ui/Badge";
 import { buttonClasses } from "@/components/ui/Button";
+import { RouteLoadingDot } from "@/components/layout/RouteLoadingDot";
 
 export const dynamic = "force-dynamic";
 
@@ -31,8 +32,12 @@ export default async function Dashboard() {
         >
           Your trips<span className="text-accent">.</span>
         </h1>
-        <Link href="/trips/new" className={buttonClasses()}>
-          Create trip
+        <Link
+          href="/trips/new"
+          className={`${buttonClasses()} inline-flex items-center gap-2`}
+        >
+          <span>Create trip</span>
+          <RouteLoadingDot />
         </Link>
       </div>
 
@@ -45,8 +50,12 @@ export default async function Dashboard() {
             Start planning — invite your crew, vote on the destination, split
             the money.
           </div>
-          <Link href="/trips/new" className={buttonClasses()}>
-            Create your first trip
+          <Link
+            href="/trips/new"
+            className={`${buttonClasses()} inline-flex items-center gap-2`}
+          >
+            <span>Create your first trip</span>
+            <RouteLoadingDot />
           </Link>
         </div>
       ) : (
@@ -58,7 +67,7 @@ export default async function Dashboard() {
               <Link
                 key={t.id}
                 href={`/trips/${t.slug}`}
-                className="border border-line bg-bg-2 p-6 flex flex-col gap-4 hover:border-line-2 transition-colors"
+                className="border border-line bg-bg-2 p-6 flex flex-col gap-4 hover:border-line-2 active:border-line-2 transition-colors relative"
               >
                 <div className="flex items-center justify-between">
                   <Badge tone={isLocked ? "ok" : "warn"}>
@@ -76,8 +85,9 @@ export default async function Dashboard() {
                     <div className="text-sm text-fg-3">{t.name}</div>
                   )}
                 </div>
-                <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 mt-auto">
-                  {formatRange(t.start_date, t.end_date)}
+                <div className="font-mono text-[10px] tracking-[0.12em] uppercase text-fg-3 mt-auto flex items-center justify-between gap-2">
+                  <span>{formatRange(t.start_date, t.end_date)}</span>
+                  <RouteLoadingDot />
                 </div>
               </Link>
             );

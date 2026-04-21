@@ -82,10 +82,6 @@ function TabContent({
   isFeedTab: boolean;
   feedUnread: number;
 }) {
-  // `useLinkStatus` is valid inside Link descendants; returns pending=true
-  // while the route transition is in flight. Gives mobile users an
-  // indicator that their tap registered and something is happening,
-  // especially on slow connections.
   const { pending } = useLinkStatus();
   return (
     <>
