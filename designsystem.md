@@ -483,6 +483,23 @@ Everywhere else stays opaque:
 
 Intentionally low-intensity — the tint is what the destination cards' glass catches, not a feature you notice on its own.
 
+### 4.18 Polaroid stack (overview hero)
+
+The locked-trip overview replaces a full-bleed hero image with a tilted stack of up to five polaroids in the right column of Block A. It's the **only place in the product that uses a drop-shadow** — see the §8 carve-out.
+
+- **Frame** — off-white `#fafaf7` background with a 1px `#e9e9e2` border, 10px side + top padding, 44px bottom caption strip, 2px corner radius. The hardcoded off-white is an intentional brand-inversion for this surface; don't promote it to a token.
+- **Image region** — 4:5 aspect, `object-cover`, 220px wide on desktop (170px below 900px). Hover lifts the polaroid 4px (`hover:-translate-y-1`) within a 200ms ease-out.
+- **Caption strip** — primary caption in `.label-xs` black (`#0a0a0b`), optional secondary line in 9px mono `#6a6a70` (photo attribution, author name, "2d ago"). Both truncate; never wrap.
+- **Stack layout** — five deterministic `{tilt, offsetX, offsetY, zIndex}` tuples in [PolaroidStack](src/components/overview/PolaroidStack.tsx). Tilts range ±5°, offsets cluster within ±70px of centre. Determinism is load-bearing: re-renders must land on the same visual so the stack feels like a fixed composition, not a shuffle.
+- **Stack container** — 520px tall desktop, 400px below 900px. Carries the single soft shadow (`drop-shadow-[0_30px_40px_rgba(0,0,0,0.4)]`) that gives the cluster its lift off the canvas.
+- **Admin affordances** — two pills top-right of each polaroid, revealed on `group-hover/pol` + `focus-within`, held at 80% opacity below 780px (no hover on touch). **SWAP** (text pill) opens the content picker for that slot. **↔** (icon pill) opens the reorder dialog to exchange with another slot. Both use `bg-bg/70 backdrop-blur-md border border-line` so the pills read as glass chrome over the white frame, not part of the polaroid itself.
+- **Slot picker** — Dialog with three tabs (Upload / Activities / Gallery) + "RESET TO AUTO" in the footer. Grid is `grid-cols-3 max-[520px]:grid-cols-2 gap-3`, 4:5 thumbs with hairline borders matching §4.10 rows.
+- **Reorder dialog** — grid of the other four slots as thumbs, tap one → two sequential `setPolaroidSlot` writes to exchange content. Headline is "Reorder slot N".
+- **Lightbox** — tap any polaroid → full-screen viewer ([PolaroidLightbox](src/components/overview/PolaroidLightbox.tsx)). Keyboard left/right nav, Esc close, touch swipe on mobile. No chat-specific panel (this is a photo viewer, not a message lightbox — it mirrors the feed lightbox but intentionally drops reply/like affordances).
+- **Responsive** — under 900px, Block A collapses to single column: text first, polaroid stack below. Stack shrinks to 400px tall with 170px polaroids so the cluster still reads as five distinct frames.
+
+### 4.19 *(reserved)*
+
 ---
 
 **Affirming-feedback decision tree:**
@@ -559,7 +576,7 @@ If a screen has more than ~8 interactive controls in view without a section head
 
 ## 8. What we don't do
 
-- ❌ Shadows (except the single popover case, for floating semantics)
+- ❌ Shadows — two documented exceptions: (1) popovers use `shadow-lg` for floating semantics; (2) the overview polaroid stack uses a single soft `drop-shadow-[0_30px_40px_rgba(0,0,0,0.4)]` on the stack container, because the scrapbook read depends on lift (see §4.18). No other surface in the product shadows.
 - ❌ Gradients (except the hero radial on the sign-in page)
 - ❌ Rounded-full on anything except avatars, dots, pills
 - ❌ Emojis in the UI
