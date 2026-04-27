@@ -44,7 +44,7 @@ export function RefreshPricesButton({
       const result = await refreshPrices(userId, tripId);
       if (result.success) {
         setOptimisticAt(result.refreshedAt);
-        toast.success("Refresh logged.");
+        toast.success("Live flight prices updated.");
         router.refresh();
         return;
       }
@@ -65,15 +65,15 @@ export function RefreshPricesButton({
           onClick={handleClick}
           disabled={pending}
         >
-          {pending ? "Refreshing…" : "Refresh check"}
+          {pending ? "Checking…" : "Refresh flight prices"}
         </Button>
         <span className="label-sm text-fg-3">
           {stamp ? `Last checked ${formatRelative(stamp)}` : "Not yet checked"}
         </span>
       </div>
       <p className="text-[12px] text-fg-3 leading-[1.5] max-w-[440px]">
-        Stub for now — logs a refresh timestamp. Live flight + hotel pricing
-        ships in a later beta.
+        Pulls live Google Flights pricing for your origin, destination, and dates.
+        Updates the Flights row in the budget. One refresh per 4h.
       </p>
       {upgradeError && (
         <div className="border border-accent/30 bg-accent/[0.06] px-4 py-3 flex items-center gap-4 flex-wrap text-[13px]">

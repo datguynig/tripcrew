@@ -182,6 +182,20 @@ export type PolaroidOverride = {
   sourceId?: string | null;
 };
 
+// Flight (and later, hotel) pricing fetched from a real provider.
+// Replaces the AI's vibes-based estimate in the budget block when present.
+export type LivePricing = {
+  flights?: {
+    low: number;
+    high: number;
+    currency: string;
+    provider: "serpapi-google-flights";
+    refreshed_at: string;
+    origin_iata: string;
+    destination_iata: string;
+  };
+};
+
 export type TripMeta = {
   spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
@@ -192,6 +206,7 @@ export type TripMeta = {
   // `enriched_draft_generated_at` to detect "plan is stale" — drives the
   // "Regenerate plan" banner on the trip overview.
   brief_updated_at?: string;
+  live_pricing?: LivePricing;
 };
 
 export type Trip = {

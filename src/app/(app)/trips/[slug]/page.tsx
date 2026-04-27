@@ -186,6 +186,7 @@ export default async function TripOverview({
         enrichedDraftTier={trip.enriched_draft_tier}
         enrichedDraftGeneratedAt={trip.enriched_draft_generated_at}
         lastPriceRefreshAt={trip.last_price_refresh_at}
+        livePricing={trip.meta?.live_pricing ?? null}
         briefStale={briefStale}
       />
     </>

@@ -1,10 +1,25 @@
 import type { EnrichedDraft } from "@/lib/ai/schema";
+import type { LivePricing } from "@/lib/types";
+import { currencySymbol } from "@/lib/currency";
 
 type Props = {
   draft: EnrichedDraft;
   generatedAt: string | null;
   currency: string;
+  livePricing?: LivePricing | null;
 };
+
+function formatRelative(iso: string): string {
+  const diff = Date.now() - Date.parse(iso);
+  if (Number.isNaN(diff)) return "just now";
+  const minutes = Math.floor(diff / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 const PERIOD_LABEL: Record<"morning" | "afternoon" | "evening", string> = {
   morning: "MORNING",
@@ -12,8 +27,14 @@ const PERIOD_LABEL: Record<"morning" | "afternoon" | "evening", string> = {
   evening: "EVENING",
 };
 
-export function EnrichedDraftView({ draft, generatedAt, currency }: Props) {
-  const symbol = currency === "GBP" ? "£" : currency === "EUR" ? "€" : currency === "USD" ? "$" : "";
+export function EnrichedDraftView({
+  draft,
+  generatedAt,
+  currency,
+  livePricing,
+}: Props) {
+  const symbol = currencySymbol(currency);
+  const liveFlights = livePricing?.flights ?? null;
 
   return (
     <article className="grid gap-12">
@@ -210,9 +231,14 @@ export function EnrichedDraftView({ draft, generatedAt, currency }: Props) {
         <div className="border border-line bg-bg-2 p-5 grid gap-3">
           <BudgetRow
             label="Flights"
-            low={draft.budget.perPersonGBP.flightsLow}
-            high={draft.budget.perPersonGBP.flightsHigh}
-            symbol={symbol}
+            low={liveFlights?.low ?? draft.budget.perPersonGBP.flightsLow}
+            high={liveFlights?.high ?? draft.budget.perPersonGBP.flightsHigh}
+            symbol={liveFlights ? currencySymbol(liveFlights.currency) : symbol}
+            badge={
+              liveFlights
+                ? `LIVE · ${liveFlights.origin_iata} → ${liveFlights.destination_iata} · ${formatRelative(liveFlights.refreshed_at)}`
+                : null
+            }
           />
           <BudgetRow
             label="Accommodation"
@@ -236,10 +262,10 @@ export function EnrichedDraftView({ draft, generatedAt, currency }: Props) {
             <span className="label-sm text-fg">TOTAL</span>
             <span className="text-[18px] font-medium tabular-nums">
               {symbol}
-              {totalLow(draft.budget.perPersonGBP)}
+              {totalLow(draft.budget.perPersonGBP, liveFlights?.low)}
               <span className="text-fg-3"> – </span>
               {symbol}
-              {totalHigh(draft.budget.perPersonGBP)}
+              {totalHigh(draft.budget.perPersonGBP, liveFlights?.high)}
             </span>
           </div>
         </div>
@@ -276,15 +302,24 @@ function BudgetRow({
   low,
   high,
   symbol,
+  badge,
 }: {
   label: string;
   low: number;
   high: number;
   symbol: string;
+  badge?: string | null;
 }) {
   return (
-    <div className="flex items-baseline justify-between gap-4">
-      <span className="text-[14px] text-fg-2">{label}</span>
+    <div className="flex items-baseline justify-between gap-4 flex-wrap">
+      <span className="text-[14px] text-fg-2 flex items-baseline gap-2 flex-wrap">
+        {label}
+        {badge && (
+          <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-accent border border-accent/30 px-1.5 py-0.5">
+            {badge}
+          </span>
+        )}
+      </span>
       <span className="text-[14px] tabular-nums">
         {symbol}
         {Math.round(low)}
@@ -296,13 +331,27 @@ function BudgetRow({
   );
 }
 
-function totalLow(b: EnrichedDraft["budget"]["perPersonGBP"]): number {
-  return Math.round(b.flightsLow + b.accommodationLow + b.foodLow + b.activitiesLow);
+function totalLow(
+  b: EnrichedDraft["budget"]["perPersonGBP"],
+  liveFlightsLow?: number,
+): number {
+  return Math.round(
+    (liveFlightsLow ?? b.flightsLow) +
+      b.accommodationLow +
+      b.foodLow +
+      b.activitiesLow,
+  );
 }
 
-function totalHigh(b: EnrichedDraft["budget"]["perPersonGBP"]): number {
+function totalHigh(
+  b: EnrichedDraft["budget"]["perPersonGBP"],
+  liveFlightsHigh?: number,
+): number {
   return Math.round(
-    b.flightsHigh + b.accommodationHigh + b.foodHigh + b.activitiesHigh,
+    (liveFlightsHigh ?? b.flightsHigh) +
+      b.accommodationHigh +
+      b.foodHigh +
+      b.activitiesHigh,
   );
 }
 
