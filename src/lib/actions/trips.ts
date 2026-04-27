@@ -47,6 +47,10 @@ const schema = z.object({
   voteDeadline: z.string().optional().or(z.literal("")),
   candidates: z.string().optional(),
   occasion: occasionSchema.optional().or(z.literal("")),
+  currency: z
+    .enum(["GBP", "USD", "EUR", "SEK", "NOK", "DKK", "CHF", "JPY", "AUD", "CAD"])
+    .optional()
+    .or(z.literal("")),
 });
 
 function parseCandidates(raw: string | undefined) {
@@ -111,12 +115,13 @@ export async function createTrip(
     voteDeadline: formData.get("voteDeadline"),
     candidates: formData.get("candidates"),
     occasion: formData.get("occasion"),
+    currency: formData.get("currency"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, startDate, endDate, voteDeadline, candidates, occasion } =
+  const { name, startDate, endDate, voteDeadline, candidates, occasion, currency } =
     parsed.data;
 
   if (startDate && endDate && endDate < startDate) {
@@ -171,6 +176,7 @@ export async function createTrip(
       vote_deadline: voteDeadline || null,
       created_by: user.id,
       meta: initialMeta,
+      currency: currency || "GBP",
     })
     .select("id, slug")
     .single<{ id: string; slug: string }>();

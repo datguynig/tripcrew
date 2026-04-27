@@ -445,16 +445,36 @@ export async function lockAndStartDraft(input: {
     brief_updated_at: new Date().toISOString(),
   };
 
+  // Mirror prefs into the trip columns the rest of the app reads:
+  //   crew_size  → trips.target_crew_size (drives Hero "1/N" stat)
+  //   budget tier → trips.target_budget_pp when admin chose a preset/custom
+  const tripUpdates: Record<string, unknown> = {
+    status: "locked",
+    destination: winner.title,
+    hero_image_url: heroUrl,
+    hero_image_attribution: heroAttribution,
+    hero_tint: heroTint,
+    meta: mergedMeta,
+    target_crew_size: preferences.crew_size,
+  };
+
+  const TIER_DEFAULTS: Record<string, number | null> = {
+    tight: 400,
+    mid: 950,
+    lavish: 2500,
+    custom: null,
+  };
+  const budgetPp =
+    preferences.budget_tier === "custom"
+      ? preferences.budget_custom_pp
+      : TIER_DEFAULTS[preferences.budget_tier] ?? null;
+  if (budgetPp !== null) {
+    tripUpdates.target_budget_pp = budgetPp;
+  }
+
   const { data: trip, error: updErr } = await service
     .from("trips")
-    .update({
-      status: "locked",
-      destination: winner.title,
-      hero_image_url: heroUrl,
-      hero_image_attribution: heroAttribution,
-      hero_tint: heroTint,
-      meta: mergedMeta,
-    })
+    .update(tripUpdates)
     .eq("id", tripId)
     .eq("status", "planning")
     .select("slug, name")

@@ -39,13 +39,14 @@ type Props = {
 const VIBE_GROUPS: { label: string; tags: AiVibeTag[] }[] = [
   { label: "Pace", tags: ["chill", "active", "adventure"] },
   { label: "Setting", tags: ["beach", "outdoors", "nature", "urban"] },
-  { label: "Food & drink", tags: ["foodie", "nightlife", "party"] },
+  { label: "Eating", tags: ["foodie"] },
+  { label: "Nights out", tags: ["nightlife", "party", "music"] },
   { label: "Culture", tags: ["culture", "art", "historic"] },
   {
     label: "Vibe",
     tags: ["romantic", "family_friendly", "luxury", "wellness"],
   },
-  { label: "Special", tags: ["photogenic", "sport", "music"] },
+  { label: "Special", tags: ["photogenic", "sport"] },
 ];
 
 const OCCASION_ORDER: AiOccasion[] = [

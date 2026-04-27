@@ -147,7 +147,7 @@ export function EnrichedDraftView({ draft, generatedAt, currency }: Props) {
                                   <span className="text-fg-3"> — {act.description}</span>
                                 )}
                                 {act.bookAhead && (
-                                  <span className="ml-2 text-[11px] uppercase tracking-wider text-accent border border-accent/40 px-1.5 py-0.5">
+                                  <span className="ml-2 text-[11px] uppercase tracking-wider text-accent border border-accent/40 px-1.5 py-0.5 inline-block whitespace-nowrap align-baseline">
                                     BOOK AHEAD
                                   </span>
                                 )}
@@ -262,7 +262,7 @@ export function EnrichedDraftView({ draft, generatedAt, currency }: Props) {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 border border-line bg-bg-2 hover:bg-bg-3 px-5 py-3 text-[14px] text-fg transition-colors"
           >
-            <span>Search flights on Skyscanner</span>
+            <span>Search flights on Google Flights</span>
             <span className="text-accent">↗</span>
           </a>
         </section>

@@ -9,6 +9,7 @@ import { DateTimePicker } from "@/components/ui/DateTimePicker";
 import { Select, type SelectOption } from "@/components/ui/Select";
 import { CandidatesEditor } from "@/components/trips/CandidatesEditor";
 import { INPUT } from "@/lib/styles";
+import { CURRENCIES, type CurrencyCode } from "@/lib/currency";
 import { OCCASION_LABELS, type AiOccasion } from "@/lib/types";
 
 const OCCASION_ORDER: AiOccasion[] = [
@@ -32,6 +33,11 @@ const OCCASION_ORDER: AiOccasion[] = [
 const OCCASION_OPTIONS: SelectOption<AiOccasion>[] = OCCASION_ORDER.map((o) => ({
   value: o,
   label: OCCASION_LABELS[o],
+}));
+
+const CURRENCY_OPTIONS: SelectOption<CurrencyCode>[] = CURRENCIES.map((c) => ({
+  value: c.code,
+  label: `${c.symbol}  ${c.code} · ${c.label}`,
 }));
 
 export function NewTripForm() {
@@ -74,6 +80,19 @@ export function NewTripForm() {
         helper="Optional, set later if unknown"
       >
         <DateRangePicker />
+      </Field>
+
+      <Field
+        label="Currency"
+        name="currency"
+        helper="Used for budgets, the kitty, and the ledger. Editable in /admin."
+      >
+        <Select<CurrencyCode>
+          name="currency"
+          options={CURRENCY_OPTIONS}
+          defaultValue="GBP"
+          placeholder="Pick a currency"
+        />
       </Field>
 
       <Field
