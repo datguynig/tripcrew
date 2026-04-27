@@ -33,7 +33,7 @@ const POLAROIDS: { caption: string; rotation: string; top: string; z: number }[]
   { caption: "Pena Palace", rotation: "-rotate-[2deg]", top: "80px", z: 30 },
 ];
 
-export default function SampleTripTile() {
+export function SampleTripTile() {
   return (
     <section
       id="sample-trip"
