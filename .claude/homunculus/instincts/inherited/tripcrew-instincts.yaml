@@ -1,0 +1,894 @@
+# Instincts generated from https://github.com/datguynig/tripcrew
+# Generated: 2026-04-27T22:52:54.778Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: tripcrew-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, chore, docs, test, refactor
+
+## Evidence
+
+- 38 commits analyzed
+- Detected conventional commit pattern
+- Examples: docs: invite-only landing page design spec, feat(db): add applications table for invite-only gate
+
+---
+id: tripcrew-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Commit Length
+
+## Action
+
+Write moderate-length commit messages (~57 characters)
+
+## Evidence
+
+- Average commit message length: 57 chars
+- Based on 38 commits
+
+---
+id: tripcrew-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: tripcrew-import-alias
+trigger: "when importing modules"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Import Alias
+
+## Action
+
+Use path aliases (@/, ~/) instead of relative imports
+
+## Evidence
+
+- Import analysis shows alias pattern
+- Example: import { x } from '@/lib/x'
+
+---
+id: tripcrew-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Export Style
+
+## Action
+
+Prefer mixed exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: mixed
+
+---
+id: tripcrew-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: app, components, lib
+
+---
+id: tripcrew-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: tripcrew-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Test Framework
+
+## Action
+
+Use jest as the test framework
+
+## Evidence
+
+- Test framework detected: jest
+- File pattern: *.test.ts
+
+---
+id: tripcrew-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Test Naming
+
+## Action
+
+Name test files using the pattern: *.test.ts
+
+## Evidence
+
+- File pattern: *.test.ts
+- Consistent across test files
+
+---
+id: tripcrew-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: migrations/*
+
+---
+id: tripcrew-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~23x per month
+- Files: src/lib/*, src/lib/applications/__tests__/*, src/lib/applications/*
+
+---
+id: tripcrew-workflow-add-new-database-table-or-column
+trigger: "when doing add new database table or column"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add New Database Table Or Column
+
+## Action
+
+Follow the add-new-database-table-or-column workflow:
+1. Create a new SQL migration file in supabase/migrations/ with a timestamped name.
+2. Define the new table or add columns in the migration SQL.
+3. If needed, update related indexes or RLS policies.
+4. Commit the migration file.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: supabase/migrations/*.sql
+
+---
+id: tripcrew-workflow-update-types-after-schema-change
+trigger: "when doing update types after schema change"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Update Types After Schema Change
+
+## Action
+
+Follow the update-types-after-schema-change workflow:
+1. Edit src/lib/types.ts to add or update types for the new/changed schema.
+2. Commit the updated types file.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/lib/types.ts
+
+---
+id: tripcrew-workflow-feature-development-with-code-review-phases
+trigger: "when doing feature development with code review phases"
+confidence: 0.8
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Feature Development With Code Review Phases
+
+## Action
+
+Follow the feature-development-with-code-review-phases workflow:
+1. Initial implementation: add feature files (routes, components, helpers, tests).
+2. Commit with feat(...) or similar.
+3. Apply code review feedback and simplifications in a follow-up commit labeled chore(phase N): ...
+4. Repeat as needed for each phase.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~6x per month
+- Files: src/app/**/*.tsx, src/components/**/*.tsx, src/lib/**/*.ts
+
+---
+id: tripcrew-workflow-add-new-api-or-server-action
+trigger: "when doing add new api or server action"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add New Api Or Server Action
+
+## Action
+
+Follow the add-new-api-or-server-action workflow:
+1. Create a new file in src/lib/actions/ or src/app/api/.
+2. Implement the server action or API route logic.
+3. If needed, add related helpers or validators.
+4. Commit the new/updated files.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: src/lib/actions/*.ts, src/app/api/**/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-validation-logic
+trigger: "when doing add or update validation logic"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Validation Logic
+
+## Action
+
+Follow the add-or-update-validation-logic workflow:
+1. Create or update a Zod schema in src/lib/validators/.
+2. Add or update tests in src/lib/validators/__tests__/
+3. Commit the validator and test files.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: src/lib/validators/*.ts, src/lib/validators/__tests__/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-marketing-or-public-facing-components
+trigger: "when doing add or update marketing or public facing components"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Marketing Or Public Facing Components
+
+## Action
+
+Follow the add-or-update-marketing-or-public-facing-components workflow:
+1. Create or update component(s) in src/components/marketing/.
+2. Update or compose the landing page or public route in src/app/(public)/.
+3. If needed, add or update helpers in src/lib/marketing/.
+4. Commit the changes.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: src/components/marketing/*.tsx, src/app/(public)/**/*.tsx, src/lib/marketing/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-admin-interface
+trigger: "when doing add or update admin interface"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Admin Interface
+
+## Action
+
+Follow the add-or-update-admin-interface workflow:
+1. Create or update admin pages in src/app/(app)/admin/.
+2. Create or update admin components in src/components/admin/.
+3. Implement or update founder-gate logic in src/lib/auth/.
+4. Commit the changes.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: src/app/(app)/admin/**/*.tsx, src/components/admin/*.tsx, src/lib/auth/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-e2e-or-content-guard-tests
+trigger: "when doing add or update e2e or content guard tests"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update E2e Or Content Guard Tests
+
+## Action
+
+Follow the add-or-update-e2e-or-content-guard-tests workflow:
+1. Create or update a test spec in tests/ (e.g., applications-flow.spec.ts, landing-content-guards.spec.ts).
+2. Commit the test file.
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: tests/*.spec.ts
+
+---
+id: tripcrew-workflow-add-or-update-documentation-and-specs
+trigger: "when doing add or update documentation and specs"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Documentation And Specs
+
+## Action
+
+Follow the add-or-update-documentation-and-specs workflow:
+1. Create or update a markdown spec or plan in docs/superpowers/specs/ or docs/superpowers/plans/.
+2. If relevant, update docs/pricing.md or roadmap.md.
+3. Commit the documentation file(s).
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: docs/superpowers/specs/*.md, docs/superpowers/plans/*.md, docs/pricing.md
+
+---
+id: tripcrew-naming-files-camelcase
+trigger: "When creating or renaming a file in the codebase"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Naming Files Camelcase
+
+## Action
+
+Name the file using camelCase (e.g., myComponent.tsx)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- Files in src/components/marketing/
+
+---
+id: tripcrew-naming-functions-camelcase
+trigger: "When defining a function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Naming Functions Camelcase
+
+## Action
+
+Name the function using camelCase (e.g., handleSubmit)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+- Files in src/lib/*.ts
+
+---
+id: tripcrew-naming-classes-pascalcase
+trigger: "When defining a class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Naming Classes Pascalcase
+
+## Action
+
+Name the class using PascalCase (e.g., ApplicationForm)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+- Files in src/components/*.tsx
+
+---
+id: tripcrew-naming-constants-screaming-snake-case
+trigger: "When defining a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Naming Constants Screaming Snake Case
+
+## Action
+
+Name the constant using SCREAMING_SNAKE_CASE (e.g., MAX_LENGTH)
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+- Files in src/lib/*.ts
+
+---
+id: tripcrew-import-style-alias
+trigger: "When importing modules"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Import Style Alias
+
+## Action
+
+Use import aliases instead of relative paths where possible
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+- Files in src/lib/*.ts
+
+---
+id: tripcrew-export-style-mixed
+trigger: "When exporting modules or functions"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Export Style Mixed
+
+## Action
+
+Use both named and default exports as appropriate
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+- Files in src/lib/*.ts
+
+---
+id: tripcrew-testing-file-pattern
+trigger: "When creating a test file"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Testing File Pattern
+
+## Action
+
+Name the test file with a .test.ts suffix (e.g., myFeature.test.ts)
+
+## Evidence
+
+- Pattern in testing.filePattern
+- Files in src/lib/applications/__tests__/*
+
+---
+id: tripcrew-testing-framework-jest
+trigger: "When writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Testing Framework Jest
+
+## Action
+
+Use the Jest testing framework
+
+## Evidence
+
+- Pattern in testing.framework
+- Files in tests/*.spec.ts
+
+---
+id: tripcrew-testing-unit-tests
+trigger: "When writing tests for a module or function"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Testing Unit Tests
+
+## Action
+
+Write unit tests for individual functions or modules
+
+## Evidence
+
+- Pattern in testing.testTypes
+- Files in src/lib/applications/__tests__/*
+
+---
+id: tripcrew-testing-e2e-tests
+trigger: "When validating a new flow or public content"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Testing E2e Tests
+
+## Action
+
+Write end-to-end or content-guard tests in tests/*.spec.ts
+
+## Evidence
+
+- Workflow add-or-update-e2e-or-content-guard-tests
+- Files in tests/*.spec.ts
+
+---
+id: tripcrew-git-commit-conventional
+trigger: "When making a git commit"
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Git Commit Conventional
+
+## Action
+
+Format the commit message using the conventional commit style (e.g., feat(scope): message)
+
+## Evidence
+
+- Pattern in commits.type
+- Examples: 'feat(db): add applications table for invite-only gate'
+
+---
+id: tripcrew-git-commit-prefixes
+trigger: "When writing a commit message"
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Git Commit Prefixes
+
+## Action
+
+Use one of the following prefixes: feat, chore, docs, test, refactor
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Examples: 'docs: invite-only landing page design spec'
+
+---
+id: tripcrew-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.8
+domain: git
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Git Commit Length
+
+## Action
+
+Keep the commit message concise, around 57 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength
+- Examples in commit messages
+
+---
+id: tripcrew-workflow-add-new-database-table-or-column
+trigger: "When introducing a new data model or extending an existing one"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add New Database Table Or Column
+
+## Action
+
+Create a timestamped SQL migration file in supabase/migrations/ and define the new table or columns
+
+## Evidence
+
+- Workflow add-new-database-table-or-column
+- Files in supabase/migrations/*.sql
+
+---
+id: tripcrew-workflow-update-types-after-schema-change
+trigger: "When a table or column is added or modified in the database schema"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Update Types After Schema Change
+
+## Action
+
+Update src/lib/types.ts to reflect the schema changes
+
+## Evidence
+
+- Workflow update-types-after-schema-change
+- Files in src/lib/types.ts
+
+---
+id: tripcrew-workflow-feature-development-with-code-review-phases
+trigger: "When building a new feature or flow and iterating based on code review"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Feature Development With Code Review Phases
+
+## Action
+
+Make an initial feat commit, then follow up with chore(phase N) commits for review feedback and simplification
+
+## Evidence
+
+- Workflow feature-development-with-code-review-phases
+- Commits: 'chore(phase 1): apply simplify + code-review feedback'
+
+---
+id: tripcrew-workflow-add-new-api-or-server-action
+trigger: "When backend logic is needed for a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add New Api Or Server Action
+
+## Action
+
+Create a new file in src/lib/actions/ or src/app/api/, implement the logic, and commit
+
+## Evidence
+
+- Workflow add-new-api-or-server-action
+- Files in src/lib/actions/*.ts, src/app/api/**/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-validation-logic
+trigger: "When adding a new form or validating new data structures"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Validation Logic
+
+## Action
+
+Create or update a Zod schema in src/lib/validators/ and add tests in src/lib/validators/__tests__/
+
+## Evidence
+
+- Workflow add-or-update-validation-logic
+- Files in src/lib/validators/*.ts
+
+---
+id: tripcrew-workflow-add-or-update-marketing-or-public-facing-components
+trigger: "When updating the marketing site or public preview flows"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Marketing Or Public Facing Components
+
+## Action
+
+Update or create components in src/components/marketing/ and compose them into public routes
+
+## Evidence
+
+- Workflow add-or-update-marketing-or-public-facing-components
+- Files in src/components/marketing/*.tsx
+
+---
+id: tripcrew-workflow-add-or-update-admin-interface
+trigger: "When building or enhancing admin tools or pages"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Admin Interface
+
+## Action
+
+Update or create admin pages/components and implement founder-gate logic as needed
+
+## Evidence
+
+- Workflow add-or-update-admin-interface
+- Files in src/app/(app)/admin/**/*.tsx
+
+---
+id: tripcrew-workflow-add-or-update-e2e-or-content-guard-tests
+trigger: "When ensuring new flows or public content work as expected"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update E2e Or Content Guard Tests
+
+## Action
+
+Write or update end-to-end or content-guard tests in tests/*.spec.ts
+
+## Evidence
+
+- Workflow add-or-update-e2e-or-content-guard-tests
+- Files in tests/*.spec.ts
+
+---
+id: tripcrew-workflow-add-or-update-documentation-and-specs
+trigger: "When planning or documenting a new feature, flow, or pricing model"
+confidence: 0.85
+domain: workflow
+source: repo-analysis
+source_repo: datguynig/tripcrew
+---
+
+# Tripcrew Workflow Add Or Update Documentation And Specs
+
+## Action
+
+Create or update markdown specs/plans in docs/superpowers/specs/ or docs/superpowers/plans/
+
+## Evidence
+
+- Workflow add-or-update-documentation-and-specs
+- Files in docs/superpowers/specs/*.md
+
