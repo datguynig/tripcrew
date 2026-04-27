@@ -21,7 +21,7 @@ create policy "applications_founder_read" on applications
   using (
     exists (
       select 1 from profiles p
-      where p.id = (select auth.uid()) and p.is_founder = true
+      where p.id = auth.uid() and p.is_founder = true
     )
   );
 
@@ -31,6 +31,6 @@ create policy "applications_founder_update" on applications
   using (
     exists (
       select 1 from profiles p
-      where p.id = (select auth.uid()) and p.is_founder = true
+      where p.id = auth.uid() and p.is_founder = true
     )
   );

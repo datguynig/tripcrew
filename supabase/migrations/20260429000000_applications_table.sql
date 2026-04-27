@@ -29,8 +29,8 @@ create table if not exists applications (
   referrer text
 );
 
-create index applications_user_id_idx on applications(user_id);
-create index applications_pending_idx on applications(approved_at) where user_id is null and approved_at is null;
+create index applications_user_id_idx on applications(user_id) where user_id is not null;
+create index applications_pending_idx on applications(created_at desc) where approved_at is null and rejected_at is null;
 create index applications_invite_token_idx on applications(invite_token) where invite_token is not null;
 
 alter table applications enable row level security;
