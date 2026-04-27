@@ -5,19 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { applicationEmailSchema } from "@/lib/validators/application";
+import { SAMPLE_LISBON } from "@/lib/marketing/sampleTrip";
 
 import { MembershipStamp } from "./MembershipStamp";
 
 type HeroProps = {
   applicantCount: number;
 };
-
-const SPEC_CELLS: { label: string; value: string }[] = [
-  { label: "Per head", value: "£820" },
-  { label: "Crew", value: "6" },
-  { label: "From", value: "LHR" },
-  { label: "Vibes", value: "Foodie · Wine" },
-];
 
 const DEAD_BUBBLES: string[] = [
   "anyone free in june?",
@@ -96,8 +90,7 @@ export function Hero({ applicantCount }: HeroProps) {
             {error && (
               <p
                 role="alert"
-                className="font-mono uppercase tracking-[0.18em] text-[11px]"
-                style={{ color: "#ff7a5c" }}
+                className="font-mono uppercase tracking-[0.18em] text-[11px] text-err"
               >
                 {error}
               </p>
@@ -151,13 +144,14 @@ function TransformationSplit() {
           The trip
         </p>
         <h3 className="mt-4 font-serif text-[36px] leading-none tracking-[-0.02em]">
-          Lisbon
+          {SAMPLE_LISBON.city}
         </h3>
         <p className="mt-2 font-mono uppercase tracking-[0.14em] text-[10px] text-ink/70">
-          Jun 14 — Jun 19 · 6 days · 6 crew
+          {SAMPLE_LISBON.datesLabel} · {SAMPLE_LISBON.durationLabel} ·{" "}
+          {SAMPLE_LISBON.crewLabel}
         </p>
         <div className="mt-5 grid grid-cols-2 border-2 border-ink">
-          {SPEC_CELLS.map((cell, index) => {
+          {SAMPLE_LISBON.specCells.map((cell, index) => {
             const isRightCol = index % 2 === 1;
             const isBottomRow = index >= 2;
             return (

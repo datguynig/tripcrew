@@ -1,36 +1,11 @@
 import Link from "next/link";
 
-const CORAL = "#ff5e3a";
+import { SAMPLE_LISBON } from "@/lib/marketing/sampleTrip";
 
-const SPEC_CELLS: { label: string; value: string }[] = [
-  { label: "Per head", value: "£820" },
-  { label: "Crew", value: "6" },
-  { label: "From", value: "LHR" },
-  { label: "Vibes", value: "Foodie · Wine" },
-];
-
-const SCHEDULE: { day: string; title: string; note: string }[] = [
-  {
-    day: "Day 1",
-    title: "Time Out Market",
-    note: "Drop bags at the apartment in Príncipe Real. Walk down to Cais do Sodré.",
-  },
-  {
-    day: "Day 2",
-    title: "Belém Tower + Pastéis de Belém",
-    note: "Tram 15 from Praça do Comércio. Custards before the queue builds.",
-  },
-  {
-    day: "Day 3",
-    title: "Sintra day trip",
-    note: "Train from Rossio. Pena Palace booked for 11. Cabo da Roca on the way back.",
-  },
-];
-
-const POLAROIDS: { caption: string; rotation: string; top: string; z: number }[] = [
-  { caption: "Time Out Market", rotation: "-rotate-[5deg]", top: "0px", z: 10 },
-  { caption: "Pastéis de Belém", rotation: "rotate-[3deg]", top: "40px", z: 20 },
-  { caption: "Pena Palace", rotation: "-rotate-[2deg]", top: "80px", z: 30 },
+const POLAROID_LAYOUT: { rotation: string; top: string; z: number }[] = [
+  { rotation: "-rotate-[5deg]", top: "0px", z: 10 },
+  { rotation: "rotate-[3deg]", top: "40px", z: 20 },
+  { rotation: "-rotate-[2deg]", top: "80px", z: 30 },
 ];
 
 export function SampleTripTile() {
@@ -54,15 +29,16 @@ export function SampleTripTile() {
             <div className="flex flex-col gap-10">
               <div>
                 <h3 className="font-serif text-[44px] md:text-[56px] leading-none tracking-[-0.03em] mb-4">
-                  Lisbon
+                  {SAMPLE_LISBON.city}
                 </h3>
                 <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/60">
-                  Jun 14 — Jun 19 · 6 days · Foodie + Wine
+                  {SAMPLE_LISBON.datesLabel} · {SAMPLE_LISBON.durationLabel} ·{" "}
+                  {SAMPLE_LISBON.vibesPlusLabel}
                 </p>
               </div>
 
               <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-cream/15 border border-cream/15">
-                {SPEC_CELLS.map((cell) => (
+                {SAMPLE_LISBON.specCells.map((cell) => (
                   <div
                     key={cell.label}
                     className="bg-ink p-4 md:p-5 flex flex-col gap-2"
@@ -78,14 +54,13 @@ export function SampleTripTile() {
               </dl>
 
               <ol className="flex flex-col gap-5">
-                {SCHEDULE.map((item) => (
+                {SAMPLE_LISBON.schedule.map((item) => (
                   <li
                     key={item.day}
-                    className="pl-4 border-l-[3px]"
-                    style={{ borderColor: CORAL }}
+                    className="pl-4 border-l-[3px] border-marketing-coral"
                   >
                     <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/55 mb-1.5">
-                      {item.day} · {item.title}
+                      {item.day} · {item.place}
                     </p>
                     <p className="text-[15px] md:text-[16px] leading-[1.55] text-cream/90">
                       {item.note}
@@ -93,27 +68,31 @@ export function SampleTripTile() {
                   </li>
                 ))}
                 <li className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/35 pt-1">
-                  3 more days · in the full plan
+                  {SAMPLE_LISBON.totalDays - SAMPLE_LISBON.visibleDays} more
+                  days · in the full plan
                 </li>
               </ol>
             </div>
 
             <div className="hidden md:block relative min-h-[460px]">
-              {POLAROIDS.map((p, i) => (
-                <div
-                  key={p.caption}
-                  className={`absolute left-1/2 -translate-x-1/2 ${p.rotation} bg-cream text-ink p-3 pb-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)] w-[260px]`}
-                  style={{ top: p.top, zIndex: p.z }}
-                >
+              {SAMPLE_LISBON.polaroidCaptions.map((caption, i) => {
+                const layout = POLAROID_LAYOUT[i];
+                return (
                   <div
-                    aria-hidden="true"
-                    className="w-full h-[260px] bg-ink/90"
-                  />
-                  <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/70 mt-3 text-center">
-                    {p.caption}
-                  </p>
-                </div>
-              ))}
+                    key={caption}
+                    className={`absolute left-1/2 -translate-x-1/2 ${layout.rotation} bg-cream text-ink p-3 pb-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)] w-[260px]`}
+                    style={{ top: layout.top, zIndex: layout.z }}
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="w-full h-[260px] bg-ink/90"
+                    />
+                    <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/70 mt-3 text-center">
+                      {caption}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

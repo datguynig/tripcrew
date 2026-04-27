@@ -26,7 +26,7 @@ const STEPS: Step[] = [
     number: "03",
     title: "Enjoy your trip.",
     body: ["Bookings handled. Ledger settled.", "Time to make memories."],
-    numberClassName: "text-[#ff5e3a]",
+    numberClassName: "text-marketing-coral",
   },
 ];
 

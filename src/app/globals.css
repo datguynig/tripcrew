@@ -21,6 +21,7 @@
      baseline. See docs/superpowers/specs/2026-04-27-invite-only-landing-page-design.md. */
   --color-cream: #f5f1e8;
   --color-ink: #0a0a0a;
+  --color-marketing-coral: #ff5e3a;
 
   --font-sans: var(--font-sans), "Inter Tight", sans-serif;
   --font-mono: var(--font-mono), "JetBrains Mono", monospace;

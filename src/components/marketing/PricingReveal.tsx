@@ -12,8 +12,6 @@ type PricingCardProps = {
   counter?: string;
 };
 
-const CORAL = "#ff5e3a";
-
 function PricingCard({
   tier,
   name,
@@ -32,13 +30,8 @@ function PricingCard({
   const bgClass = isFree
     ? "bg-cream text-ink"
     : isPlus
-      ? "text-cream"
-      : "bg-ink text-cream";
-
-  const inlineBg = isPlus ? { backgroundColor: "#1a1a1a" } : undefined;
-  const foundingBorderStyle = isFounding
-    ? { borderLeft: `4px solid ${CORAL}` }
-    : undefined;
+      ? "bg-bg-3 text-cream"
+      : "bg-ink text-cream border-l-4 border-marketing-coral";
 
   const mutedDescription = isFree ? "text-ink/70" : "text-cream/70";
   const periodColor = isFree ? "text-ink/60" : "text-cream/60";
@@ -46,23 +39,14 @@ function PricingCard({
   const bulletColor = isFree ? "text-ink/85" : "text-cream/85";
 
   return (
-    <div
-      className={`relative ${bgClass} p-8 flex flex-col`}
-      style={{ ...inlineBg, ...foundingBorderStyle }}
-    >
+    <div className={`relative ${bgClass} p-8 flex flex-col`}>
       {ribbon && (
-        <div
-          className="absolute top-0 right-0 px-3 py-1.5 font-mono uppercase tracking-[0.18em] text-[10px] text-cream"
-          style={{ backgroundColor: CORAL }}
-        >
+        <div className="absolute top-0 right-0 px-3 py-1.5 bg-marketing-coral text-cream font-mono uppercase tracking-[0.18em] text-[10px]">
           {ribbon}
         </div>
       )}
       {counter && (
-        <div
-          className="absolute top-4 right-4 font-mono uppercase tracking-[0.18em] text-[10px]"
-          style={{ color: CORAL }}
-        >
+        <div className="absolute top-4 right-4 text-marketing-coral font-mono uppercase tracking-[0.18em] text-[10px]">
           {counter}
         </div>
       )}
