@@ -147,7 +147,7 @@ export function TripPreview({
                 <dt className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/55">
                   {cell.label}
                 </dt>
-                <dd className="font-serif text-[26px] md:text-[32px] leading-none tracking-[-0.02em] truncate">
+                <dd className="font-serif text-[24px] md:text-[28px] leading-[1.1] tracking-[-0.02em] break-words">
                   {cell.value}
                 </dd>
               </div>
