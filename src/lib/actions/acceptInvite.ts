@@ -102,7 +102,7 @@ export async function acceptInvite(token: string): Promise<AcceptResult> {
     .eq("token", token)
     .is("accepted_at", null);
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/trips/${lookup.tripSlug}`);
   revalidatePath(`/trips/${lookup.tripSlug}/crew`);
   revalidatePath(`/trips/${lookup.tripSlug}/admin`);

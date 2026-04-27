@@ -62,7 +62,7 @@ export default async function CheckoutSuccessPage() {
             <span className="text-accent">→</span>
           </Link>
           <Link
-            href="/"
+            href="/dashboard"
             className="inline-flex items-center gap-2 px-3 h-10 text-[13px] text-fg-2 hover:text-fg transition-colors"
           >
             Or jump to your trips
