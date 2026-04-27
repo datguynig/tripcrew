@@ -226,6 +226,83 @@ Replaces the current auth-walled `/join/[token]` page. Public read-only render o
 
 **Shared rendering with `/sample-trip/lisbon`.** Both surfaces use the same trip-preview component. The sample-trip page is a fixed Lisbon trip with no inviter strip / no crew counter / no CTA-to-join. The invite-link page is token-gated, hydrated with the real inviter + trip + crew. Build once, ship two surfaces.
 
+## Block 7 — Admin approval flow
+
+The founder needs a UI to triage applications: see the queue, read each applicant's answers, view the computed score, approve in batches, reject when appropriate. Without this, the application form is a write-only inbox. Builds on top of the `/admin/applications` analytics dashboard but is a distinct surface for *acting* on applications, not just reading the funnel.
+
+**Three pages.**
+
+**1. `/admin/applications/queue` — the triage view.**
+
+Founder-only route. Lists pending applications sorted by score descending so the highest-WTP candidates surface first. Each row shows enough context to make a yes/no call without opening the detail view:
+
+```
+[email]                     [submitted]   [role]      [budget]      [score]   [actions]
+sarah@example.com           2 hours ago   Organiser   Monopoly       9.2/10   [approve] [hold]
+marcus@startup.io           5 hours ago   Organiser   Splurge        7.8/10   [approve] [hold]
+james@gmail.com             1 day ago     Depends     Every penny    3.4/10   [approve] [hold]
+```
+
+Score is computed as `(Q1_weight × Q2_weight × Q4_weight) / max_score × 10`, rendered as a single number with an accent-coral bar visualization. Q3 (pain) doesn't gate — it's surfaced in the row's expandable detail but not in the score.
+
+Top-of-page filter chips: `Pending` (default) · `Approved` · `Rejected` · `All`. A small counter to the right: `83 pending · 412 total`.
+
+Bulk action: select multiple rows via checkbox, click `Approve selected (n) →`. Useful for batch processing high-score applicants on a Sunday evening.
+
+**2. `/admin/applications/[id]` — the detail view.**
+
+Full application with all four answers laid out, the computed score with a brief explanation of how it was derived, and the action buttons. Editorial-brutalist treatment, dark theme matching the rest of the admin surface.
+
+```
+APPLICATION · sarah@example.com                          PENDING · 2H AGO
+
+01 · TRIPS PER YEAR
+     2-3                                                              ★★★★
+
+02 · WHEN YOUR CREW TALKS ABOUT A TRIP, YOU'RE...
+     The one who organises it                                         ★★★★★
+
+03 · WHAT KILLS MOST OF YOUR TRIPS?
+     Dates never align
+
+04 · WHEN IT COMES TO TRIP BUDGETS, YOU...
+     Treat it like monopoly money                                     ★★★★★
+
+SCORE · 9.2 / 10
+Active organiser (Q1+Q2) with high willingness-to-pay (Q4).
+Top of the priority queue.
+
+SOURCE · twitter.com/tripcrew · UTM: launch-week
+
+[ APPROVE & SEND INVITE ]   [ HOLD ]   [ REJECT ]
+```
+
+Optional `notes` textarea below the score block — admin can scribble context ("met them at the React London meetup") that persists on the row.
+
+**3. `/admin/applications/[id]` action buttons — what each does.**
+
+- **Approve & send invite.** Writes `approved_at = now()`, `approved_by = <admin user_id>`, generates a unique `invite_token` (UUID), sets `invite_sent_at = now()`. Fires a transactional email via Resend (or whichever provider is wired): subject "You're in, *<first name parsed from email>*" with a magic-link sign-in URL. Mirrors the Q3 pain in the email's first line for personalization.
+- **Hold.** No DB write. Application stays in pending, just visually flagged so admin can come back to it without making a decision now.
+- **Reject.** Writes `rejected_at = now()`, `rejected_by = <admin user_id>`. No automatic rejection email — explicit silence is kinder than a "not the right fit" template, and reduces brand exposure to anyone who might screenshot the message. Application disappears from pending; visible in the `Rejected` filter for audit.
+
+Approval emits a Stripe `customer.created` (no subscription yet) so the user has a Stripe customer ID waiting when they later upgrade — saves a checkout step. The `applications.user_id` link gets populated when the invitee accepts the magic link and creates their auth profile.
+
+**Schema additions.**
+
+The `applications` table from the data-model section needs two extra columns:
+
+```sql
+alter table applications add column rejected_at timestamptz;
+alter table applications add column rejected_by uuid references profiles(id);
+alter table applications add column admin_notes text;
+```
+
+**Topbar nav surface.** When the admin (founder) is signed in, an extra `Applications` link appears in the topbar with a numeric badge of pending applications. Pulses when a new one comes in via Realtime.
+
+**Realtime.** The queue page subscribes to `applications` table inserts so new submissions appear at the top of the queue without a refresh — same pattern as the existing realtime hooks.
+
+**Founder-only access.** Existing admin gating in [src/lib/auth.ts](src/lib/auth.ts) is per-trip (admin role on `trip_members`). Approval routes need a different gate: the global founder. Implementation choice: a `profiles.is_founder boolean` flag, set manually for the founder account. All `/admin/applications/*` routes check this flag in their RSC and 404 otherwise.
+
 ## Application data model + analytics
 
 A new `applications` table captures Q1–Q4 answers and lifecycle state. Joins against `profiles` and Stripe webhooks close the loop from application → activation → paid conversion, so we can validate which form answers actually predict revenue.
@@ -291,7 +368,16 @@ PostHog event tracking is deferred to v2 — SQL aggregates are enough for the l
 - `src/lib/actions/applications.ts` — server action: create application from email + Q1–Q4 answers
 - `supabase/migrations/<ts>_applications_table.sql` — `applications` table + indexes
 - `src/app/api/stripe/webhook/route.ts` (extend) — set `applications.first_paid_at` on `customer.subscription.created`
-- `src/app/(app)/admin/applications/page.tsx` — admin analytics dashboard (founder-only)
+- `src/app/(app)/admin/applications/page.tsx` — analytics dashboard (founder-only): funnel + segment paid-conversion charts
+- `src/app/(app)/admin/applications/queue/page.tsx` — pending-application triage list with score column, filter chips, bulk approve
+- `src/app/(app)/admin/applications/[id]/page.tsx` — application detail view with approve / hold / reject actions, admin notes
+- `src/components/admin/ApplicationRow.tsx` — single row in the queue table
+- `src/components/admin/ApplicationDetail.tsx` — full application card with score breakdown
+- `src/lib/actions/approveApplication.ts` — server action: approve + generate token + queue welcome email
+- `src/lib/actions/rejectApplication.ts` — server action: mark rejected, no email
+- `src/lib/applications/scoring.ts` — pure score function: (Q1, Q2, Q4) → numeric score with weight constants
+- `src/lib/email/welcomeEmail.ts` — transactional email template with magic-link sign-in URL, Q3 pain mirrored in opening line
+- `supabase/migrations/<ts>_applications_admin_columns.sql` — adds `rejected_at`, `rejected_by`, `admin_notes` to applications + adds `profiles.is_founder` flag
 - Public marketing layout assets (font preloads, OG images, etc.)
 
 **Edited:**
@@ -323,6 +409,9 @@ PostHog event tracking is deferred to v2 — SQL aggregates are enough for the l
 4. **Invite-link page.** Visit `/join/<valid-token>` while signed out. Sees the public preview with inviter strip, trip details with last-3-days locked, crew counter above the CTA, `I'M IN →` button. Clicking the button initiates the auth flow; after sign-in the user lands inside the trip.
 5. **Pricing tier render.** Pricing block renders all three tiers. Founding Crew counter reads from `select count(*) from profiles where founding_crew_at is not null` (or equivalent). Decrements as Stripe webhook receives subscription create events for the founding-crew price ID.
 6. **Application analytics.** `/admin/applications` (founder-only) renders the four queries. After 100+ applications and at least 10 paid conversions, the conversion-by-segment table shows differential rates by `budget_attitude` — validates Q4 as a real WTP filter.
-7. **No emojis on the page.** Grep the rendered HTML for any emoji codepoints — should return zero.
-8. **No competitor brand names.** Grep the rendered HTML for `Splitwise`, `WhatsApp`, `Google Flights` — should return zero.
-9. **Roadmap sync.** Each Founding Crew feature shipped flips its `roadmap.md` row from 📋 to ✅ with commit hash + date.
+7. **Admin approval queue.** `/admin/applications/queue` (founder-only, gated by `profiles.is_founder`) lists pending applications sorted by score descending. Submitting a new application makes it appear at the top of the queue in real time without a refresh. Non-founder users hitting any `/admin/applications/*` route get a 404.
+8. **Approval action.** Click `Approve & send invite` on a pending row. Application gets `approved_at` + `invite_token`. Welcome email lands in the applicant's inbox with a magic-link URL. Magic link signs the user in and creates a `profiles` row linked back to the application via `applications.user_id`.
+9. **Reject action.** Click `Reject` on a pending row. Application gets `rejected_at`, no email is sent, row disappears from `Pending` filter and appears in `Rejected`.
+10. **No emojis on the page.** Grep the rendered HTML for any emoji codepoints — should return zero.
+11. **No competitor brand names.** Grep the rendered HTML for `Splitwise`, `WhatsApp`, `Google Flights` — should return zero.
+12. **Roadmap sync.** Each Founding Crew feature shipped flips its `roadmap.md` row from 📋 to ✅ with commit hash + date.
