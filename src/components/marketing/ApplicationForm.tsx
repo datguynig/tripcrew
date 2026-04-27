@@ -4,35 +4,21 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { submitApplication } from "@/lib/actions/applications";
+import {
+  BUDGET_ATTITUDE_LABEL,
+  BUDGET_ATTITUDE_OPTIONS,
+  PAIN_LABEL,
+  PAIN_OPTIONS,
+  ROLE_LABEL,
+  ROLE_OPTIONS,
+  TRIPS_PER_YEAR_OPTIONS,
+} from "@/lib/applications/answerLabels";
 import type {
   ApplicationBudgetAttitude,
   ApplicationPain,
   ApplicationRole,
   ApplicationTripsPerYear,
 } from "@/lib/types";
-
-const TRIPS_OPTIONS: ApplicationTripsPerYear[] = ["0", "1", "2-3", "4+"];
-
-const ROLE_OPTIONS: { label: string; value: ApplicationRole }[] = [
-  { label: "The one who organises it", value: "organiser" },
-  { label: "The one who shows up", value: "attendee" },
-  { label: "Depends on the trip", value: "depends" },
-];
-
-const PAIN_OPTIONS: { label: string; value: ApplicationPain }[] = [
-  { label: "Dates never align", value: "dates" },
-  { label: "Nobody books anything", value: "booking" },
-  { label: "Money gets weird", value: "money" },
-  { label: "Plan never gets made", value: "plan" },
-  { label: "Trips happen but feel chaotic", value: "chaos" },
-];
-
-const BUDGET_OPTIONS: { label: string; value: ApplicationBudgetAttitude }[] = [
-  { label: "Treat it like monopoly money", value: "monopoly" },
-  { label: "Splurge on what matters", value: "splurge" },
-  { label: "Make every pound count", value: "count" },
-  { label: "It depends on the trip", value: "depends" },
-];
 
 const LEGEND_CLASS =
   "block mb-4 font-mono uppercase tracking-[0.18em] text-[12px] text-ink";
@@ -94,7 +80,7 @@ export function ApplicationForm({ email }: { email: string }) {
       <fieldset>
         <legend className={LEGEND_CLASS}>01 / Trips per year</legend>
         <div className="grid grid-cols-4 gap-3">
-          {TRIPS_OPTIONS.map((value) => {
+          {TRIPS_PER_YEAR_OPTIONS.map((value) => {
             const selected = tripsPerYear === value;
             return (
               <button
@@ -122,13 +108,13 @@ export function ApplicationForm({ email }: { email: string }) {
           02 / When your crew talks about a trip, you&apos;re...
         </legend>
         <div className="flex flex-col gap-3">
-          {ROLE_OPTIONS.map((option) => {
-            const selected = role === option.value;
+          {ROLE_OPTIONS.map((value) => {
+            const selected = role === value;
             return (
               <button
-                key={option.value}
+                key={value}
                 type="button"
-                onClick={() => setRole(option.value)}
+                onClick={() => setRole(value)}
                 aria-pressed={selected}
                 className={classes(
                   OPTION_BASE,
@@ -138,7 +124,7 @@ export function ApplicationForm({ email }: { email: string }) {
                     : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
-                {option.label}
+                {ROLE_LABEL[value]}
               </button>
             );
           })}
@@ -150,13 +136,13 @@ export function ApplicationForm({ email }: { email: string }) {
           03 / What kills most of your trips?
         </legend>
         <div className="flex flex-col gap-3">
-          {PAIN_OPTIONS.map((option) => {
-            const selected = pain === option.value;
+          {PAIN_OPTIONS.map((value) => {
+            const selected = pain === value;
             return (
               <button
-                key={option.value}
+                key={value}
                 type="button"
-                onClick={() => setPain(option.value)}
+                onClick={() => setPain(value)}
                 aria-pressed={selected}
                 className={classes(
                   OPTION_BASE,
@@ -166,7 +152,7 @@ export function ApplicationForm({ email }: { email: string }) {
                     : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
-                {option.label}
+                {PAIN_LABEL[value]}
               </button>
             );
           })}
@@ -178,13 +164,13 @@ export function ApplicationForm({ email }: { email: string }) {
           04 / When it comes to trip budgets, you...
         </legend>
         <div className="flex flex-col gap-3">
-          {BUDGET_OPTIONS.map((option) => {
-            const selected = budgetAttitude === option.value;
+          {BUDGET_ATTITUDE_OPTIONS.map((value) => {
+            const selected = budgetAttitude === value;
             return (
               <button
-                key={option.value}
+                key={value}
                 type="button"
-                onClick={() => setBudgetAttitude(option.value)}
+                onClick={() => setBudgetAttitude(value)}
                 aria-pressed={selected}
                 className={classes(
                   OPTION_BASE,
@@ -194,7 +180,7 @@ export function ApplicationForm({ email }: { email: string }) {
                     : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
-                {option.label}
+                {BUDGET_ATTITUDE_LABEL[value]}
               </button>
             );
           })}
