@@ -36,9 +36,9 @@ export default async function ApplicationConfirmationPage({
   const formattedCount = count.toLocaleString("en-GB");
 
   return (
-    <main className="min-h-screen w-full bg-[#f5f1e8] text-[#0a0a0a] flex items-center justify-center px-6 py-24">
+    <main className="min-h-screen w-full bg-cream text-ink flex items-center justify-center px-6 py-24">
       <article className="w-full max-w-[640px] flex flex-col items-center text-center gap-8">
-        <p className="font-mono uppercase tracking-[0.22em] text-[12px] text-[#0a0a0a]">
+        <p className="font-mono uppercase tracking-[0.22em] text-[12px] text-ink">
           Application received
         </p>
 
@@ -56,7 +56,7 @@ export default async function ApplicationConfirmationPage({
           ask them to send you one of their slots.
         </p>
 
-        <p className="mt-8 font-mono uppercase tracking-[0.22em] text-[11px] text-[#0a0a0a] tabular-nums">
+        <p className="mt-8 font-mono uppercase tracking-[0.22em] text-[11px] text-ink tabular-nums">
           {formattedCount} on the list &middot; ~30 invited per week
         </p>
       </article>

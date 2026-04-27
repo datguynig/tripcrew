@@ -6,7 +6,7 @@ test.describe("application flow", () => {
   test("visitor submits an application and lands on confirmation", async ({
     page,
   }) => {
-    const email = `e2e-${Date.now()}@test.local`;
+    const email = `e2e-${crypto.randomUUID().slice(0, 8)}@test.local`;
     await page.goto(`/apply?email=${encodeURIComponent(email)}`);
     await expect(
       page.getByRole("heading", { name: "One last thing." }),

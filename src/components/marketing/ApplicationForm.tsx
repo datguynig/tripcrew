@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { submitApplication } from "@/lib/actions/applications";
 import type {
@@ -35,21 +35,17 @@ const BUDGET_OPTIONS: { label: string; value: ApplicationBudgetAttitude }[] = [
 ];
 
 const LEGEND_CLASS =
-  "block mb-4 font-mono uppercase tracking-[0.18em] text-[12px] text-[#0a0a0a]";
+  "block mb-4 font-mono uppercase tracking-[0.18em] text-[12px] text-ink";
 
 const OPTION_BASE =
-  "inline-flex items-center border-2 border-[#0a0a0a] transition-[background-color,color] duration-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a0a0a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f5f1e8]";
+  "inline-flex items-center border-2 border-ink transition-[background-color,color] duration-100 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
 
 function classes(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
-export function ApplicationForm() {
+export function ApplicationForm({ email }: { email: string }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email")?.trim() ?? "";
-
-  const [ready, setReady] = useState(false);
   const [tripsPerYear, setTripsPerYear] =
     useState<ApplicationTripsPerYear | null>(null);
   const [role, setRole] = useState<ApplicationRole | null>(null);
@@ -58,16 +54,6 @@ export function ApplicationForm() {
     useState<ApplicationBudgetAttitude | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    if (!email) {
-      router.replace("/");
-      return;
-    }
-    setReady(true);
-  }, [email, router]);
-
-  if (!ready) return null;
 
   const allAnswered =
     tripsPerYear !== null &&
@@ -120,8 +106,8 @@ export function ApplicationForm() {
                   OPTION_BASE,
                   "justify-center min-h-[56px] font-mono text-[15px] tracking-[0.05em]",
                   selected
-                    ? "bg-[#0a0a0a] text-[#f5f1e8]"
-                    : "bg-transparent text-[#0a0a0a] hover:border-[3px] hover:m-[-1px]",
+                    ? "bg-ink text-cream"
+                    : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
                 {value}
@@ -148,8 +134,8 @@ export function ApplicationForm() {
                   OPTION_BASE,
                   "text-left min-h-[64px] px-5 py-4 text-[15px] leading-snug",
                   selected
-                    ? "bg-[#0a0a0a] text-[#f5f1e8]"
-                    : "bg-transparent text-[#0a0a0a] hover:border-[3px] hover:m-[-1px]",
+                    ? "bg-ink text-cream"
+                    : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
                 {option.label}
@@ -176,8 +162,8 @@ export function ApplicationForm() {
                   OPTION_BASE,
                   "text-left min-h-[64px] px-5 py-4 text-[15px] leading-snug",
                   selected
-                    ? "bg-[#0a0a0a] text-[#f5f1e8]"
-                    : "bg-transparent text-[#0a0a0a] hover:border-[3px] hover:m-[-1px]",
+                    ? "bg-ink text-cream"
+                    : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
                 {option.label}
@@ -204,8 +190,8 @@ export function ApplicationForm() {
                   OPTION_BASE,
                   "text-left min-h-[64px] px-5 py-4 text-[15px] leading-snug",
                   selected
-                    ? "bg-[#0a0a0a] text-[#f5f1e8]"
-                    : "bg-transparent text-[#0a0a0a] hover:border-[3px] hover:m-[-1px]",
+                    ? "bg-ink text-cream"
+                    : "bg-transparent text-ink hover:border-[3px] hover:m-[-1px]",
                 )}
               >
                 {option.label}
@@ -228,10 +214,10 @@ export function ApplicationForm() {
           type="submit"
           disabled={!allAnswered || isPending}
           className={classes(
-            "border-2 px-6 min-h-[56px] font-mono uppercase tracking-[0.18em] text-[12px] transition-[background-color,color,border-color] duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0a0a0a] focus-visible:ring-offset-2 focus-visible:ring-offset-[#f5f1e8]",
+            "border-2 px-6 min-h-[56px] font-mono uppercase tracking-[0.18em] text-[12px] transition-[background-color,color,border-color] duration-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream",
             !allAnswered || isPending
-              ? "bg-transparent text-[#0a0a0a]/40 border-[#0a0a0a]/40 cursor-not-allowed"
-              : "bg-[#0a0a0a] text-[#f5f1e8] border-[#0a0a0a] cursor-pointer hover:opacity-90",
+              ? "bg-transparent text-ink/40 border-ink/40 cursor-not-allowed"
+              : "bg-ink text-cream border-ink cursor-pointer hover:opacity-90",
           )}
         >
           {isPending ? "Submitting..." : "Submit application →"}
