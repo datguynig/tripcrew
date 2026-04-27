@@ -8,11 +8,21 @@ function isPlan(value: unknown): value is Plan {
   return value === "pro" || value === "trial" || value === "free";
 }
 
+// Mirrors the `get_user_plan` Postgres RPC (which returns "pro" for both
+// `active` and `trialing` Stripe statuses, plus the 7-day local trial via
+// `trial_started_at`). Used by the team-share gate so a free crew member
+// gets Pro coverage when any admin is paying — matches the marketing
+// promise on /account ("Buy once for your crew").
 function profileHasProAccess(profile: {
   stripe_subscription_status: string | null;
   trial_started_at: string | null;
 }): boolean {
-  if (profile.stripe_subscription_status === "active") return true;
+  if (
+    profile.stripe_subscription_status === "active" ||
+    profile.stripe_subscription_status === "trialing"
+  ) {
+    return true;
+  }
   if (!profile.trial_started_at) return false;
   return Date.parse(profile.trial_started_at) + SEVEN_DAYS_MS > Date.now();
 }
