@@ -1,0 +1,93 @@
+- generic [ref=e1]:
+  - generic [ref=e20]:
+    - link "Skip to content" [ref=e21] [cursor=pointer]:
+      - /url: "#main-content"
+      - text: Skip to content↓
+    - generic [ref=e23]:
+      - button "TripCrew" [ref=e25] [cursor=pointer]:
+        - generic [ref=e27]: TripCrew
+        - img [ref=e28]
+      - generic [ref=e30]:
+        - link "Crew Plus active — manage subscription" [ref=e31] [cursor=pointer]:
+          - /url: /account
+          - text: CREW PLUS
+        - button "No unread notifications" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+        - button "Account menu for Nigel" [ref=e38] [cursor=pointer]: NI
+    - main [ref=e39]:
+      - generic [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - heading "New trip." [level=2] [ref=e92]
+            - paragraph [ref=e93]: Name it. Dates and destination can wait — the crew can vote on those.
+          - generic [ref=e94]: § 00
+        - generic [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97]: Trip name*
+            - textbox "Trip name*" [ref=e98]:
+              - /placeholder: What are you calling it?
+              - text: Boys trip Barcelona
+            - generic [ref=e99]: E.g. 'Summer 2026 crew'
+          - generic [ref=e100]:
+            - generic [ref=e101]: Occasion
+            - generic [ref=e102]:
+              - button "Occasion" [expanded] [active] [ref=e103] [cursor=pointer]:
+                - generic [ref=e104]: Pick one (optional)
+                - img [ref=e105]
+              - listbox [ref=e141]:
+                - option "Group holiday" [ref=e142] [cursor=pointer]:
+                  - generic [ref=e143]: Group holiday
+                - option "Guys trip" [ref=e144] [cursor=pointer]:
+                  - generic [ref=e145]: Guys trip
+                - option "Girls trip" [ref=e146] [cursor=pointer]:
+                  - generic [ref=e147]: Girls trip
+                - option "Couples trip" [ref=e148] [cursor=pointer]:
+                  - generic [ref=e149]: Couples trip
+                - option "Birthday" [ref=e150] [cursor=pointer]:
+                  - generic [ref=e151]: Birthday
+                - option "Anniversary" [ref=e152] [cursor=pointer]:
+                  - generic [ref=e153]: Anniversary
+                - option "Honeymoon" [ref=e154] [cursor=pointer]:
+                  - generic [ref=e155]: Honeymoon
+                - option "Babymoon" [ref=e156] [cursor=pointer]:
+                  - generic [ref=e157]: Babymoon
+                - option "Engagement" [ref=e158] [cursor=pointer]:
+                  - generic [ref=e159]: Engagement
+                - option "Hen do" [ref=e160] [cursor=pointer]:
+                  - generic [ref=e161]: Hen do
+                - option "Stag do" [ref=e162] [cursor=pointer]:
+                  - generic [ref=e163]: Stag do
+                - option "Family" [ref=e164] [cursor=pointer]:
+                  - generic [ref=e165]: Family
+                - option "Graduation" [ref=e166] [cursor=pointer]:
+                  - generic [ref=e167]: Graduation
+                - option "Reunion" [ref=e168] [cursor=pointer]:
+                  - generic [ref=e169]: Reunion
+                - option "Corporate retreat" [ref=e170] [cursor=pointer]:
+                  - generic [ref=e171]: Corporate retreat
+            - generic [ref=e107]: Sets the tone for the AI from day one. Editable later.
+          - generic [ref=e108]:
+            - generic [ref=e109]: Trip dates
+            - button "Pick dates" [ref=e111] [cursor=pointer]:
+              - generic [ref=e112]: Pick dates
+              - img [ref=e113]
+            - generic [ref=e116]: Optional, set later if unknown
+          - generic [ref=e117]:
+            - generic [ref=e118]: Destination candidates
+            - generic [ref=e119]:
+              - generic [ref=e123]:
+                - generic [ref=e124]:
+                  - generic [ref=e125]: Where
+                  - generic [ref=e126]: ›
+                - combobox "Destination" [ref=e127]
+              - button "+ Add another" [ref=e128] [cursor=pointer]
+            - generic [ref=e129]: Pick from real places. Skip if unsure — crew can propose later.
+          - generic [ref=e130]:
+            - generic [ref=e131]: Vote deadline
+            - button "Vote deadline" [ref=e133] [cursor=pointer]:
+              - generic [ref=e134]: Pick a date & time
+              - img [ref=e135]
+            - generic [ref=e138]: Optional soft deadline — shown to the crew, not enforced
+          - button "Create trip" [ref=e140] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=e19]

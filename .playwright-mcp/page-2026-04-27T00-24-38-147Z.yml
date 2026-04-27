@@ -1,0 +1,79 @@
+- generic [ref=e1]:
+  - generic [ref=e20]:
+    - link "Skip to content" [ref=e21] [cursor=pointer]:
+      - /url: "#main-content"
+      - text: Skip to content↓
+    - generic [ref=e23]:
+      - button "Boys trip Barcelona" [ref=e291] [cursor=pointer]:
+        - generic [ref=e27]: Boys trip Barcelona
+        - img [ref=e28]
+      - generic [ref=e30]:
+        - link "Crew Plus active — manage subscription" [ref=e31] [cursor=pointer]:
+          - /url: /account
+          - text: CREW PLUS
+        - button "No unread notifications" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+        - button "Account menu for Nigel" [ref=e38] [cursor=pointer]: NI
+    - main [ref=e39]:
+      - generic [ref=e292]:
+        - navigation [ref=e295]:
+          - link "Destinations" [ref=e296] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/destinations
+            - generic [ref=e297]: "00"
+            - generic [ref=e298]: Destinations
+          - link "Overview" [ref=e300] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j
+            - generic [ref=e301]: "01"
+            - generic [ref=e302]: Overview
+          - link "Crew" [ref=e303] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/crew
+            - generic [ref=e304]: "02"
+            - generic [ref=e305]: Crew
+          - link "Shortlist" [ref=e306] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/shortlist
+            - generic [ref=e307]: "03"
+            - generic [ref=e308]: Shortlist
+          - link "Bookings" [ref=e309] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/bookings
+            - generic [ref=e310]: "04"
+            - generic [ref=e311]: Bookings
+          - link "Ledger" [ref=e312] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/ledger
+            - generic [ref=e313]: "05"
+            - generic [ref=e314]: Ledger
+          - link "Feed" [ref=e315] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/feed
+            - generic [ref=e316]: "06"
+            - generic [ref=e317]: Feed
+          - link "Admin" [ref=e318] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/admin
+            - generic [ref=e319]: "07"
+            - generic [ref=e320]: Admin
+        - generic [ref=e321]:
+          - generic [ref=e322]:
+            - generic [ref=e323]:
+              - heading "Where to." [level=2] [ref=e324]
+              - paragraph [ref=e325]: Propose candidates. Vote yes, meh, or no. Admin locks the winner.
+            - generic [ref=e326]: § 00
+          - generic [ref=e327]:
+            - generic [ref=e328]:
+              - generic [ref=e329]: Crew of one
+              - paragraph [ref=e330]: Invite the crew so they can propose and vote. A solo vote isn't much of a vote.
+            - link "Invite crew →" [ref=e331] [cursor=pointer]:
+              - /url: /trips/boys-trip-barcelona-j86j/crew
+          - generic [ref=e334]:
+            - generic [ref=e335]:
+              - generic [ref=e336]: Where
+              - generic [ref=e337]: ›
+            - combobox "Destination" [active] [ref=e338]
+            - button "Propose destination" [disabled] [ref=e340]:
+              - generic [ref=e341]: Propose
+              - generic [ref=e342]: ↵
+          - generic [ref=e343]: No candidates · propose one
+          - generic [ref=e344]:
+            - generic [ref=e345]:
+              - generic [ref=e346]: Admin
+              - generic [ref=e347]: Lock the top candidate to kick off planning. You'll capture trip preferences in the next step.
+            - button "Lock destination" [disabled] [ref=e348]
+  - region "Notifications alt+T"
+  - alert [ref=e19]

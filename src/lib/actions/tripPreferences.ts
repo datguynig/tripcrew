@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTripMember } from "@/lib/auth";
-import { preferencesSchema } from "@/lib/actions/destinations";
+import { preferencesSchema } from "@/lib/validators/aiPreferences";
 import type { AiPreferences, TripMeta } from "@/lib/types";
 
 const inputSchema = z.object({

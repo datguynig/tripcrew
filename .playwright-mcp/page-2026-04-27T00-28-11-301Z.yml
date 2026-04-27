@@ -1,0 +1,115 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+      - text: Skip to content↓
+    - generic [ref=e5]:
+      - button "Boys trip Barcelona" [ref=e7] [cursor=pointer]:
+        - generic [ref=e9]: Boys trip Barcelona
+        - img [ref=e10]
+      - generic [ref=e12]:
+        - link "Crew Plus active — manage subscription" [ref=e13] [cursor=pointer]:
+          - /url: /account
+          - text: CREW PLUS
+        - button "No unread notifications" [ref=e15] [cursor=pointer]:
+          - img [ref=e16]
+        - button "Account menu for Nigel" [ref=e20] [cursor=pointer]: NI
+    - main [ref=e21]:
+      - generic [ref=e22]:
+        - navigation [ref=e25]:
+          - link "Destinations" [ref=e26] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/destinations
+            - generic [ref=e27]: "00"
+            - generic [ref=e28]: Destinations
+          - link "Overview" [ref=e30] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j
+            - generic [ref=e31]: "01"
+            - generic [ref=e32]: Overview
+          - link "Crew" [ref=e33] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/crew
+            - generic [ref=e34]: "02"
+            - generic [ref=e35]: Crew
+          - link "Shortlist" [ref=e36] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/shortlist
+            - generic [ref=e37]: "03"
+            - generic [ref=e38]: Shortlist
+          - link "Bookings" [ref=e39] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/bookings
+            - generic [ref=e40]: "04"
+            - generic [ref=e41]: Bookings
+          - link "Ledger" [ref=e42] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/ledger
+            - generic [ref=e43]: "05"
+            - generic [ref=e44]: Ledger
+          - link "Feed" [ref=e45] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/feed
+            - generic [ref=e46]: "06"
+            - generic [ref=e47]: Feed
+          - link "Admin" [ref=e48] [cursor=pointer]:
+            - /url: /trips/boys-trip-barcelona-j86j/admin
+            - generic [ref=e49]: "07"
+            - generic [ref=e50]: Admin
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - generic [ref=e53]:
+              - heading "Where to." [level=2] [ref=e54]
+              - paragraph [ref=e55]: Propose candidates. Vote yes, meh, or no. Admin locks the winner.
+            - generic [ref=e56]: § 00
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: Crew of one
+              - paragraph [ref=e60]: Invite the crew so they can propose and vote. A solo vote isn't much of a vote.
+            - link "Invite crew →" [ref=e61] [cursor=pointer]:
+              - /url: /trips/boys-trip-barcelona-j86j/crew
+          - generic [ref=e63]:
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - generic [ref=e66]: Where
+                - generic [ref=e67]: ›
+              - combobox "Destination" [expanded] [active] [ref=e68]: Barcelona
+              - button "Propose destination" [ref=e70] [cursor=pointer]:
+                - generic [ref=e71]: Propose
+                - generic [ref=e72]: ↵
+            - listbox [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e83]: Suggestions · 06
+                - generic [ref=e84]:
+                  - generic [ref=e85]: ↑↓ nav
+                  - generic [ref=e86]: ↵ pick
+              - generic [ref=e87]:
+                - option "Barcelona Spain" [selected] [ref=e88]:
+                  - generic [ref=e91]: Barcelona
+                  - generic [ref=e92]: Spain
+                - option "Barcelona Municipio Simón Bolívar · Anzoátegui Venezuela" [ref=e93]:
+                  - generic [ref=e95]:
+                    - generic [ref=e96]: Barcelona
+                    - generic [ref=e97]: Municipio Simón Bolívar · Anzoátegui
+                  - generic [ref=e98]: Venezuela
+                - option "Barcelona Sorsogon Philippines" [ref=e99]:
+                  - generic [ref=e101]:
+                    - generic [ref=e102]: Barcelona
+                    - generic [ref=e103]: Sorsogon
+                  - generic [ref=e104]: Philippines
+                - option "Barcelona Rio Grande do Norte Brazil" [ref=e105]:
+                  - generic [ref=e107]:
+                    - generic [ref=e108]: Barcelona
+                    - generic [ref=e109]: Rio Grande do Norte
+                  - generic [ref=e110]: Brazil
+                - option "Barcelona Louisiana United States" [ref=e111]:
+                  - generic [ref=e113]:
+                    - generic [ref=e114]: Barcelona
+                    - generic [ref=e115]: Louisiana
+                  - generic [ref=e116]: United States
+                - option "Barcelona Arkansas United States" [ref=e117]:
+                  - generic [ref=e119]:
+                    - generic [ref=e120]: Barcelona
+                    - generic [ref=e121]: Arkansas
+                  - generic [ref=e122]: United States
+          - generic [ref=e73]: No candidates · propose one
+          - generic [ref=e74]:
+            - generic [ref=e75]:
+              - generic [ref=e76]: Admin
+              - generic [ref=e77]: Lock the top candidate to kick off planning. You'll capture trip preferences in the next step.
+            - button "Lock destination" [disabled] [ref=e78]
+  - region "Notifications alt+T"
+  - alert [ref=e79]

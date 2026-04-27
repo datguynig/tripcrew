@@ -1,0 +1,15 @@
+[     709ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://tripcrew-nine.vercel.app/sign-in:0
+[  125764ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  126072ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  179186ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  179235ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
+[  257351ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  257499ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  257658ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  257660ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
+[  257802ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  258014ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  258460ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  258466ms] An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error.
+[  258616ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
+[  258776ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://tripcrew-nine.vercel.app/trips/boys-trip-barcelona-j86j/destinations:0
