@@ -76,7 +76,7 @@ export async function signInWithPassword(
     return { error: "Wrong email or password." };
   }
 
-  redirect(next ?? "/");
+  redirect(next ?? "/dashboard");
 }
 
 export async function signUpWithPassword(

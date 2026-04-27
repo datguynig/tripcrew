@@ -18,7 +18,7 @@ export default async function TripLayout({
   if (!trip) notFound();
 
   const member = await getTripMember(trip.id, user.id);
-  if (!member) redirect("/");
+  if (!member) redirect("/dashboard");
 
   const ambientStyle = trip.hero_tint
     ? ({ "--trip-tint": trip.hero_tint } as CSSProperties)

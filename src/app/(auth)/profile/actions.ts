@@ -40,5 +40,5 @@ export async function createProfile(
     return { error: "Could not save profile." };
   }
 
-  redirect(next ?? "/");
+  redirect(next ?? "/dashboard");
 }

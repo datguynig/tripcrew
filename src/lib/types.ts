@@ -14,6 +14,8 @@ export type Profile = {
   stripe_subscription_id: string | null;
   stripe_subscription_status: SubscriptionStatus | null;
   current_period_end: string | null;
+  is_founder: boolean;
+  founding_crew_at: string | null;
 };
 
 export type TripStatus = "planning" | "locked";
@@ -431,4 +433,38 @@ export type Notification = {
   payload: NotificationPayload;
   read_at: string | null;
   created_at: string;
+};
+
+export type ApplicationTripsPerYear = "0" | "1" | "2-3" | "4+";
+export type ApplicationRole = "organiser" | "attendee" | "depends";
+export type ApplicationPain = "dates" | "booking" | "money" | "plan" | "chaos";
+export type ApplicationBudgetAttitude =
+  | "monopoly"
+  | "splurge"
+  | "count"
+  | "depends";
+
+export type Application = {
+  id: string;
+  email: string;
+  created_at: string;
+  trips_per_year: ApplicationTripsPerYear;
+  role: ApplicationRole;
+  pain: ApplicationPain;
+  budget_attitude: ApplicationBudgetAttitude;
+  approved_at: string | null;
+  approved_by: string | null;
+  invite_token: string | null;
+  invite_sent_at: string | null;
+  user_id: string | null;
+  activated_at: string | null;
+  first_trip_at: string | null;
+  first_lock_at: string | null;
+  first_paid_at: string | null;
+  rejected_at: string | null;
+  rejected_by: string | null;
+  admin_notes: string | null;
+  utm_source: string | null;
+  utm_campaign: string | null;
+  referrer: string | null;
 };

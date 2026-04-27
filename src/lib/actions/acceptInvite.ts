@@ -18,14 +18,25 @@ type AcceptResult =
 export async function lookupInvite(token: string): Promise<
   | { kind: "invalid" }
   | { kind: "expired" }
-  | { kind: "ok"; tripId: string; tripName: string; tripSlug: string }
+  | {
+      kind: "ok";
+      tripId: string;
+      tripName: string;
+      tripSlug: string;
+      inviterName: string | null;
+    }
 > {
   const service = createServiceClient();
   const { data: invite } = await service
     .from("trip_invites")
-    .select("id, trip_id, expires_at")
+    .select("id, trip_id, expires_at, invited_by")
     .eq("token", token)
-    .maybeSingle<{ id: string; trip_id: string; expires_at: string | null }>();
+    .maybeSingle<{
+      id: string;
+      trip_id: string;
+      expires_at: string | null;
+      invited_by: string | null;
+    }>();
   if (!invite) return { kind: "invalid" };
   if (invite.expires_at && new Date(invite.expires_at).getTime() < Date.now()) {
     return { kind: "expired" };
@@ -38,11 +49,22 @@ export async function lookupInvite(token: string): Promise<
     .maybeSingle<{ id: string; name: string; slug: string }>();
   if (!trip) return { kind: "invalid" };
 
+  let inviterName: string | null = null;
+  if (invite.invited_by) {
+    const { data: inviter } = await service
+      .from("profiles")
+      .select("name")
+      .eq("id", invite.invited_by)
+      .maybeSingle<{ name: string | null }>();
+    inviterName = inviter?.name ?? null;
+  }
+
   return {
     kind: "ok",
     tripId: trip.id,
     tripName: trip.name,
     tripSlug: trip.slug,
+    inviterName,
   };
 }
 
@@ -102,7 +124,7 @@ export async function acceptInvite(token: string): Promise<AcceptResult> {
     .eq("token", token)
     .is("accepted_at", null);
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/trips/${lookup.tripSlug}`);
   revalidatePath(`/trips/${lookup.tripSlug}/crew`);
   revalidatePath(`/trips/${lookup.tripSlug}/admin`);

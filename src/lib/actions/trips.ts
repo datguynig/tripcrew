@@ -215,6 +215,6 @@ export async function createTrip(
     if (candErr) console.error("candidate insert error", candErr);
   }
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect(`/trips/${trip.slug}/destinations`);
 }

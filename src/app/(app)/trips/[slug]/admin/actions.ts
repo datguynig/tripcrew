@@ -531,6 +531,6 @@ export async function deleteTrip(
     return { error: "Could not delete. Admin only." };
   }
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/dashboard");
+  redirect("/dashboard");
 }

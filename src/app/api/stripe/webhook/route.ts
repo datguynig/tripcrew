@@ -83,7 +83,22 @@ async function profileIdForCustomer(
   }
 }
 
-async function applySubscription(sub: Stripe.Subscription): Promise<void> {
+async function customerEmail(customerId: string): Promise<string | null> {
+  try {
+    const stripe = getStripe();
+    const cust = await stripe.customers.retrieve(customerId);
+    if (cust.deleted) return null;
+    return cust.email ?? null;
+  } catch (err) {
+    console.error("stripe webhook: customers.retrieve failed:", err);
+    return null;
+  }
+}
+
+async function applySubscription(
+  sub: Stripe.Subscription,
+  isCreated: boolean,
+): Promise<void> {
   const customerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const profileId = await profileIdForCustomer(customerId);
@@ -107,6 +122,44 @@ async function applySubscription(sub: Stripe.Subscription): Promise<void> {
 
   if (error) {
     throw new Error(`profiles update failed: ${error.message}`);
+  }
+
+  if (!isCreated) return;
+
+  // First paid event for this subscription. Stamp the application row
+  // (matched by customer email) and, if this is the founding-crew price,
+  // mark the profile.
+  const email = await customerEmail(customerId);
+  if (email) {
+    const { error: stampErr } = await supabase
+      .from("applications")
+      .update({ first_paid_at: new Date().toISOString() })
+      .eq("email", email.toLowerCase())
+      .is("first_paid_at", null);
+    if (stampErr) {
+      console.error(
+        "stripe webhook: applications.first_paid_at update failed:",
+        stampErr,
+      );
+    }
+  }
+
+  const foundingPriceId = process.env.STRIPE_FOUNDING_PRICE_ID;
+  if (foundingPriceId) {
+    const priceId = sub.items.data[0]?.price?.id;
+    if (priceId === foundingPriceId) {
+      const { error: foundingErr } = await supabase
+        .from("profiles")
+        .update({ founding_crew_at: new Date().toISOString() })
+        .eq("id", profileId)
+        .is("founding_crew_at", null);
+      if (foundingErr) {
+        console.error(
+          "stripe webhook: founding_crew_at update failed:",
+          foundingErr,
+        );
+      }
+    }
   }
 }
 
@@ -134,9 +187,11 @@ export async function POST(request: Request): Promise<Response> {
   try {
     switch (event.type) {
       case "customer.subscription.created":
+        await applySubscription(event.data.object as Stripe.Subscription, true);
+        break;
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
-        await applySubscription(event.data.object as Stripe.Subscription);
+        await applySubscription(event.data.object as Stripe.Subscription, false);
         break;
       default:
         // Acknowledge unhandled events so Stripe doesn't retry. We
