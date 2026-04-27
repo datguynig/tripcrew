@@ -59,55 +59,64 @@ export const BUDGET_TIER_LABELS: Record<AiBudgetTier, string> = {
   custom: "Custom",
 };
 
+// Vibe tags are picked by the crew at lock time and shape every AI output.
+// Each tag must be a *specific* signal the AI can act on differently — see
+// VIBE_INSTRUCTIONS in src/lib/ai/vibeMap.ts for the per-tag prompt and
+// Places-fetch contract. Catchall tags that duplicate a group name are
+// banned (e.g. no "culture" tag inside a "Culture" group).
 export type AiVibeTag =
   // Pace
   | "chill"
   | "active"
   | "adventure"
+  | "sport"
   // Setting
   | "beach"
-  | "outdoors"
+  | "mountains"
   | "nature"
-  | "urban"
-  // Food / drink
+  | "city"
+  // Food
   | "foodie"
-  | "nightlife"
+  | "street_food"
+  | "wine"
+  // After dark
   | "party"
+  | "bars"
+  | "live_music"
   // Culture
-  | "culture"
   | "art"
-  | "historic"
-  // Vibe
+  | "history"
+  | "architecture"
+  // Mood
   | "romantic"
   | "family_friendly"
   | "luxury"
   | "wellness"
-  // Special
-  | "photogenic"
-  | "sport"
-  | "music";
+  | "photogenic";
 
 export const VIBE_LABELS: Record<AiVibeTag, string> = {
   chill: "Chill",
   active: "Active",
   adventure: "Adventure",
+  sport: "Sports",
   beach: "Beach",
-  outdoors: "Outdoors",
+  mountains: "Mountains",
   nature: "Nature",
-  urban: "Urban",
+  city: "City",
   foodie: "Foodie",
-  nightlife: "Nightlife",
+  street_food: "Street food",
+  wine: "Wine",
   party: "Party",
-  culture: "Culture",
+  bars: "Bars",
+  live_music: "Live music",
   art: "Art & galleries",
-  historic: "Historic",
+  history: "History",
+  architecture: "Architecture",
   romantic: "Romantic",
   family_friendly: "Family-friendly",
   luxury: "Luxury",
   wellness: "Wellness",
   photogenic: "Photogenic",
-  sport: "Sports",
-  music: "Music & festivals",
 };
 
 export type AiOccasion =

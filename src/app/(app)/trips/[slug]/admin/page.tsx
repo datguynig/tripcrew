@@ -7,6 +7,7 @@ import { IdentitySection } from "@/components/admin/IdentitySection";
 import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
 import { SectionLeadsSection } from "@/components/admin/SectionLeadsSection";
 import { TripPreferencesPanel } from "@/components/admin/TripPreferencesPanel";
+import { sanitizeVibes } from "@/lib/ai/vibeMap";
 import {
   CrewManagement,
   type AdminCrewMember,
@@ -62,10 +63,12 @@ export default async function AdminPage({
       ];
     }) ?? [];
 
+  const storedPrefs: Partial<AiPreferences> = trip.meta?.ai_preferences ?? {};
   const initialPrefs: AiPreferences = {
     ...DEFAULT_PREFERENCES,
     crew_size: trip.target_crew_size ?? DEFAULT_PREFERENCES.crew_size,
-    ...(trip.meta?.ai_preferences ?? {}),
+    ...storedPrefs,
+    vibes: sanitizeVibes(storedPrefs.vibes),
   };
 
   return (

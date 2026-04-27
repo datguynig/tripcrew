@@ -37,16 +37,15 @@ type Props = {
 };
 
 const VIBE_GROUPS: { label: string; tags: AiVibeTag[] }[] = [
-  { label: "Pace", tags: ["chill", "active", "adventure"] },
-  { label: "Setting", tags: ["beach", "outdoors", "nature", "urban"] },
-  { label: "Eating", tags: ["foodie"] },
-  { label: "Nights out", tags: ["nightlife", "party", "music"] },
-  { label: "Culture", tags: ["culture", "art", "historic"] },
+  { label: "Pace", tags: ["chill", "active", "adventure", "sport"] },
+  { label: "Setting", tags: ["beach", "mountains", "nature", "city"] },
+  { label: "Food", tags: ["foodie", "street_food", "wine"] },
+  { label: "After dark", tags: ["party", "bars", "live_music"] },
+  { label: "Culture", tags: ["art", "history", "architecture"] },
   {
-    label: "Vibe",
-    tags: ["romantic", "family_friendly", "luxury", "wellness"],
+    label: "Mood",
+    tags: ["romantic", "family_friendly", "luxury", "wellness", "photogenic"],
   },
-  { label: "Special", tags: ["photogenic", "sport"] },
 ];
 
 const OCCASION_ORDER: AiOccasion[] = [
@@ -147,13 +146,8 @@ export function TripPreferencesForm({
       <section className="grid gap-2">
         <label className="label-sm-wide text-fg-3">Origin airport</label>
         <AirportSearch
-          value={value.origin?.name ?? ""}
-          onChange={(v) => {
-            if (value.origin && v !== value.origin.name) {
-              update({ origin: null });
-            }
-          }}
           onSelect={handleOriginSelect}
+          onClear={() => update({ origin: null })}
           selected={
             value.origin
               ? {
@@ -249,7 +243,7 @@ export function TripPreferencesForm({
 
       {/* Vibes */}
       <section className="grid gap-3">
-        <label className="label-sm-wide text-fg-3">Vibe · pick what fits</label>
+        <label className="label-sm-wide text-fg-3">Vibes · pick what fits</label>
         <div className="grid gap-3">
           {VIBE_GROUPS.map((g) => (
             <div key={g.label} className="grid gap-2">

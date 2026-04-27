@@ -2,11 +2,13 @@ import { getPlaceDetails } from "@/lib/places/details";
 import { nearbySearch } from "@/lib/places/nearby";
 import { textSearch } from "@/lib/places/text-search";
 import type { PlaceDetails, PlaceSummary } from "@/lib/places/types";
+import type { VibePlacesQuery } from "@/lib/ai/vibeMap";
 
 export interface DestinationContext {
   destination: string;
   languageCode?: string;
   regionCode?: string;
+  vibeQueries?: VibePlacesQuery[];
 }
 
 export interface EnrichedDestination {
@@ -16,6 +18,11 @@ export interface EnrichedDestination {
   museums: PlaceSummary[];
   restaurants: PlaceSummary[];
   nightlife: PlaceSummary[];
+  // Keyed by VibePlacesQuery.key — e.g. { wineries: [...], bars: [...] }.
+  // Empty when no vibes selected. Promised to the prompt under
+  // REAL DESTINATION DATA › vibePlaces so the model can ground vibe-led
+  // suggestions in real spots, not invent them.
+  vibePlaces: Record<string, PlaceSummary[]>;
   placesCalls: number;
   errors: Array<{ source: string; message: string }>;
 }
@@ -53,6 +60,7 @@ export async function enrichDestination(
       museums: [],
       restaurants: [],
       nightlife: [],
+      vibePlaces: {},
       placesCalls,
       errors: [
         ...errors,
@@ -62,13 +70,7 @@ export async function enrichDestination(
   }
 
   const { latitude, longitude } = resolved.location;
-  const [
-    neighbourhoodsResult,
-    attractionsResult,
-    museumsResult,
-    restaurantsResult,
-    nightlifeResult,
-  ] = await Promise.allSettled([
+  const baseFetches: Array<Promise<PlaceSummary[]>> = [
     textSearch({
       query: `popular neighbourhoods in ${ctx.destination}`,
       maxResults: 5,
@@ -110,8 +112,33 @@ export async function enrichDestination(
       rankBy: "POPULARITY",
       languageCode: ctx.languageCode,
     }),
+  ];
+
+  const vibeQueries = ctx.vibeQueries ?? [];
+  const vibeFetches: Array<Promise<PlaceSummary[]>> = vibeQueries.map((q) => {
+    if (q.kind === "nearby") {
+      return nearbySearch({
+        latitude,
+        longitude,
+        radius: q.radius,
+        includedTypes: q.includedTypes,
+        maxResults: q.max,
+        rankBy: "POPULARITY",
+        languageCode: ctx.languageCode,
+      });
+    }
+    return textSearch({
+      query: q.query(ctx.destination),
+      maxResults: q.max,
+      languageCode: ctx.languageCode,
+    });
+  });
+
+  const allResults = await Promise.allSettled([
+    ...baseFetches,
+    ...vibeFetches,
   ]);
-  placesCalls += 5;
+  placesCalls += baseFetches.length + vibeFetches.length;
 
   const collect = <T>(result: PromiseSettledResult<T[]>, source: string): T[] => {
     if (result.status === "fulfilled") return result.value;
@@ -119,11 +146,25 @@ export async function enrichDestination(
     return [];
   };
 
+  const [
+    neighbourhoodsResult,
+    attractionsResult,
+    museumsResult,
+    restaurantsResult,
+    nightlifeResult,
+    ...vibeResults
+  ] = allResults;
+
   const neighbourhoods = collect(neighbourhoodsResult, "neighbourhoods");
   const attractionSummaries = collect(attractionsResult, "attractions");
   const museums = collect(museumsResult, "museums");
   const restaurants = collect(restaurantsResult, "restaurants");
   const nightlife = collect(nightlifeResult, "nightlife");
+
+  const vibePlaces: Record<string, PlaceSummary[]> = {};
+  vibeQueries.forEach((q, i) => {
+    vibePlaces[q.key] = collect(vibeResults[i], `vibe:${q.key}`);
+  });
 
   const detailResults = await Promise.allSettled(
     attractionSummaries
@@ -143,6 +184,7 @@ export async function enrichDestination(
     museums,
     restaurants,
     nightlife,
+    vibePlaces,
     placesCalls,
     errors,
   };

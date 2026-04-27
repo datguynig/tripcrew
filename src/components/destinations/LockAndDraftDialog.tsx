@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { TripPreferencesForm } from "@/components/trips/TripPreferencesForm";
 import { lockAndStartDraft } from "@/lib/actions/destinations";
+import { sanitizeVibes } from "@/lib/ai/vibeMap";
 import { useRouter } from "next/navigation";
 import type { AiPreferences, AiOccasion } from "@/lib/types";
 
@@ -44,7 +45,9 @@ function initialPrefs(
   defaultBudgetPp: number | null,
   defaultOccasion: AiOccasion | undefined,
 ): AiPreferences {
-  if (existing) return existing;
+  if (existing) {
+    return { ...existing, vibes: sanitizeVibes(existing.vibes) };
+  }
   return {
     origin: null,
     crew_size: Math.max(1, defaultCrewSize),

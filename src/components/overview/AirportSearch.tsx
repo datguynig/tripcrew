@@ -16,31 +16,45 @@ import {
 type Selected = AirportOption | null;
 
 type Props = {
-  value: string;
-  onChange: (value: string) => void;
   onSelect: (airport: AirportOption) => void;
+  onClear?: () => void;
   selected?: Selected;
   placeholder?: string;
   autoFocus?: boolean;
 };
 
 export function AirportSearch({
-  value,
-  onChange,
   onSelect,
+  onClear,
   selected = null,
   placeholder = "Search airport — e.g. Heathrow, LHR",
   autoFocus = false,
 }: Props) {
+  const [query, setQuery] = useState(selected?.name ?? "");
   const [results, setResults] = useState<AirportOption[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Seed with initial value so a prefilled field (re-opened prefs
-  // modal) doesn't fire the search + pop the dropdown on mount.
-  const justPickedRef = useRef<string | null>(value || null);
+  // Skip the search effect for the picked value — picking writes name into
+  // the input, but we don't want that write to immediately re-fire the API.
+  const justPickedRef = useRef<string | null>(selected?.name ?? null);
+  // Sync `query` to an externally-changed `selected` (e.g., admin panel
+  // mounts with a prefilled airport, or parent resets). Only react to id
+  // changes, not every render.
+  const lastSelectedIdRef = useRef<string | null>(selected?.id ?? null);
+
+  useEffect(() => {
+    const nextId = selected?.id ?? null;
+    if (nextId === lastSelectedIdRef.current) return;
+    lastSelectedIdRef.current = nextId;
+    const nextName = selected?.name ?? "";
+    setQuery(nextName);
+    justPickedRef.current = nextName || null;
+    setResults([]);
+    setOpen(false);
+  }, [selected]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,13 +66,13 @@ export function AirportSearch({
   }, [open]);
 
   useEffect(() => {
-    const query = value.trim();
-    if (query.length < 2) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
       setResults([]);
       setOpen(false);
       return;
     }
-    if (justPickedRef.current !== null && justPickedRef.current === value) {
+    if (justPickedRef.current !== null && justPickedRef.current === query) {
       return;
     }
     justPickedRef.current = null;
@@ -67,7 +81,7 @@ export function AirportSearch({
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await searchAirportsAction({ query });
+        const res = await searchAirportsAction({ query: trimmed });
         if (controller.signal.aborted) return;
         const hits = res.results ?? [];
         setResults(hits);
@@ -82,11 +96,19 @@ export function AirportSearch({
       controller.abort();
       clearTimeout(t);
     };
-  }, [value]);
+  }, [query]);
+
+  const handleQueryChange = (v: string) => {
+    setQuery(v);
+    if (selected && v !== selected.name) {
+      onClear?.();
+    }
+  };
 
   const handleSelect = (a: AirportOption) => {
     justPickedRef.current = a.name;
-    onChange(a.name);
+    lastSelectedIdRef.current = a.id;
+    setQuery(a.name);
     onSelect(a);
     setOpen(false);
     setResults([]);
@@ -141,8 +163,8 @@ export function AirportSearch({
         </div>
         <input
           type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={query}
+          onChange={(e) => handleQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => {
             setFocused(true);

@@ -11,6 +11,7 @@ import {
   buildEnrichedDraftPrompt,
   type TripContext,
 } from "@/lib/ai/prompts";
+import { vibePlacesQueries } from "@/lib/ai/vibeMap";
 import {
   estimateGeminiCostGBP,
   generateJson,
@@ -190,7 +191,10 @@ export async function generateLockAndDraft(
     let model = getGeminiModelName();
 
     if (tier === "enriched") {
-      const enriched = await enrichDestination({ destination: ctx.destination });
+      const enriched = await enrichDestination({
+        destination: ctx.destination,
+        vibeQueries: vibePlacesQueries(ctx.vibes),
+      });
       placesCalls = enriched.placesCalls;
 
       const weather =
