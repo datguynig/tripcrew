@@ -35,6 +35,8 @@ type JoinTripRow = {
   target_budget_pp: number | null;
   currency: string | null;
   target_crew_size: number | null;
+  start_date: string | null;
+  end_date: string | null;
   meta: { origin?: string; vibes?: string } | null;
 };
 
@@ -71,7 +73,7 @@ export default async function JoinPage({
   const { data: trip } = await service
     .from("trips")
     .select(
-      "id, hero_title, city_label, dates_label, target_budget_pp, currency, target_crew_size, meta",
+      "id, hero_title, city_label, dates_label, target_budget_pp, currency, target_crew_size, start_date, end_date, meta",
     )
     .eq("id", lookup.tripId)
     .maybeSingle<JoinTripRow>();
@@ -101,7 +103,7 @@ export default async function JoinPage({
 
   const inviterName = lookup.inviterName ?? "A friend";
   const meta = trip.meta ?? {};
-  const totalDays = inferDays(trip.dates_label) ?? 6;
+  const totalDays = computeTripDays(trip.start_date, trip.end_date) ?? 6;
 
   return (
     <TripPreview
@@ -129,10 +131,15 @@ export default async function JoinPage({
   );
 }
 
-function inferDays(label: string | null): number | null {
-  if (!label) return null;
-  const match = label.match(/(\d+)\s*days?/i);
-  return match ? Number(match[1]) : null;
+function computeTripDays(
+  startIso: string | null,
+  endIso: string | null,
+): number | null {
+  if (!startIso || !endIso) return null;
+  const start = Date.parse(startIso);
+  const end = Date.parse(endIso);
+  if (Number.isNaN(start) || Number.isNaN(end) || end < start) return null;
+  return Math.floor((end - start) / 86_400_000) + 1;
 }
 
 function JoinError({ kind }: { kind: string }) {

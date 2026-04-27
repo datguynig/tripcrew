@@ -42,9 +42,7 @@ export default async function SampleTripPage({
         dates_label: trip.dates_label,
         target_budget_pp: trip.target_budget_pp,
         currency: trip.currency,
-        crew_size: trip.target_crew_size ?? SAMPLE_LISBON.specCells[1]
-          ? Number(SAMPLE_LISBON.specCells[1].value)
-          : 6,
+        crew_size: trip.target_crew_size ?? 6,
         origin: meta.origin ?? "LHR",
         vibes: meta.vibes ?? "Foodie · Wine",
       }}
@@ -54,7 +52,7 @@ export default async function SampleTripPage({
         note: row.note,
       }))}
       totalDays={SAMPLE_LISBON.totalDays}
-      visibleDays={SAMPLE_LISBON.totalDays}
+      visibleDays={SAMPLE_LISBON.visibleDays}
       variant={{ kind: "sample", ribbonLabel: `Sample trip · ${slug}` }}
     />
   );
