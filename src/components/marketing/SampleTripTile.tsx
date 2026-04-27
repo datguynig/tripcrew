@@ -1,14 +1,8 @@
 import Link from "next/link";
 
-import { SAMPLE_LISBON } from "@/lib/marketing/sampleTrip";
+import type { SampleTrip } from "@/lib/marketing/sampleTrips";
 
-const POLAROID_LAYOUT: { rotation: string; top: string; z: number }[] = [
-  { rotation: "-rotate-[5deg]", top: "0px", z: 10 },
-  { rotation: "rotate-[3deg]", top: "40px", z: 20 },
-  { rotation: "-rotate-[2deg]", top: "80px", z: 30 },
-];
-
-export function SampleTripTile() {
+export function SampleTripTile({ trip }: { trip: SampleTrip }) {
   return (
     <section
       id="sample-trip"
@@ -20,7 +14,8 @@ export function SampleTripTile() {
             See what the AI actually produces
           </p>
           <h2 className="font-serif text-[36px] md:text-[52px] leading-[1.05] tracking-[-0.02em] max-w-[18ch]">
-            A real trip. Real budget. Real plan. Six friends. Lisbon. Six days.
+            A real trip. Real budget. Real plan. Six friends.{" "}
+            {trip.city}. {trip.totalDays} days.
           </h2>
         </header>
 
@@ -29,16 +24,16 @@ export function SampleTripTile() {
             <div className="flex flex-col gap-10">
               <div>
                 <h3 className="font-serif text-[44px] md:text-[56px] leading-none tracking-[-0.03em] mb-4">
-                  {SAMPLE_LISBON.city}
+                  {trip.city}
                 </h3>
                 <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/60">
-                  {SAMPLE_LISBON.datesLabel} · {SAMPLE_LISBON.durationLabel} ·{" "}
-                  {SAMPLE_LISBON.vibesPlusLabel}
+                  {trip.datesLabel} · {trip.durationLabel} ·{" "}
+                  {trip.vibesPlusLabel}
                 </p>
               </div>
 
               <dl className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-cream/15 border border-cream/15">
-                {SAMPLE_LISBON.specCells.map((cell) => (
+                {trip.specCells.map((cell) => (
                   <div
                     key={cell.label}
                     className="bg-ink p-4 md:p-5 flex flex-col gap-2"
@@ -54,7 +49,7 @@ export function SampleTripTile() {
               </dl>
 
               <ol className="flex flex-col gap-5">
-                {SAMPLE_LISBON.schedule.map((item) => (
+                {trip.schedule.map((item) => (
                   <li
                     key={item.day}
                     className="pl-4 border-l-[3px] border-marketing-coral"
@@ -68,32 +63,13 @@ export function SampleTripTile() {
                   </li>
                 ))}
                 <li className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/35 pt-1">
-                  {SAMPLE_LISBON.totalDays - SAMPLE_LISBON.visibleDays} more
-                  days · in the full plan
+                  {trip.totalDays - trip.visibleDays} more days · in the full
+                  plan
                 </li>
               </ol>
             </div>
 
-            <div className="hidden md:block relative min-h-[460px]">
-              {SAMPLE_LISBON.polaroidCaptions.map((caption, i) => {
-                const layout = POLAROID_LAYOUT[i];
-                return (
-                  <div
-                    key={caption}
-                    className={`absolute left-1/2 -translate-x-1/2 ${layout.rotation} bg-cream text-ink p-3 pb-5 shadow-[0_20px_40px_-15px_rgba(0,0,0,0.6)] w-[260px]`}
-                    style={{ top: layout.top, zIndex: layout.z }}
-                  >
-                    <div
-                      aria-hidden="true"
-                      className="w-full h-[260px] bg-ink/90"
-                    />
-                    <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/70 mt-3 text-center">
-                      {caption}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+            <DestinationPanel trip={trip} />
           </div>
 
           <div className="mt-12 md:mt-16 pt-8 border-t border-cream/15 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
@@ -101,7 +77,7 @@ export function SampleTripTile() {
               Shareable · group-chat-ready
             </p>
             <Link
-              href="/sample-trip/lisbon"
+              href={`/sample-trip/${trip.slug}`}
               className="inline-flex items-center justify-center bg-cream text-ink font-mono uppercase tracking-[0.18em] text-[12px] px-7 min-h-[52px] border-2 border-cream hover:bg-transparent hover:text-cream transition-colors duration-150"
             >
               Explore the full trip →
@@ -110,5 +86,49 @@ export function SampleTripTile() {
         </article>
       </div>
     </section>
+  );
+}
+
+// Right-column editorial typography panel. Replaces the previous polaroid
+// stack — the empty placeholders read as broken on a marketing page.
+// Editorial-brutalist baseline: huge serif destination, mono-cap dates,
+// coral rule, then the highlight stack as mono-caps with coral middots.
+function DestinationPanel({ trip }: { trip: SampleTrip }) {
+  return (
+    <div className="hidden md:flex flex-col justify-between border border-cream/20 p-8 min-h-[460px] relative">
+      <div className="absolute -top-3 left-6 bg-ink px-2">
+        <span className="font-mono uppercase tracking-[0.22em] text-[10px] text-marketing-coral">
+          Featured trip
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-6 mt-6">
+        <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/55">
+          Destination
+        </p>
+        <h4 className="font-serif text-[64px] lg:text-[80px] leading-[0.92] tracking-[-0.04em]">
+          {trip.city}
+        </h4>
+        <div className="h-px w-12 bg-marketing-coral" />
+        <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-cream/70">
+          {trip.datesLabel}
+        </p>
+        <p className="font-sans text-[15px] leading-[1.45] text-cream/80 italic">
+          {trip.occasionLine}
+        </p>
+      </div>
+
+      <ul className="flex flex-col gap-2 mt-8">
+        {trip.highlights.map((h) => (
+          <li
+            key={h}
+            className="font-mono uppercase tracking-[0.22em] text-[11px] text-cream/85 flex items-center gap-3"
+          >
+            <span className="text-marketing-coral">·</span>
+            {h}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
