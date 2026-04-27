@@ -30,7 +30,7 @@ export const requireFounder = cache(async (): Promise<{ id: string }> => {
     .eq("id", user.id)
     .maybeSingle<{ id: string; is_founder: boolean }>();
 
-  if (!isFounderProfile({ id: user.id, name: null, is_founder: profile?.is_founder ?? false })) {
+  if (!profile || !profile.is_founder) {
     throw new FounderForbiddenError();
   }
   return { id: user.id };

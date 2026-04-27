@@ -62,6 +62,10 @@ export async function approveApplication(
     return { error: "Could not approve. Try again." };
   }
 
+  // The /sign-in page does not yet read ?invite= and link the resulting
+  // user back to applications.user_id. Until that handler ships, the
+  // applicant signs in normally and the user_id link is a manual SQL
+  // backfill. Tracked in roadmap.md under "Onboarding & lifecycle".
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tripcrew.app";
   const magicLinkUrl = `${baseUrl}/sign-in?invite=${inviteToken}`;
 

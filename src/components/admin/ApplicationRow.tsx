@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { approveApplication } from "@/lib/actions/approveApplication";
 import { rejectApplication } from "@/lib/actions/rejectApplication";
 import { MAX_SCORE } from "@/lib/applications/scoring";
+import { timeAgo } from "@/lib/applications/timeAgo";
 import type { Application } from "@/lib/types";
 
 type Props = {
@@ -15,19 +16,6 @@ type Props = {
   >;
   score: number;
 };
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
-  if (diffSec < 60) return "just now";
-  const minutes = Math.floor(diffSec / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 export function ApplicationRow({ application, score }: Props) {
   const router = useRouter();

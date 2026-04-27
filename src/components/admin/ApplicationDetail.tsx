@@ -14,6 +14,7 @@ import {
   PAIN_LABEL,
   BUDGET_ATTITUDE_LABEL,
 } from "@/lib/applications/answerLabels";
+import { timeAgo } from "@/lib/applications/timeAgo";
 import type { Application } from "@/lib/types";
 
 type Props = {
@@ -28,23 +29,6 @@ function deriveStatus(application: Application): Status {
   if (application.approved_at) return "approved";
   if (application.rejected_at) return "rejected";
   return "pending";
-}
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  const now = Date.now();
-  const diff = Math.max(0, now - then);
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  const years = Math.floor(days / 365);
-  return `${years}y ago`;
 }
 
 export function ApplicationDetail({
