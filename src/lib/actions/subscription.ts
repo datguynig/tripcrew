@@ -40,7 +40,10 @@ export async function createCheckoutSession(): Promise<CheckoutResult> {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: { trial_period_days: TRIAL_DAYS },
+      subscription_data: {
+        trial_period_days: TRIAL_DAYS,
+        metadata: { user_id: user.id },
+      },
       allow_promotion_codes: true,
       ...(profile?.stripe_customer_id
         ? { customer: profile.stripe_customer_id }
