@@ -5,6 +5,7 @@ import { SampleTripTile } from "@/components/marketing/SampleTripTile";
 import { PricingReveal } from "@/components/marketing/PricingReveal";
 import { getApplicationCount } from "@/lib/actions/applications";
 import { getFoundingCrewRemaining } from "@/lib/pricing/foundingCount";
+import { pickFeaturedSampleTrip } from "@/lib/marketing/sampleTrips";
 
 export const dynamic = "force-dynamic";
 
@@ -13,12 +14,13 @@ export default async function LandingPage() {
     getApplicationCount(),
     getFoundingCrewRemaining(),
   ]);
+  const featuredTrip = pickFeaturedSampleTrip();
 
   return (
     <main>
-      <Hero applicantCount={applicantCount} />
+      <Hero applicantCount={applicantCount} featuredTrip={featuredTrip} />
       <HowItWorks />
-      <SampleTripTile />
+      <SampleTripTile trip={featuredTrip} />
       <PricingReveal foundingRemaining={foundingRemaining} />
       <Footer />
     </main>

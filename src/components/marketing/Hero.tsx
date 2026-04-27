@@ -5,22 +5,23 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { applicationEmailSchema } from "@/lib/validators/application";
-import { SAMPLE_LISBON } from "@/lib/marketing/sampleTrip";
+import type { SampleTrip } from "@/lib/marketing/sampleTrips";
 
 import { MembershipStamp } from "./MembershipStamp";
 
 type HeroProps = {
   applicantCount: number;
+  featuredTrip: SampleTrip;
 };
 
 const DEAD_BUBBLES: string[] = [
   "anyone free in june?",
   "depends on dates",
-  "lisbon? portugal?",
+  "where though?",
   "i'll check flights later",
 ];
 
-export function Hero({ applicantCount }: HeroProps) {
+export function Hero({ applicantCount, featuredTrip }: HeroProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function Hero({ applicantCount }: HeroProps) {
           </div>
 
           <div className="flex items-center">
-            <TransformationSplit />
+            <TransformationSplit trip={featuredTrip} />
           </div>
         </div>
 
@@ -114,7 +115,7 @@ export function Hero({ applicantCount }: HeroProps) {
   );
 }
 
-function TransformationSplit() {
+function TransformationSplit({ trip }: { trip: SampleTrip }) {
   return (
     <div className="grid w-full grid-cols-1 border-2 border-cream/30 sm:grid-cols-2">
       <div className="relative border-b-2 border-cream/30 p-6 sm:border-b-0 sm:border-r-2">
@@ -144,14 +145,13 @@ function TransformationSplit() {
           The trip
         </p>
         <h3 className="mt-4 font-serif text-[36px] leading-none tracking-[-0.02em]">
-          {SAMPLE_LISBON.city}
+          {trip.city}
         </h3>
         <p className="mt-2 font-mono uppercase tracking-[0.14em] text-[10px] text-ink/70">
-          {SAMPLE_LISBON.datesLabel} · {SAMPLE_LISBON.durationLabel} ·{" "}
-          {SAMPLE_LISBON.crewLabel}
+          {trip.datesLabel} · {trip.durationLabel} · {trip.crewLabel}
         </p>
         <div className="mt-5 grid grid-cols-2 border-2 border-ink">
-          {SAMPLE_LISBON.specCells.map((cell, index) => {
+          {trip.specCells.map((cell, index) => {
             const isRightCol = index % 2 === 1;
             const isBottomRow = index >= 2;
             return (
