@@ -3,6 +3,7 @@ import { requireFounder, FounderForbiddenError } from "@/lib/auth/founder";
 import { createServiceClient } from "@/lib/supabase/server";
 import { scoreApplication } from "@/lib/applications/scoring";
 import { ApplicationRow } from "@/components/admin/ApplicationRow";
+import { QueueRealtime } from "@/components/admin/QueueRealtime";
 import type {
   Application,
   ApplicationBudgetAttitude,
@@ -144,6 +145,7 @@ export default async function ApplicationsQueuePage({ searchParams }: PageProps)
           })}
         </nav>
 
+        <QueueRealtime>
         <div className="mt-6 border border-cream/15">
           <table className="w-full border-collapse">
             <thead>
@@ -190,6 +192,7 @@ export default async function ApplicationsQueuePage({ searchParams }: PageProps)
             </tbody>
           </table>
         </div>
+        </QueueRealtime>
       </div>
     </div>
   );
