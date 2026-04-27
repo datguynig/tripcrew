@@ -6,6 +6,9 @@ export const applicationEmailSchema = z
   .toLowerCase()
   .email("Enter a valid email.");
 
+// Enums must mirror the check constraints in
+// supabase/migrations/20260429000000_applications_table.sql AND the
+// string unions in src/lib/types.ts. Three sources of truth — drift risk.
 export const applicationAnswersSchema = z.object({
   trips_per_year: z.enum(["0", "1", "2-3", "4+"]),
   role: z.enum(["organiser", "attendee", "depends"]),
