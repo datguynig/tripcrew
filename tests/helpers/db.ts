@@ -90,19 +90,6 @@ export async function seedAiDraft(tripId: string) {
   if (bErr) throw bErr;
 }
 
-export async function setAiEnabledByEmail(email: string, enabled: boolean) {
-  const admin = adminClient();
-  const { data: list, error: lErr } = await admin.auth.admin.listUsers();
-  if (lErr) throw lErr;
-  const user = list.users.find((u) => u.email === email);
-  if (!user) throw new Error(`User not found: ${email}`);
-  const { error } = await admin
-    .from("profiles")
-    .update({ ai_enabled: enabled })
-    .eq("id", user.id);
-  if (error) throw error;
-}
-
 export async function readTripAiState(tripId: string) {
   const admin = adminClient();
   const [{ data: trip }, { data: acts }, { data: books }] = await Promise.all([

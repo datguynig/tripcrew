@@ -85,7 +85,12 @@ export function useTripPrefs() {
             });
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status !== "SUBSCRIBED") return;
+          void listFeedPrefs().then((data) => {
+            setPrefs(data);
+          });
+        });
     })();
     return () => {
       if (channel) supabase.removeChannel(channel);

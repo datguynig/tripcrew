@@ -5,13 +5,10 @@ import { Hero } from "@/components/layout/Hero";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
 import { Schedule } from "@/components/overview/Schedule";
-import { AIDraftCTA } from "@/components/overview/AIDraftCTA";
-import { AIFeedbackCard } from "@/components/overview/AIFeedbackCard";
+import { LockAndDraftSection } from "@/components/overview/LockAndDraftSection";
 import { PolaroidStack } from "@/components/overview/PolaroidStack";
 import type { PolaroidSlot } from "@/components/overview/PolaroidStack";
-import { aiEnabled as aiConfigured } from "@/lib/ai";
-import { placesEnabled } from "@/lib/places";
-import { getRedraftAvailability } from "@/lib/actions/aiDraft";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import type { PolaroidOverride } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +25,14 @@ function formatDateRange(start: string | null, end: string | null) {
       .toUpperCase();
   if (start && end) return `${fmt(start)} – ${fmt(end)}`;
   return fmt((start ?? end) as string);
+}
+
+function tripDayCount(start: string | null, end: string | null): number | null {
+  if (!start || !end) return null;
+  const s = Date.parse(`${start}T00:00:00Z`);
+  const e = Date.parse(`${end}T00:00:00Z`);
+  if (!Number.isFinite(s) || !Number.isFinite(e)) return null;
+  return Math.max(1, Math.round((e - s) / 86_400_000) + 1);
 }
 
 function relativeTimeLabel(iso: string): string {
@@ -223,49 +228,12 @@ export default async function TripOverview({
   const kittyTotal =
     expenses?.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
 
-  const aiDrafted = trip.ai_drafted_at !== null;
-  const availability =
-    aiDrafted && isAdmin && user?.profile.ai_enabled && trip.destination
-      ? await getRedraftAvailability(trip.id)
-      : null;
-  const surfaceDraftedAt = trip.meta?.surface_drafted_at ?? {};
-  const aiRailBase =
-    aiDrafted && isAdmin && user?.profile.ai_enabled && trip.destination
-      ? {
-          tripId: trip.id,
-          destination: trip.destination,
-          canRedraft: availability?.ok ?? false,
-          blockedReason: availability?.ok ? null : availability?.reason ?? null,
-        }
-      : undefined;
-
-  const versionCounts = aiRailBase
-    ? await (async () => {
-        const { data } = await supabase
-          .from("ai_draft_versions")
-          .select("surface")
-          .eq("trip_id", trip.id)
-          .returns<Array<{ surface: string }>>();
-        const counts: Record<string, number> = {};
-        for (const r of data ?? []) counts[r.surface] = (counts[r.surface] ?? 0) + 1;
-        return counts;
-      })()
-    : {};
-
-  const aiRailSpec = aiRailBase
-    ? {
-        ...aiRailBase,
-        draftedAt: surfaceDraftedAt.spec_grid ?? trip.ai_drafted_at,
-        versionsCount: versionCounts.spec_grid ?? 0,
-      }
-    : undefined;
-  const aiRailSchedule = aiRailBase
-    ? {
-        ...aiRailBase,
-        draftedAt: surfaceDraftedAt.schedule ?? trip.ai_drafted_at,
-        versionsCount: versionCounts.schedule ?? 0,
-      }
-    : undefined;
+  const planExists = !!trip.enriched_draft_generated_at;
+  const briefStale =
+    !!trip.meta?.brief_updated_at &&
+    !!trip.enriched_draft_generated_at &&
+    new Date(trip.meta.brief_updated_at).getTime() >
+      new Date(trip.enriched_draft_generated_at).getTime();
 
   const heroTitle = trip.hero_title ?? trip.destination ?? trip.name;
   const heroSubtitle = trip.hero_subtitle;
@@ -347,63 +315,81 @@ export default async function TripOverview({
       <section className="py-14 pb-24 section-enter">
         <SectionHeader code="§ 01" title="The brief." lead={overviewLead} />
 
-        {(() => {
-          const showAICTA =
-            isAdmin &&
-            user?.profile.ai_enabled &&
-            trip.ai_drafted_at === null &&
-            aiConfigured() &&
-            placesEnabled() &&
-            !!trip.destination;
-
-          return (
-            <>
-              {showAICTA && trip.destination && (
-                <AIDraftCTA
-                  tripId={trip.id}
-                  destination={trip.destination}
-                  tripSlug={trip.slug}
-                  crewCount={crewCount ?? 0}
-                  currency={trip.currency ?? "GBP"}
-                  targetBudgetPp={trip.target_budget_pp}
-                  existingPreferences={trip.meta?.ai_preferences ?? null}
-                />
-              )}
-
-              <SpecGrid
-                cells={specCells}
-                isAdmin={isAdmin}
-                tripId={trip.id}
-                tripSlug={trip.slug}
-                currency={trip.currency ?? "GBP"}
-                aiDrafted={aiDrafted}
-                aiRail={aiRailSpec}
-              />
-              <Schedule
-                rows={scheduleRows}
-                isAdmin={isAdmin}
-                tripId={trip.id}
-                tripSlug={trip.slug}
-                startDate={trip.start_date}
-                aiDrafted={aiDrafted}
-                aiRail={aiRailSchedule}
-              />
-            </>
-          );
-        })()}
-
-        {trip.ai_drafted_at !== null && user && (
-          <AIFeedbackCard
-            tripId={trip.id}
-            surface="all"
-            canRedraft={availability?.ok ?? false}
-            redraftBlockedReason={
-              availability?.ok ? null : availability?.reason ?? null
+        {planExists ? (
+          <CollapsibleSection
+            storageKey={`tripcrew:brief-open:${trip.slug}`}
+            defaultOpen={false}
+            summary={
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="label-sm-wide text-fg-3">BRIEF</span>
+                <span className="text-[14px] text-fg font-medium">
+                  {[
+                    trip.dates_label,
+                    (() => {
+                      const perHead = specCells.find((c) =>
+                        c.label.toLowerCase().includes("head"),
+                      );
+                      return perHead?.value ? `${perHead.value}pp` : null;
+                    })(),
+                    (() => {
+                      const days = tripDayCount(trip.start_date, trip.end_date);
+                      return days ? `${days} day${days === 1 ? "" : "s"}` : null;
+                    })(),
+                    trip.city_label,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </div>
             }
-            destination={trip.destination}
-          />
+          >
+            <SpecGrid
+              cells={specCells}
+              isAdmin={isAdmin}
+              tripId={trip.id}
+              tripSlug={trip.slug}
+              currency={trip.currency ?? "GBP"}
+            />
+            <Schedule
+              rows={scheduleRows}
+              isAdmin={isAdmin}
+              tripId={trip.id}
+              tripSlug={trip.slug}
+              startDate={trip.start_date}
+            />
+          </CollapsibleSection>
+        ) : (
+          <>
+            <SpecGrid
+              cells={specCells}
+              isAdmin={isAdmin}
+              tripId={trip.id}
+              tripSlug={trip.slug}
+              currency={trip.currency ?? "GBP"}
+            />
+            <Schedule
+              rows={scheduleRows}
+              isAdmin={isAdmin}
+              tripId={trip.id}
+              tripSlug={trip.slug}
+              startDate={trip.start_date}
+            />
+          </>
         )}
       </section>
+
+      <LockAndDraftSection
+        tripId={trip.id}
+        userId={user?.id ?? null}
+        isAdmin={isAdmin}
+        destination={trip.destination}
+        currency={trip.currency ?? "GBP"}
+        enrichedDraft={trip.enriched_draft}
+        enrichedDraftTier={trip.enriched_draft_tier}
+        enrichedDraftGeneratedAt={trip.enriched_draft_generated_at}
+        lastPriceRefreshAt={trip.last_price_refresh_at}
+        briefStale={briefStale}
+      />
     </>
   );
 }

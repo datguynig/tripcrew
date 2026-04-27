@@ -1,0 +1,154 @@
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
+import { createServiceClient } from "@/lib/supabase/server";
+import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+type AllowedStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "incomplete";
+
+function coerceStatus(stripeStatus: Stripe.Subscription.Status): AllowedStatus {
+  switch (stripeStatus) {
+    case "active":
+      return "active";
+    case "trialing":
+      return "trialing";
+    case "past_due":
+    case "unpaid":
+      return "past_due";
+    case "incomplete":
+      return "incomplete";
+    case "canceled":
+    case "incomplete_expired":
+    case "paused":
+    default:
+      return "canceled";
+  }
+}
+
+function periodEndIso(sub: Stripe.Subscription): string | null {
+  const item = sub.items?.data?.[0] as
+    | (Stripe.SubscriptionItem & { current_period_end?: number })
+    | undefined;
+  const fromItem = item?.current_period_end;
+  const fromSub = (sub as Stripe.Subscription & { current_period_end?: number })
+    .current_period_end;
+  const epoch = fromItem ?? fromSub;
+  if (typeof epoch !== "number") return null;
+  return new Date(epoch * 1000).toISOString();
+}
+
+async function profileIdForCustomer(
+  customerId: string,
+): Promise<string | null> {
+  const supabase = createServiceClient();
+  const { data: byId } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("stripe_customer_id", customerId)
+    .maybeSingle<{ id: string }>();
+  if (byId?.id) return byId.id;
+
+  // Fallback: fetch the Stripe customer's email and match it to an
+  // auth user. Useful for the first webhook event after a future
+  // checkout flow, before profiles.stripe_customer_id is populated.
+  try {
+    const stripe = getStripe();
+    const cust = await stripe.customers.retrieve(customerId);
+    if (cust.deleted) return null;
+    const email = cust.email;
+    if (!email) return null;
+
+    const { data: list, error } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 200,
+    });
+    if (error) {
+      console.error("stripe webhook: auth.admin.listUsers failed:", error);
+      return null;
+    }
+    const match = list.users.find(
+      (u) => u.email?.toLowerCase() === email.toLowerCase(),
+    );
+    return match?.id ?? null;
+  } catch (err) {
+    console.error("stripe webhook: customer/email fallback failed:", err);
+    return null;
+  }
+}
+
+async function applySubscription(sub: Stripe.Subscription): Promise<void> {
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const profileId = await profileIdForCustomer(customerId);
+  if (!profileId) {
+    console.warn(
+      `stripe webhook: no profile for customer ${customerId} (sub ${sub.id})`,
+    );
+    return;
+  }
+
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      stripe_customer_id: customerId,
+      stripe_subscription_id: sub.id,
+      stripe_subscription_status: coerceStatus(sub.status),
+      current_period_end: periodEndIso(sub),
+    })
+    .eq("id", profileId);
+
+  if (error) {
+    throw new Error(`profiles update failed: ${error.message}`);
+  }
+}
+
+export async function POST(request: Request): Promise<Response> {
+  const signature = request.headers.get("stripe-signature");
+  if (!signature) {
+    return NextResponse.json({ error: "missing signature" }, { status: 400 });
+  }
+
+  const rawBody = await request.text();
+
+  let event: Stripe.Event;
+  try {
+    event = getStripe().webhooks.constructEvent(
+      rawBody,
+      signature,
+      getWebhookSecret(),
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("stripe webhook: signature verification failed:", message);
+    return NextResponse.json({ error: "invalid signature" }, { status: 400 });
+  }
+
+  try {
+    switch (event.type) {
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted":
+        await applySubscription(event.data.object as Stripe.Subscription);
+        break;
+      default:
+        // Acknowledge unhandled events so Stripe doesn't retry. We
+        // narrow the surface deliberately — this handler only owns
+        // subscription state on profiles.
+        break;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`stripe webhook: ${event.type} (${event.id}) failed:`, err);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+
+  return NextResponse.json({ received: true });
+}

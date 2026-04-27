@@ -179,8 +179,10 @@ export function Feed({
                 return [...prev, row];
               }
               if (payload.eventType === "UPDATE") {
-                const row = payload.new as Post;
-                return prev.map((p) => (p.id === row.id ? row : p));
+                const row = payload.new as Partial<Post> & { id: string };
+                return prev.map((p) =>
+                  p.id === row.id ? { ...p, ...row } : p,
+                );
               }
               if (payload.eventType === "DELETE") {
                 const row = payload.old as { id?: string };
@@ -221,7 +223,32 @@ export function Feed({
             });
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          // Catch-up fetch on subscribe success — closes the SSR-to-
+          // SUBSCRIBED gap where after()-fired UPDATEs are otherwise lost.
+          if (status !== "SUBSCRIBED") return;
+          void (async () => {
+            const { data: postsData } = await supabase
+              .from("posts")
+              .select(
+                "id, trip_id, image_url, caption, author_id, created_at, reply_to_post_id, edited_at",
+              )
+              .eq("trip_id", tripId)
+              .order("created_at", { ascending: false })
+              .limit(200)
+              .returns<Post[]>();
+            if (postsData) setPosts([...postsData].sort(ascByCreatedAt));
+
+            const ids = (postsData ?? []).map((p) => p.id);
+            if (ids.length === 0) return;
+            const { data: likesData } = await supabase
+              .from("post_likes")
+              .select("post_id, user_id, created_at")
+              .in("post_id", ids)
+              .returns<PostLike[]>();
+            if (likesData) setLikes(likesData);
+          })();
+        });
     })();
 
     return () => {

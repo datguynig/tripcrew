@@ -1,8 +1,19 @@
+export type SubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "incomplete";
+
 export type Profile = {
   id: string;
   name: string;
   joined_at: string;
-  ai_enabled: boolean;
+  trial_started_at: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_subscription_status: SubscriptionStatus | null;
+  current_period_end: string | null;
 };
 
 export type TripStatus = "planning" | "locked";
@@ -41,14 +52,109 @@ export type AiOriginAirport = {
 
 export type AiBudgetTier = "tight" | "mid" | "lavish" | "custom";
 
+export const BUDGET_TIER_LABELS: Record<AiBudgetTier, string> = {
+  tight: "Tight",
+  mid: "Comfortable",
+  lavish: "Lavish",
+  custom: "Custom",
+};
+
 export type AiVibeTag =
+  // Pace
   | "chill"
   | "active"
+  | "adventure"
+  // Setting
+  | "beach"
+  | "outdoors"
+  | "nature"
+  | "urban"
+  // Food / drink
   | "foodie"
   | "nightlife"
+  | "party"
+  // Culture
   | "culture"
-  | "outdoors"
-  | "beach";
+  | "art"
+  | "historic"
+  // Vibe
+  | "romantic"
+  | "family_friendly"
+  | "luxury"
+  | "wellness"
+  // Special
+  | "photogenic"
+  | "sport"
+  | "music";
+
+export const VIBE_LABELS: Record<AiVibeTag, string> = {
+  chill: "Chill",
+  active: "Active",
+  adventure: "Adventure",
+  beach: "Beach",
+  outdoors: "Outdoors",
+  nature: "Nature",
+  urban: "Urban",
+  foodie: "Foodie",
+  nightlife: "Nightlife",
+  party: "Party",
+  culture: "Culture",
+  art: "Art & galleries",
+  historic: "Historic",
+  romantic: "Romantic",
+  family_friendly: "Family-friendly",
+  luxury: "Luxury",
+  wellness: "Wellness",
+  photogenic: "Photogenic",
+  sport: "Sports",
+  music: "Music & festivals",
+};
+
+export type AiOccasion =
+  | "group_holiday"
+  | "birthday"
+  | "anniversary"
+  | "honeymoon"
+  | "babymoon"
+  | "engagement"
+  | "hen_do"
+  | "stag_do"
+  | "family"
+  | "graduation"
+  | "reunion"
+  | "corporate_retreat"
+  | "guys_trip"
+  | "girls_trip"
+  | "couples_trip";
+
+export const OCCASION_LABELS: Record<AiOccasion, string> = {
+  group_holiday: "Group holiday",
+  birthday: "Birthday",
+  anniversary: "Anniversary",
+  honeymoon: "Honeymoon",
+  babymoon: "Babymoon",
+  engagement: "Engagement",
+  hen_do: "Hen do",
+  stag_do: "Stag do",
+  family: "Family",
+  graduation: "Graduation",
+  reunion: "Reunion",
+  corporate_retreat: "Corporate retreat",
+  guys_trip: "Guys trip",
+  girls_trip: "Girls trip",
+  couples_trip: "Couples trip",
+};
+
+// Pinned moment: a structured anchor the AI must build the plan around
+// (e.g. "Watch FC Barcelona at Camp Nou, Saturday evening — must-do").
+// Up to 5 per trip; honoured by the enriched-tier draft only.
+export type TripPin = {
+  title: string;
+  when: string | null;
+  date: string | null;
+  priority: "must" | "nice";
+  notes: string | null;
+};
 
 export type AiPreferences = {
   origin: AiOriginAirport | null;
@@ -56,13 +162,10 @@ export type AiPreferences = {
   budget_tier: AiBudgetTier;
   budget_custom_pp: number | null;
   vibes: AiVibeTag[];
+  occasion?: AiOccasion;
+  notes?: string;
+  pins?: TripPin[];
 };
-
-export type TripDraftSurface =
-  | "spec_grid"
-  | "schedule"
-  | "activities"
-  | "bookings";
 
 export type PolaroidSourceType =
   | "destination"
@@ -84,8 +187,11 @@ export type TripMeta = {
   schedule?: ScheduleItem[];
   section_leads?: SectionLeads;
   ai_preferences?: AiPreferences;
-  surface_drafted_at?: Partial<Record<TripDraftSurface, string>>;
   polaroid_slots?: PolaroidOverride[];
+  // Set whenever brief, prefs, or pins are edited. Compared against
+  // `enriched_draft_generated_at` to detect "plan is stale" — drives the
+  // "Regenerate plan" banner on the trip overview.
+  brief_updated_at?: string;
 };
 
 export type Trip = {
@@ -113,6 +219,10 @@ export type Trip = {
   hero_image_attribution: string | null;
   hero_image_user_url: string | null;
   hero_tint: string | null;
+  enriched_draft: unknown | null;
+  enriched_draft_tier: "basic" | "enriched" | null;
+  enriched_draft_generated_at: string | null;
+  last_price_refresh_at: string | null;
   created_at: string;
 };
 
@@ -199,6 +309,8 @@ export type DestinationCandidate = {
   country: string | null;
   photo_url: string | null;
   photo_attribution: string | null;
+  basic_draft: unknown | null;
+  basic_draft_generated_at: string | null;
 };
 
 export type DestinationVote = {
@@ -234,12 +346,6 @@ export type PostWithAuthor = Post & {
 };
 
 export type AiProvider = "gemini" | "claude";
-export type AiFeedbackSurface =
-  | "schedule"
-  | "hero_spec"
-  | "activities"
-  | "bookings"
-  | "all";
 
 export type AiUsage = {
   id: string;
@@ -255,16 +361,6 @@ export type AiUsage = {
   places_requests: number | null;
   places_cost_usd: string | null;
   total_cost_usd: string | null;
-  created_at: string;
-};
-
-export type AiFeedback = {
-  id: string;
-  trip_id: string;
-  user_id: string | null;
-  surface: AiFeedbackSurface;
-  rating: -1 | 1 | null;
-  note: string | null;
   created_at: string;
 };
 

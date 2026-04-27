@@ -9,16 +9,17 @@ import {
  * Exercises the admin-gated lock/unlock flow end-to-end:
  *   1. Create a fresh trip (signed-in user becomes admin)
  *   2. Propose a candidate
- *   3. Lock the destination → undo toast appears → navigate to Overview
- *   4. Back to Destinations → click Unlock → Dialog opens with correct copy
- *   5. Cancel → Dialog closes, still locked
- *   6. Unlock → trip back to planning
+ *   3. Click "Lock destination" → Lock & Draft dialog opens
+ *   4. Click "Lock without drafting" → trip locks, lands on overview
+ *   5. Back to Destinations → click Unlock → Dialog opens with correct copy
+ *   6. Cancel → Dialog closes, still locked
+ *   7. Unlock → trip back to planning
  *
  * Avoids the AI draft path because it calls a real external provider
- * (Gemini + Google Places) and racks up cost per run. The
- * "Reset drafts" branch below seeds a fake AI draft via the service
- * role so we can exercise the destructive unlock without spending
- * money on Gemini + Places.
+ * (Gemini + Google Places) and racks up cost per run. The test always
+ * picks "Lock without drafting" to skip the draft. The "Reset drafts"
+ * branch below seeds a fake AI draft via the service role so we can
+ * exercise the destructive unlock without spending money.
  */
 
 async function createTripAndProposeCandidate(
@@ -42,26 +43,29 @@ async function createTripAndProposeCandidate(
   await expect(page.getByText(candidate).first()).toBeVisible();
 }
 
+async function lockWithoutDrafting(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: /^lock destination$/i }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/lock & draft/i)).toBeVisible();
+  await dialog
+    .getByRole("button", { name: /^lock without drafting$/i })
+    .click();
+  await page.waitForURL(/\/trips\/[^/]+$/, { timeout: 10_000 });
+}
+
 test.describe("destination lock / unlock admin flow", () => {
-  test("lock fires undo toast and navigates to Overview", async ({ page }) => {
+  test("Lock & Draft dialog opens, lock-without-drafting lands on overview", async ({
+    page,
+  }) => {
     await createTripAndProposeCandidate(
       page,
       `Lock Test ${Date.now()}`,
       "Lisbon",
     );
 
-    await page.getByRole("button", { name: /^lock destination$/i }).click();
+    await lockWithoutDrafting(page);
 
-    // Toast appears before the navigation unwinds.
-    await expect(page.getByText(/destination locked\./i)).toBeVisible({
-      timeout: 5_000,
-    });
-    await expect(
-      page.getByRole("button", { name: /^undo$/i }),
-    ).toBeVisible();
-
-    // Client navigates to Overview once the transition completes.
-    await page.waitForURL(/\/trips\/[^/]+$/, { timeout: 5_000 });
     await expect(
       page.getByRole("heading", { name: /the brief/i }),
     ).toBeVisible();
@@ -78,8 +82,7 @@ test.describe("destination lock / unlock admin flow", () => {
       "Porto",
     );
 
-    await page.getByRole("button", { name: /^lock destination$/i }).click();
-    await page.waitForURL(/\/trips\/[^/]+$/, { timeout: 5_000 });
+    await lockWithoutDrafting(page);
 
     // Go back to Destinations where the Unlock button lives.
     await page.getByRole("link", { name: /destinations/i }).first().click();
@@ -117,31 +120,6 @@ test.describe("destination lock / unlock admin flow", () => {
     ).toBeVisible({ timeout: 5_000 });
   });
 
-  test("undo toast action reverses the lock", async ({ page }) => {
-    await createTripAndProposeCandidate(
-      page,
-      `Undo Lock Test ${Date.now()}`,
-      "Madrid",
-    );
-
-    await page.getByRole("button", { name: /^lock destination$/i }).click();
-
-    // Undo action visible in the toast.
-    await expect(
-      page.getByRole("button", { name: /^undo$/i }),
-    ).toBeVisible({ timeout: 5_000 });
-
-    await page.getByRole("button", { name: /^undo$/i }).click();
-
-    // The undo handler navigates the user to /destinations once the
-    // server re-opens the trip. Wait for that URL, then verify the
-    // Lock Destination button is back (trip is in planning state).
-    await page.waitForURL(/\/destinations$/, { timeout: 10_000 });
-    await expect(
-      page.getByRole("button", { name: /^lock destination$/i }),
-    ).toBeVisible({ timeout: 5_000 });
-  });
-
   test("reset drafts wipes AI-drafted hero + meta + rows", async ({ page }) => {
     await createTripAndProposeCandidate(
       page,
@@ -149,11 +127,7 @@ test.describe("destination lock / unlock admin flow", () => {
       "Barcelona",
     );
 
-    // Lock via UI so the trip reaches status='locked' with the real
-    // winner title + revalidation. Wait on the Overview-only hero
-    // heading rather than waitForURL — the dev server can be slow
-    // enough that the URL race trips up the regex matcher.
-    await page.getByRole("button", { name: /^lock destination$/i }).click();
+    await lockWithoutDrafting(page);
     await expect(
       page.getByRole("heading", { name: /the brief/i }),
     ).toBeVisible({ timeout: 15_000 });

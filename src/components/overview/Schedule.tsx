@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
-import { AIDraftRail } from "@/components/overview/AIDraftRail";
 import { InlineEdit } from "@/components/ui/InlineEdit";
 import { InlineTextarea } from "@/components/ui/InlineTextarea";
 import {
@@ -15,23 +13,12 @@ import {
 import { useToast } from "@/hooks/useToast";
 import type { ScheduleItem } from "@/lib/types";
 
-type AiRail = {
-  tripId: string;
-  destination: string;
-  draftedAt: string | null;
-  canRedraft: boolean;
-  blockedReason: string | null;
-  versionsCount?: number;
-};
-
 type Props = {
   rows: ScheduleItem[];
   isAdmin?: boolean;
   tripId: string;
   tripSlug?: string;
   startDate: string | null;
-  aiDrafted?: boolean;
-  aiRail?: AiRail;
 };
 
 function deriveDayLabel(index: number, startDate: string | null): string {
@@ -54,8 +41,6 @@ export function Schedule({
   isAdmin,
   tripId,
   startDate,
-  aiDrafted = false,
-  aiRail,
 }: Props) {
   const toast = useToast();
   const [optimistic, setOptimistic] = useState<ScheduleItem[] | null>(null);
@@ -153,23 +138,6 @@ export function Schedule({
 
   return (
     <div>
-      {aiDrafted && aiRail ? (
-        <AIDraftRail
-          tripId={aiRail.tripId}
-          destination={aiRail.destination}
-          surface="schedule"
-          draftedAt={aiRail.draftedAt}
-          isAdmin={!!isAdmin}
-          canRedraft={aiRail.canRedraft}
-          blockedReason={aiRail.blockedReason}
-          versionsCount={aiRail.versionsCount ?? 0}
-        />
-      ) : aiDrafted ? (
-        <div className="flex justify-end mb-2">
-          <AIDraftBadge />
-        </div>
-      ) : null}
-
       {emptyAdmin ? (
         <div className="border border-line py-14 text-center">
           <div className="label-sm-wide text-fg-3 mb-4">Schedule empty</div>

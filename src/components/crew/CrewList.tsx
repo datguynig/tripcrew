@@ -71,7 +71,9 @@ export function CrewList({
         },
         refresh,
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") void refresh();
+      });
 
     return () => {
       supabase.removeChannel(channel);

@@ -87,6 +87,14 @@ export function AccountMenu({ profile }: Props) {
               </span>
               <span className="block font-mono text-[10px] tracking-[0.08em] uppercase text-fg-3 truncate">
                 {profile.name}
+                {profile.stripe_subscription_status === "active" &&
+                  " · Crew Plus"}
+                {profile.stripe_subscription_status === "trialing" &&
+                  " · Crew Plus trial"}
+                {profile.stripe_subscription_status === "past_due" &&
+                  " · payment needed"}
+                {profile.stripe_subscription_status === "canceled" &&
+                  " · Crew Plus ending"}
               </span>
             </span>
             <RouteLoadingDot className="shrink-0" />

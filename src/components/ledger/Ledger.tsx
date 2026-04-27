@@ -62,8 +62,10 @@ export function Ledger({
               return [row, ...prev];
             }
             if (payload.eventType === "UPDATE") {
-              const row = payload.new as Expense;
-              return prev.map((e) => (e.id === row.id ? row : e));
+              const row = payload.new as Partial<Expense> & { id: string };
+              return prev.map((e) =>
+                e.id === row.id ? { ...e, ...row } : e,
+              );
             }
             if (payload.eventType === "DELETE") {
               const row = payload.old as { id?: string };
@@ -73,7 +75,18 @@ export function Ledger({
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        void supabase
+          .from("expenses")
+          .select("*")
+          .eq("trip_id", tripId)
+          .order("created_at", { ascending: false })
+          .returns<Expense[]>()
+          .then(({ data }) => {
+            if (data) setExpenses(data);
+          });
+      });
 
     return () => {
       supabase.removeChannel(channel);

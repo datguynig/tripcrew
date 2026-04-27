@@ -12,9 +12,6 @@ import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
-import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
-import { RerollButton } from "@/components/overview/RerollButton";
-
 type CrewOption = { id: string; name: string };
 
 type Props = {
@@ -22,8 +19,6 @@ type Props = {
   crew: CrewOption[];
   tripId: string;
   isAdmin: boolean;
-  canReroll: boolean;
-  rerollBlockedReason: string | null;
 };
 
 export function BookingsList({
@@ -31,8 +26,6 @@ export function BookingsList({
   crew,
   tripId,
   isAdmin,
-  canReroll,
-  rerollBlockedReason,
 }: Props) {
   const [bookings, setBookings] = useState<Booking[]>(initial);
   const [title, setTitle] = useState("");
@@ -61,9 +54,9 @@ export function BookingsList({
               return [...prev, row].sort((a, b) => a.position - b.position);
             }
             if (payload.eventType === "UPDATE") {
-              const row = payload.new as Booking;
+              const row = payload.new as Partial<Booking> & { id: string };
               return prev
-                .map((b) => (b.id === row.id ? row : b))
+                .map((b) => (b.id === row.id ? { ...b, ...row } : b))
                 .sort((a, b) => a.position - b.position);
             }
             if (payload.eventType === "DELETE") {
@@ -74,7 +67,18 @@ export function BookingsList({
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        void supabase
+          .from("bookings")
+          .select("*")
+          .eq("trip_id", tripId)
+          .order("position", { ascending: true })
+          .returns<Booking[]>()
+          .then(({ data }) => {
+            if (data) setBookings(data);
+          });
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -156,29 +160,13 @@ export function BookingsList({
       ) : (
         <div className="border border-line">
           {bookings.map((b) => {
-            const showReroll = isAdmin && b.ai_drafted;
             return (
             <div
               key={b.id}
-              className={`group grid ${
-                showReroll
-                  ? "grid-cols-[24px_28px_1fr_180px_36px] max-[520px]:grid-cols-[24px_28px_1fr_36px]"
-                  : "grid-cols-[28px_1fr_180px_36px] max-[520px]:grid-cols-[28px_1fr_36px]"
-              } items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 max-[400px]:gap-3 ${
+              className={`group grid grid-cols-[28px_1fr_180px_36px] max-[520px]:grid-cols-[28px_1fr_36px] items-center py-4 px-6 border-b border-line last:border-b-0 gap-4 max-[400px]:gap-3 ${
                 b.done ? "opacity-50" : ""
               }`}
             >
-              {showReroll && (
-                <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-center justify-center">
-                  <RerollButton
-                    tripId={tripId}
-                    surface="bookings"
-                    rowId={b.id}
-                    disabled={!canReroll}
-                    blockedReason={rerollBlockedReason}
-                  />
-                </div>
-              )}
               <button
                 onClick={() => handleToggle(b.id, !b.done)}
                 aria-label={b.done ? "Mark not done" : "Mark done"}
@@ -194,7 +182,6 @@ export function BookingsList({
                 }`}
               >
                 <span>{b.title}</span>
-                {b.ai_drafted && <AIDraftBadge dot />}
               </div>
               <select
                 value={b.assignee_id ?? ""}

@@ -7,6 +7,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude /api/* from auth-gating: external callers (e.g. the Stripe
+    // webhook at /api/stripe/webhook) won't carry a Supabase session cookie
+    // and would otherwise be 307-redirected to /sign-in. Each /api/ route
+    // is responsible for its own auth (signature verification, JWT, etc.).
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

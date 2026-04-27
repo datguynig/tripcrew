@@ -9,6 +9,8 @@ import {
   tripMemberIdsExcept,
 } from "@/lib/notifications";
 import { enrichPlace } from "@/lib/placeEnrichment";
+import { generateLockAndDraft } from "@/lib/actions/lockAndDraft";
+import type { AiPreferences, TripMeta } from "@/lib/types";
 
 async function revalidateTrip(tripId: string) {
   const service = createServiceClient();
@@ -322,46 +324,119 @@ export async function unlockDestination(
   return { ok: true as const, reset: false };
 }
 
-export async function lockDestination(tripId: string) {
-  const parsed = z.string().uuid().safeParse(tripId);
-  if (!parsed.success) return { error: "Invalid trip" };
+export const preferencesSchema: z.ZodType<AiPreferences> = z.object({
+  origin: z
+    .object({
+      name: z.string(),
+      address: z.string().nullable(),
+      latitude: z.number().nullable(),
+      longitude: z.number().nullable(),
+      placeId: z.string().nullable(),
+      metro: z.string().nullable().optional(),
+      metroAirports: z.array(z.string()).nullable().optional(),
+    })
+    .nullable(),
+  crew_size: z.number().int().min(1).max(50),
+  budget_tier: z.enum(["tight", "mid", "lavish", "custom"]),
+  budget_custom_pp: z.number().nullable(),
+  vibes: z.array(z.string() as z.ZodType<AiPreferences["vibes"][number]>),
+  occasion: z
+    .enum([
+      "group_holiday",
+      "birthday",
+      "anniversary",
+      "honeymoon",
+      "babymoon",
+      "engagement",
+      "hen_do",
+      "stag_do",
+      "family",
+      "graduation",
+      "reunion",
+      "corporate_retreat",
+      "guys_trip",
+      "girls_trip",
+      "couples_trip",
+    ])
+    .optional(),
+  notes: z.string().max(400).optional(),
+  pins: z
+    .array(
+      z.object({
+        title: z.string().max(120),
+        when: z.string().max(80).nullable(),
+        date: z.string().nullable(),
+        priority: z.enum(["must", "nice"]),
+        notes: z.string().max(300).nullable(),
+      }),
+    )
+    .max(5)
+    .optional(),
+});
+
+const lockAndDraftSchema = z.object({
+  tripId: z.string().uuid(),
+  preferences: preferencesSchema,
+  autoDraft: z.boolean(),
+});
+
+/**
+ * Atomic Lock & Draft action — saves the trip's AI preferences, locks
+ * the destination, and (when autoDraft) kicks off `generateLockAndDraft`
+ * via Vercel `after()` so the response returns fast and the user lands
+ * on the trip overview while the AI is still working in the background.
+ */
+export async function lockAndStartDraft(input: {
+  tripId: string;
+  preferences: AiPreferences;
+  autoDraft: boolean;
+}): Promise<
+  | { ok: true; slug: string }
+  | { ok: false; error: string }
+> {
+  const parsed = lockAndDraftSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid input." };
+  }
+  const { tripId, preferences, autoDraft } = parsed.data;
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "Not signed in" };
+  if (!user) return { ok: false, error: "Not signed in." };
 
   const { data: member } = await supabase
     .from("trip_members")
     .select("role")
-    .eq("trip_id", parsed.data)
+    .eq("trip_id", tripId)
     .eq("user_id", user.id)
     .maybeSingle<{ role: "admin" | "member" }>();
-  if (member?.role !== "admin") return { error: "Admin only" };
+  if (member?.role !== "admin")
+    return { ok: false, error: "Admin only." };
 
   const service = createServiceClient();
+
+  // Pick the winner the same way `lockDestination` does — highest
+  // (yes*2 + maybe), tiebreak by position.
   const { data: candidates } = await service
     .from("destination_candidates")
     .select(
       "id, title, position, latitude, longitude, photo_url, photo_attribution",
     )
-    .eq("trip_id", parsed.data)
+    .eq("trip_id", tripId)
     .order("position", { ascending: true });
 
   if (!candidates || candidates.length === 0) {
-    return { error: "Add at least one candidate before locking" };
+    return { ok: false, error: "Add at least one candidate before locking." };
   }
 
   const { data: votes } = await service
     .from("destination_votes")
     .select("candidate_id, vote")
-    .in(
-      "candidate_id",
-      candidates.map((c) => c.id),
-    );
+    .in("candidate_id", candidates.map((c) => c.id));
 
-  const scored = candidates
+  const winner = candidates
     .map((c) => {
       const vs = votes?.filter((v) => v.candidate_id === c.id) ?? [];
       const yes = vs.filter((v) => v.vote === "yes").length;
@@ -371,17 +446,9 @@ export async function lockDestination(tripId: string) {
     .sort((a, b) => {
       if (b.score !== a.score) return b.score - a.score;
       return a.position - b.position;
-    });
+    })[0];
 
-  const winner = scored[0];
-
-  // Enrich synchronously if the winner wasn't enriched at propose
-  // time (e.g. proposed before this feature shipped, or enrichment
-  // failed). Locking is a deliberate admin moment — small delay is
-  // acceptable to get the hero image into the overview on first load.
-  // Tint extraction rides the same buffer; always runs on lock so
-  // pre-enriched candidates (which don't carry a tint) still get
-  // an atmosphere.
+  // Same hero enrichment / tint extraction as lockDestination.
   let heroUrl = winner.photo_url;
   let heroAttribution = winner.photo_attribution;
   let heroTint: string | null = null;
@@ -413,6 +480,20 @@ export async function lockDestination(tripId: string) {
     heroTint = result.tint;
   }
 
+  // Read existing meta so we preserve any non-AI fields when we merge
+  // ai_preferences in.
+  const { data: existing } = await service
+    .from("trips")
+    .select("meta")
+    .eq("id", tripId)
+    .maybeSingle<{ meta: TripMeta | null }>();
+
+  const mergedMeta: TripMeta = {
+    ...(existing?.meta ?? {}),
+    ai_preferences: preferences,
+    brief_updated_at: new Date().toISOString(),
+  };
+
   const { data: trip, error: updErr } = await service
     .from("trips")
     .update({
@@ -421,27 +502,29 @@ export async function lockDestination(tripId: string) {
       hero_image_url: heroUrl,
       hero_image_attribution: heroAttribution,
       hero_tint: heroTint,
+      meta: mergedMeta,
     })
-    .eq("id", parsed.data)
+    .eq("id", tripId)
     .eq("status", "planning")
     .select("slug, name")
     .maybeSingle<{ slug: string; name: string }>();
-  if (updErr) return { error: updErr.message };
-  if (!trip) return { error: "Destination already locked" };
+  if (updErr) return { ok: false, error: updErr.message };
+  if (!trip) return { ok: false, error: "Destination already locked." };
 
   revalidatePath(`/trips/${trip.slug}`);
   revalidatePath(`/trips/${trip.slug}/destinations`);
 
+  // Same notification fan-out as lockDestination.
   const [{ data: actor }, recipients] = await Promise.all([
     service
       .from("profiles")
       .select("name")
       .eq("id", user.id)
       .maybeSingle<{ name: string }>(),
-    tripMemberIdsExcept(parsed.data, user.id),
+    tripMemberIdsExcept(tripId, user.id),
   ]);
   await createNotifications({
-    tripId: parsed.data,
+    tripId,
     actorId: user.id,
     kind: "destination_locked",
     payload: {
@@ -452,7 +535,18 @@ export async function lockDestination(tripId: string) {
     },
     recipients,
   });
-  // No server-side redirect here — the client navigates after firing
-  // the "undo" toast, so the toast registers before the route swap.
-  return { ok: true as const, slug: trip.slug };
+
+  // Fire the AI draft in the background. Response returns now;
+  // realtime delivers the populated draft to the client when ready.
+  if (autoDraft) {
+    after(async () => {
+      try {
+        await generateLockAndDraft({ tripId, userId: user.id });
+      } catch (err) {
+        console.error("lockAndStartDraft after() draft failed:", err);
+      }
+    });
+  }
+
+  return { ok: true, slug: trip.slug };
 }

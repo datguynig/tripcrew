@@ -6,8 +6,33 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { DateRangePicker } from "@/components/ui/DateRangePicker";
 import { DateTimePicker } from "@/components/ui/DateTimePicker";
+import { Select, type SelectOption } from "@/components/ui/Select";
 import { CandidatesEditor } from "@/components/trips/CandidatesEditor";
 import { INPUT } from "@/lib/styles";
+import { OCCASION_LABELS, type AiOccasion } from "@/lib/types";
+
+const OCCASION_ORDER: AiOccasion[] = [
+  "group_holiday",
+  "guys_trip",
+  "girls_trip",
+  "couples_trip",
+  "birthday",
+  "anniversary",
+  "honeymoon",
+  "babymoon",
+  "engagement",
+  "hen_do",
+  "stag_do",
+  "family",
+  "graduation",
+  "reunion",
+  "corporate_retreat",
+];
+
+const OCCASION_OPTIONS: SelectOption<AiOccasion>[] = OCCASION_ORDER.map((o) => ({
+  value: o,
+  label: OCCASION_LABELS[o],
+}));
 
 export function NewTripForm() {
   const [state, action, pending] = useActionState<CreateTripState, FormData>(
@@ -28,6 +53,18 @@ export function NewTripForm() {
           maxLength={80}
           placeholder="What are you calling it?"
           className={INPUT}
+        />
+      </Field>
+
+      <Field
+        label="Occasion"
+        name="occasion"
+        helper="Sets the tone for the AI from day one. Editable later."
+      >
+        <Select<AiOccasion>
+          name="occasion"
+          options={OCCASION_OPTIONS}
+          placeholder="Pick one (optional)"
         />
       </Field>
 

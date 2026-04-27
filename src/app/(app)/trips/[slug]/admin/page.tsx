@@ -6,16 +6,21 @@ import { AdminCard } from "@/components/admin/AdminCard";
 import { IdentitySection } from "@/components/admin/IdentitySection";
 import { DatesBudgetSection } from "@/components/admin/DatesBudgetSection";
 import { SectionLeadsSection } from "@/components/admin/SectionLeadsSection";
-import { AdminRedraftSection } from "@/components/admin/AdminRedraftSection";
-import { getRedraftAvailability } from "@/lib/actions/aiDraft";
-import { aiEnabled as aiConfigured } from "@/lib/ai";
-import { placesEnabled } from "@/lib/places";
+import { TripPreferencesPanel } from "@/components/admin/TripPreferencesPanel";
 import {
   CrewManagement,
   type AdminCrewMember,
 } from "@/components/admin/CrewManagement";
 import { DangerZone } from "@/components/admin/DangerZone";
-import type { TripRole } from "@/lib/types";
+import type { AiPreferences, TripRole } from "@/lib/types";
+
+const DEFAULT_PREFERENCES: AiPreferences = {
+  origin: null,
+  crew_size: 4,
+  budget_tier: "mid",
+  budget_custom_pp: null,
+  vibes: [],
+};
 
 export const dynamic = "force-dynamic";
 
@@ -57,19 +62,11 @@ export default async function AdminPage({
       ];
     }) ?? [];
 
-  const showRedraft =
-    trip.ai_drafted_at !== null &&
-    user.profile.ai_enabled &&
-    aiConfigured() &&
-    placesEnabled() &&
-    !!trip.destination;
-  const redraftAvailability = showRedraft
-    ? await getRedraftAvailability(trip.id)
-    : null;
-  const { count: crewCount } = await supabase
-    .from("trip_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("trip_id", trip.id);
+  const initialPrefs: AiPreferences = {
+    ...DEFAULT_PREFERENCES,
+    crew_size: trip.target_crew_size ?? DEFAULT_PREFERENCES.crew_size,
+    ...(trip.meta?.ai_preferences ?? {}),
+  };
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -119,32 +116,21 @@ export default async function AdminPage({
           />
         </AdminCard>
 
-        {showRedraft && trip.destination && (
-          <AdminCard
-            code="D"
-            title="AI draft"
-            description="Redraft the entire trip. Wipes AI-generated hero, spec, schedule, activities, and bookings — keeps manual edits on non-AI rows. For surgical edits, use the rail on Overview instead."
-          >
-            <AdminRedraftSection
-              tripId={trip.id}
-              destination={trip.destination}
-              crewCount={crewCount ?? 0}
-              currency={trip.currency ?? "GBP"}
-              targetBudgetPp={trip.target_budget_pp}
-              existingPreferences={trip.meta?.ai_preferences ?? null}
-              lastDraftedAt={trip.ai_drafted_at}
-              canRedraft={redraftAvailability?.ok ?? false}
-              blockedReason={
-                redraftAvailability?.ok
-                  ? null
-                  : redraftAvailability?.reason ?? null
-              }
-            />
-          </AdminCard>
-        )}
+        <AdminCard
+          code="D"
+          title="Trip preferences"
+          description="Origin, crew size, budget, vibes, occasion, notes, and pinned moments. The AI uses these to draft the brief and plan; saving here marks the brief stale and prompts a regenerate on the overview."
+        >
+          <TripPreferencesPanel
+            tripId={trip.id}
+            initial={initialPrefs}
+            defaultCurrency={trip.currency ?? "GBP"}
+            tripDates={{ start: trip.start_date, end: trip.end_date }}
+          />
+        </AdminCard>
 
         <AdminCard
-          code={showRedraft ? "E" : "D"}
+          code="E"
           title="Crew management"
           description="Promote, demote, remove members. Delete the trip."
         >

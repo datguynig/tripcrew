@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { AIDraftBadge } from "@/components/overview/AIDraftBadge";
-import { AIDraftRail } from "@/components/overview/AIDraftRail";
 import { InlineEdit } from "@/components/ui/InlineEdit";
 import { InlineMoneyEdit } from "@/components/ui/InlineMoneyEdit";
 import { InlineTextarea } from "@/components/ui/InlineTextarea";
@@ -11,23 +9,12 @@ import { useToast } from "@/hooks/useToast";
 import { DEFAULT_SPEC_LABELS } from "@/lib/constants";
 import type { SpecItem } from "@/lib/types";
 
-type AiRail = {
-  tripId: string;
-  destination: string;
-  draftedAt: string | null;
-  canRedraft: boolean;
-  blockedReason: string | null;
-  versionsCount?: number;
-};
-
 type Props = {
   cells: SpecItem[];
   isAdmin?: boolean;
   tripId: string;
   tripSlug?: string;
   currency: string;
-  aiDrafted?: boolean;
-  aiRail?: AiRail;
 };
 
 export function SpecGrid({
@@ -35,8 +22,6 @@ export function SpecGrid({
   isAdmin,
   tripId,
   currency,
-  aiDrafted = false,
-  aiRail,
 }: Props) {
   const toast = useToast();
   const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
@@ -92,23 +77,6 @@ export function SpecGrid({
 
   return (
     <div className="mb-9">
-      {aiDrafted && aiRail ? (
-        <AIDraftRail
-          tripId={aiRail.tripId}
-          destination={aiRail.destination}
-          surface="spec_grid"
-          draftedAt={aiRail.draftedAt}
-          isAdmin={!!isAdmin}
-          canRedraft={aiRail.canRedraft}
-          blockedReason={aiRail.blockedReason}
-          versionsCount={aiRail.versionsCount ?? 0}
-        />
-      ) : aiDrafted ? (
-        <div className="flex justify-end mb-2">
-          <AIDraftBadge />
-        </div>
-      ) : null}
-
       <div className="grid grid-cols-4 max-[900px]:grid-cols-2 max-[520px]:grid-cols-1 border border-line">
         {displayed.map((cell, i) => {
           const isMoney = typeof cell.amount === "number";

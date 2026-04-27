@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { ShortlistBoard } from "@/components/shortlist/ShortlistBoard";
-import { getRedraftAvailability } from "@/lib/actions/aiDraft";
 import type { Activity, Vote } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +37,6 @@ export default async function ShortlistPage({
 
   const member = await getTripMember(trip.id, user.id);
   const isAdmin = member?.role === "admin";
-  const rerollAvailability =
-    isAdmin && user.profile.ai_enabled && trip.destination
-      ? await getRedraftAvailability(trip.id)
-      : null;
 
   const lead =
     trip.meta?.section_leads?.shortlist ??
@@ -56,10 +51,6 @@ export default async function ShortlistPage({
         currentUserId={user.id}
         tripId={trip.id}
         isAdmin={isAdmin}
-        canReroll={rerollAvailability?.ok ?? false}
-        rerollBlockedReason={
-          rerollAvailability?.ok ? null : rerollAvailability?.reason ?? null
-        }
       />
     </section>
   );

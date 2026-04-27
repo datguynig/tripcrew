@@ -122,16 +122,19 @@ export function useNotifications() {
               return;
             }
             if (payload.eventType === "UPDATE") {
-              const row = payload.new as Notification;
+              const row = payload.new as Partial<Notification> & {
+                id: string;
+              };
               const existing = notificationsRef.current.find(
                 (n) => n.id === row.id,
               );
-              setNotifications((prev) =>
-                prev.map((n) => (n.id === row.id ? row : n)),
-              );
               if (!existing) return;
+              const merged = { ...existing, ...row } as Notification;
+              setNotifications((prev) =>
+                prev.map((n) => (n.id === row.id ? merged : n)),
+              );
               const wasUnread = existing.read_at === null;
-              const isUnread = row.read_at === null;
+              const isUnread = merged.read_at === null;
               if (wasUnread === isUnread) return;
               setUnreadCount((c) =>
                 isUnread ? c + 1 : Math.max(0, c - 1),
@@ -150,7 +153,22 @@ export function useNotifications() {
             }
           },
         )
-        .subscribe();
+        .subscribe((status) => {
+          // Catch-up on subscribe — events fired between mount and the
+          // SUBSCRIBED state are not replayed by Supabase Realtime, so
+          // re-pull listRecent to close the gap.
+          if (status !== "SUBSCRIBED" || cancelled) return;
+          void listRecent(20)
+            .then(({ notifications: ns, unreadCount: uc }) => {
+              if (cancelled) return;
+              setNotifications(ns);
+              setUnreadCount(uc);
+            })
+            .catch(() => {
+              // Non-critical — initial fetch in the other useEffect
+              // already populated state. Errors get surfaced there.
+            });
+        });
     })();
 
     return () => {

@@ -12,6 +12,10 @@ type Options<T> = {
   initial: T[];
   pk?: (row: T) => string;
   transform?: (row: Keyable) => T;
+  // Pull current state when the channel reaches SUBSCRIBED. Closes the
+  // SSR-to-subscription gap where realtime UPDATEs are otherwise lost
+  // (Supabase doesn't replay events between mount and SUBSCRIBED).
+  refetch?: () => Promise<T[]>;
 };
 
 export function useRealtimeTable<T extends Keyable>(opts: Options<T>) {
@@ -44,7 +48,11 @@ export function useRealtimeTable<T extends Keyable>(opts: Options<T>) {
             }
             if (payload.eventType === "UPDATE") {
               const row = transform(payload.new);
-              return prev.map((r) => (pk(r) === pk(row) ? row : r));
+              // Merge — defends against partial payloads when a table
+              // is published without `replica identity full`.
+              return prev.map((r) =>
+                pk(r) === pk(row) ? ({ ...r, ...row } as T) : r,
+              );
             }
             if (payload.eventType === "DELETE") {
               const oldId = String(
@@ -56,12 +64,18 @@ export function useRealtimeTable<T extends Keyable>(opts: Options<T>) {
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (!opts.refetch) return;
+        void opts.refetch().then((data) => {
+          if (data) setRows(data);
+        });
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [opts.table, opts.filter, pk, opts.transform]);
+  }, [opts.table, opts.filter, pk, opts.transform, opts.refetch]);
 
   return rows;
 }

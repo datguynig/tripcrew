@@ -83,6 +83,23 @@ export async function suggestPlaces(
   }));
 }
 
+/**
+ * Forward-geocode a free-text title to coordinates. Internally pairs
+ * suggest + retrieve so callers can resolve a string they didn't pick
+ * from autocomplete (e.g. server-side backfill of candidates that were
+ * proposed before the Mapbox token was wired up).
+ */
+export async function forwardGeocode(
+  query: string,
+  signal?: AbortSignal,
+): Promise<PlaceDetails | null> {
+  if (!query.trim() || !mapboxEnabled()) return null;
+  const session = newSessionToken();
+  const suggestions = await suggestPlaces(query, session, signal);
+  if (suggestions.length === 0) return null;
+  return retrievePlace(suggestions[0].mapboxId, session);
+}
+
 export async function retrievePlace(
   mapboxId: string,
   sessionToken: string,

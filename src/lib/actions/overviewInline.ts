@@ -40,6 +40,10 @@ function revalidateOverview(slug: string) {
   revalidatePath(`/trips/${slug}/admin`);
 }
 
+function withBriefBump(meta: TripMeta | null | undefined): TripMeta {
+  return { ...(meta ?? {}), brief_updated_at: new Date().toISOString() };
+}
+
 const heroFieldSchema = z.object({
   tripId: z.string().uuid(),
   field: z.enum(["hero_title", "hero_subtitle"]),
@@ -62,16 +66,20 @@ export async function updateHeroField(input: {
     return { error: `Max ${max} characters.` };
   }
 
-  const supabase = await createClient();
-  const { data: trip, error } = await supabase
-    .from("trips")
-    .update({ [parsed.data.field]: parsed.data.value || null })
-    .eq("id", parsed.data.tripId)
-    .select("slug")
-    .maybeSingle<{ slug: string }>();
+  const { supabase, data } = await readTrip(parsed.data.tripId);
+  if (!data) return { error: "Trip not found." };
+  const nextMeta = withBriefBump(data.meta);
 
-  if (error || !trip) return { error: "Could not save." };
-  revalidateOverview(trip.slug);
+  const { error } = await supabase
+    .from("trips")
+    .update({
+      [parsed.data.field]: parsed.data.value || null,
+      meta: nextMeta,
+    })
+    .eq("id", parsed.data.tripId);
+
+  if (error) return { error: "Could not save." };
+  revalidateOverview(data.slug);
   return { ok: true as const };
 }
 
@@ -210,7 +218,10 @@ export async function updateSpecCell(input: {
   const nextSpec = current.map((c, i) =>
     i === parsed.data.index ? nextCell : c,
   );
-  const nextMeta: TripMeta = { ...(data.meta ?? {}), spec_grid: nextSpec };
+  const nextMeta: TripMeta = {
+    ...withBriefBump(data.meta),
+    spec_grid: nextSpec,
+  };
 
   // Mirror the "Per head" spec cell into trips.target_budget_pp.
   // Both surface the same number (per-head budget) and the Hero stat
@@ -270,7 +281,10 @@ export async function updateScheduleRow(input: {
     ...parsed.data.patch,
   };
   const nextRows = rows.map((r, i) => (i === parsed.data.index ? nextRow : r));
-  const nextMeta: TripMeta = { ...(data.meta ?? {}), schedule: nextRows };
+  const nextMeta: TripMeta = {
+    ...withBriefBump(data.meta),
+    schedule: nextRows,
+  };
 
   const { error } = await supabase
     .from("trips")
@@ -309,7 +323,10 @@ export async function reorderScheduleRow(input: {
   }
   const [moved] = rows.splice(parsed.data.from, 1);
   rows.splice(parsed.data.to, 0, moved);
-  const nextMeta: TripMeta = { ...(data.meta ?? {}), schedule: rows };
+  const nextMeta: TripMeta = {
+    ...withBriefBump(data.meta),
+    schedule: rows,
+  };
 
   const { error } = await supabase
     .from("trips")
@@ -348,7 +365,10 @@ export async function insertScheduleRow(input: {
   const rows = [...(data.meta?.schedule ?? [])];
   const idx = Math.min(parsed.data.index, rows.length);
   rows.splice(idx, 0, parsed.data.row);
-  const nextMeta: TripMeta = { ...(data.meta ?? {}), schedule: rows };
+  const nextMeta: TripMeta = {
+    ...withBriefBump(data.meta),
+    schedule: rows,
+  };
 
   const { error } = await supabase
     .from("trips")
@@ -381,7 +401,7 @@ export async function addScheduleRow(tripId: string) {
     body: "",
   };
   const nextMeta: TripMeta = {
-    ...(data.meta ?? {}),
+    ...withBriefBump(data.meta),
     schedule: [...rows, next],
   };
 
@@ -417,7 +437,10 @@ export async function deleteScheduleRow(input: {
   if (parsed.data.index >= rows.length) return { error: "Row not found." };
 
   const nextRows = rows.filter((_, i) => i !== parsed.data.index);
-  const nextMeta: TripMeta = { ...(data.meta ?? {}), schedule: nextRows };
+  const nextMeta: TripMeta = {
+    ...withBriefBump(data.meta),
+    schedule: nextRows,
+  };
 
   const { error } = await supabase
     .from("trips")

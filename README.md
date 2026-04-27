@@ -80,7 +80,7 @@ Optional for destination autocomplete:
 NEXT_PUBLIC_MAPBOX_TOKEN=
 ```
 
-Optional for the AI draft ("Lock & draft") beta feature. All three keys are required to enable; without them the AI CTA stays hidden:
+Optional for the AI draft ("Lock & draft") beta feature. `GEMINI_API_KEY` and `GOOGLE_PLACES_API_KEY` are required for the AI CTA; without either, the CTA stays hidden. `AI_BETA_OWNER_EMAIL` only controls access to `/ai-usage` cost telemetry:
 
 ```bash
 GEMINI_API_KEY=          # from https://aistudio.google.com/apikey
@@ -150,8 +150,10 @@ Core entities used by the current app include:
 - `bookings`
 - `expenses`
 - `posts`
+- `post_likes`
 - `trip_invites`
 - `notifications`
+- `trip_notification_prefs`
 - `ai_usage`
 - `ai_feedback`
 - `ai_draft_versions`
@@ -160,7 +162,7 @@ Trip membership is role-based (`admin` or `member`), and most tables are protect
 
 ## Realtime behavior
 
-The app subscribes to Supabase Realtime for collaborative updates. Current realtime-backed tables include trip membership, votes, bookings, expenses, and posts.
+The app subscribes to Supabase Realtime for collaborative updates. Current realtime-backed tables include `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `post_likes`, `notifications`, and `trip_notification_prefs`.
 
 ## Scripts
 

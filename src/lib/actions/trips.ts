@@ -4,6 +4,7 @@ import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
+import type { AiOccasion, TripMeta } from "@/lib/types";
 
 const candidateSchema = z.object({
   title: z.string().trim().min(1).max(120),
@@ -12,6 +13,24 @@ const candidateSchema = z.object({
   latitude: z.number().finite().gte(-90).lte(90).nullable().optional(),
   country: z.string().trim().max(100).nullable().optional(),
 });
+
+const occasionSchema = z.enum([
+  "group_holiday",
+  "birthday",
+  "anniversary",
+  "honeymoon",
+  "babymoon",
+  "engagement",
+  "hen_do",
+  "stag_do",
+  "family",
+  "graduation",
+  "reunion",
+  "corporate_retreat",
+  "guys_trip",
+  "girls_trip",
+  "couples_trip",
+]);
 
 const schema = z.object({
   name: z.string().trim().min(1, "Name required").max(80),
@@ -27,6 +46,7 @@ const schema = z.object({
     .or(z.literal("")),
   voteDeadline: z.string().optional().or(z.literal("")),
   candidates: z.string().optional(),
+  occasion: occasionSchema.optional().or(z.literal("")),
 });
 
 function parseCandidates(raw: string | undefined) {
@@ -90,12 +110,14 @@ export async function createTrip(
     endDate: formData.get("endDate"),
     voteDeadline: formData.get("voteDeadline"),
     candidates: formData.get("candidates"),
+    occasion: formData.get("occasion"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  const { name, startDate, endDate, voteDeadline, candidates } = parsed.data;
+  const { name, startDate, endDate, voteDeadline, candidates, occasion } =
+    parsed.data;
 
   if (startDate && endDate && endDate < startDate) {
     return { error: "End date must be after start date" };
@@ -125,6 +147,19 @@ export async function createTrip(
   }
   if (!slug) return { error: "Could not generate unique slug" };
 
+  const initialMeta: TripMeta = occasion
+    ? {
+        ai_preferences: {
+          origin: null,
+          crew_size: 0,
+          budget_tier: "mid",
+          budget_custom_pp: null,
+          vibes: [],
+          occasion: occasion as AiOccasion,
+        },
+      }
+    : {};
+
   const { data: trip, error: tripErr } = await service
     .from("trips")
     .insert({
@@ -135,7 +170,7 @@ export async function createTrip(
       end_date: endDate || null,
       vote_deadline: voteDeadline || null,
       created_by: user.id,
-      meta: {},
+      meta: initialMeta,
     })
     .select("id, slug")
     .single<{ id: string; slug: string }>();

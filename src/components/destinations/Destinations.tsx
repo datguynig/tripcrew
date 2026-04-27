@@ -6,12 +6,16 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
   castDestinationVote,
-  lockDestination,
   proposeCandidate,
   removeCandidate,
   unlockDestination,
 } from "@/lib/actions/destinations";
-import type { DestinationCandidate, DestinationVote } from "@/lib/types";
+import { draftAllCandidates } from "@/lib/actions/draftCandidates";
+import type {
+  AiPreferences,
+  DestinationCandidate,
+  DestinationVote,
+} from "@/lib/types";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import {
@@ -21,6 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/Dialog";
 import { DestinationSearch } from "@/components/destinations/DestinationSearch";
+import { CandidatePlanPreview } from "@/components/destinations/CandidatePlanPreview";
+import { LockAndDraftDialog } from "@/components/destinations/LockAndDraftDialog";
 import { useToast } from "@/hooks/useToast";
 
 type Props = {
@@ -30,11 +36,18 @@ type Props = {
   initialVotes: DestinationVote[];
   currentUserId: string;
   isAdmin: boolean;
+  hasPro: boolean;
   crewCount: number;
   voteDeadline: string | null;
   locked: boolean;
   lockedDestination: string | null;
   aiDrafted: boolean;
+  tripCurrency: string;
+  tripBudgetPp: number | null;
+  tripStartDate: string | null;
+  tripEndDate: string | null;
+  tripTargetCrewSize: number | null;
+  tripPreferences: AiPreferences | null;
 };
 
 type Filter = "all";
@@ -59,11 +72,18 @@ export function Destinations({
   initialVotes,
   currentUserId,
   isAdmin,
+  hasPro,
   crewCount,
   voteDeadline,
   locked,
   lockedDestination,
   aiDrafted,
+  tripCurrency,
+  tripBudgetPp,
+  tripStartDate,
+  tripEndDate,
+  tripTargetCrewSize,
+  tripPreferences,
 }: Props) {
   const [candidates, setCandidates] =
     useState<DestinationCandidate[]>(initialCandidates);
@@ -78,8 +98,10 @@ export function Destinations({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [draftPending, startDraftTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
   const toast = useToast();
   const router = useRouter();
 
@@ -112,8 +134,12 @@ export function Destinations({
               return [...prev, row].sort((a, b) => a.position - b.position);
             }
             if (payload.eventType === "UPDATE") {
-              const row = payload.new as DestinationCandidate;
-              return prev.map((c) => (c.id === row.id ? row : c));
+              const row = payload.new as Partial<DestinationCandidate> & {
+                id: string;
+              };
+              // Merge rather than replace — defends against partial payloads
+              // when a table is published without `replica identity full`.
+              return prev.map((c) => (c.id === row.id ? { ...c, ...row } : c));
             }
             if (payload.eventType === "DELETE") {
               const row = payload.old as { id?: string };
@@ -163,7 +189,25 @@ export function Destinations({
           });
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Catch-up fetch on subscribe success: events fired between SSR
+        // response and channel SUBSCRIBED state aren't replayed by Supabase
+        // Realtime, so the page-render `after()` enrichment writes can land
+        // in that gap and never reach this client. Pull current state to
+        // close the gap.
+        if (status !== "SUBSCRIBED") return;
+        void supabase
+          .from("destination_candidates")
+          .select(
+            "id, trip_id, title, note, proposed_by, position, created_at, mapbox_id, longitude, latitude, country, photo_url, photo_attribution, basic_draft, basic_draft_generated_at",
+          )
+          .eq("trip_id", tripId)
+          .order("position", { ascending: true })
+          .returns<DestinationCandidate[]>()
+          .then(({ data }) => {
+            if (data) setCandidates(data);
+          });
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -292,28 +336,25 @@ export function Destinations({
 
   const handleLock = () => {
     setError(null);
-    startTransition(async () => {
-      const res = await lockDestination(tripId);
-      if (res?.error) {
-        setError(res.error);
+    setLockDialogOpen(true);
+  };
+
+  const handleDraftAll = () => {
+    if (!hasPro) return;
+    startDraftTransition(async () => {
+      const res = await draftAllCandidates({ tripId, userId: currentUserId });
+      if (!res.success) {
+        toast.error(res.error);
         return;
       }
-      // Fire the undo toast before navigating so it registers with
-      // the Toaster before the route swap. The Toaster sits in the
-      // root layout and survives the navigation.
-      toast.reversible({
-        message: "Destination locked.",
-        actionLabel: "Undo",
-        duration: 8000,
-        onAction: async () => {
-          const undo = await unlockDestination({ tripId, reset: false });
-          if (undo?.error) toast.error(undo.error);
-          else router.push(`/trips/${tripSlug}/destinations`);
-        },
-      });
-      if (res?.ok && res.slug) {
-        router.push(`/trips/${res.slug}`);
-      }
+      const parts: string[] = [];
+      if (res.drafted > 0) parts.push(`${res.drafted} drafted`);
+      if (res.skipped > 0) parts.push(`${res.skipped} skipped`);
+      if (res.failed > 0) parts.push(`${res.failed} failed`);
+      const msg = parts.length > 0 ? parts.join(" · ") : "Nothing to draft";
+      if (res.failed > 0) toast.error(msg);
+      else toast.success(msg);
+      router.refresh();
     });
   };
 
@@ -497,6 +538,51 @@ export function Destinations({
         )}
       </div>
 
+      {isAdmin && ranked.length > 0 && (
+        <div className="mb-6 border border-accent/40 bg-accent/[0.04] p-5 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span
+                className="w-[5px] h-[5px] rounded-full bg-accent"
+                aria-hidden="true"
+              />
+              <span className="label-sm-wide text-accent">
+                {hasPro ? "AI · Plan every candidate" : "Crew Plus · Plan every candidate"}
+              </span>
+            </div>
+            <p className="text-[14px] text-fg-2 max-w-[560px]">
+              {hasPro
+                ? "Draft a basic plan for every shortlisted destination so the crew can vote on plans, not just place names. The winner upgrades to a full enriched plan once you lock it."
+                : "Draft a basic plan for every shortlisted destination so the crew can vote on plans, not just place names. Crew Plus unlocks this — the winner becomes a full enriched plan on lock."}
+            </p>
+          </div>
+          {hasPro ? (
+            <Button
+              tone="accent"
+              size="md"
+              onClick={handleDraftAll}
+              disabled={
+                draftPending ||
+                ranked.every((c) => c.basic_draft !== null)
+              }
+            >
+              {draftPending
+                ? "Drafting…"
+                : ranked.every((c) => c.basic_draft !== null)
+                  ? "All drafted"
+                  : `Draft all (${ranked.filter((c) => c.basic_draft === null).length})`}
+            </Button>
+          ) : (
+            <Link
+              href="/account"
+              className="font-mono text-[11px] tracking-[0.1em] uppercase text-accent hover:text-fg transition-colors shrink-0"
+            >
+              Upgrade →
+            </Link>
+          )}
+        </div>
+      )}
+
       {ranked.length === 0 ? (
         <div className="border border-line py-14 text-center label text-fg-3">
           No candidates · propose one
@@ -514,65 +600,76 @@ export function Destinations({
               !c.photo_url &&
               hasCoords &&
               Date.now() - new Date(c.created_at).getTime() < 30_000;
+            // Drop the 16:9 image area entirely when there's nothing to show.
+            // Coordless candidates would otherwise render a 340px void with a
+            // near-invisible "No preview" label. With image suppressed the card
+            // collapses to text-only and the LEADING badge moves inline.
+            const showImage = !!c.photo_url || awaitingPhoto || hasCoords;
             return (
               <article
                 key={c.id}
                 className="relative flex flex-col bg-bg-2/70 backdrop-blur-md border border-line group"
               >
-                <div className="relative aspect-[16/9] bg-bg-3 overflow-hidden">
-                  {c.photo_url ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={c.photo_url}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="block w-full h-full object-cover"
-                    />
-                  ) : awaitingPhoto ? (
-                    <div
-                      className="w-full h-full bg-bg-3 animate-pulse"
-                      aria-hidden
-                    />
-                  ) : hasCoords ? (
-                    <MapFallback
-                      longitude={c.longitude!}
-                      latitude={c.latitude!}
-                      title={c.title}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="label-xs text-fg-3">No preview</span>
-                    </div>
-                  )}
+                {showImage && (
+                  <div className="relative aspect-[16/9] bg-bg-3 overflow-hidden">
+                    {c.photo_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={c.photo_url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="block w-full h-full object-cover"
+                      />
+                    ) : awaitingPhoto ? (
+                      <div
+                        className="w-full h-full bg-bg-3 animate-pulse"
+                        aria-hidden
+                      />
+                    ) : (
+                      <MapFallback
+                        longitude={c.longitude!}
+                        latitude={c.latitude!}
+                        title={c.title}
+                      />
+                    )}
 
-                  {c.photo_url && (c.photo_attribution || isLeading) && (
-                    <div
-                      aria-hidden
-                      className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bg/80 via-bg/40 to-transparent pointer-events-none"
-                    />
-                  )}
+                    {c.photo_url && (c.photo_attribution || isLeading) && (
+                      <div
+                        aria-hidden
+                        className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-bg/80 via-bg/40 to-transparent pointer-events-none"
+                      />
+                    )}
 
-                  {isLeading && (
+                    {isLeading && (
+                      <span
+                        aria-hidden
+                        className="absolute top-[10px] left-[10px] font-mono text-[10px] tracking-[0.16em] bg-accent text-[#140400] px-2 py-[3px]"
+                      >
+                        LEADING
+                      </span>
+                    )}
+
+                    {c.photo_url && c.photo_attribution && (
+                      <span
+                        title={`Photo: ${c.photo_attribution}`}
+                        className="absolute bottom-[10px] right-[10px] max-w-[calc(100%-20px)] label-xs text-fg-2 tracking-[0.08em] pointer-events-none truncate text-right"
+                      >
+                        Photo · {c.photo_attribution}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-4 p-5 flex-1">
+                  {!showImage && isLeading && (
                     <span
                       aria-hidden
-                      className="absolute top-[10px] left-[10px] font-mono text-[10px] tracking-[0.16em] bg-accent text-[#140400] px-2 py-[3px]"
+                      className="self-start font-mono text-[10px] tracking-[0.16em] bg-accent text-[#140400] px-2 py-[3px]"
                     >
                       LEADING
                     </span>
                   )}
-
-                  {c.photo_url && c.photo_attribution && (
-                    <span
-                      title={`Photo: ${c.photo_attribution}`}
-                      className="absolute bottom-[10px] right-[10px] max-w-[calc(100%-20px)] label-xs text-fg-2 tracking-[0.08em] pointer-events-none truncate text-right"
-                    >
-                      Photo · {c.photo_attribution}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-4 p-5 flex-1">
                   <div className="flex items-start gap-3 min-w-0">
                     <h3 className="text-[22px] font-medium tracking-[-0.02em] leading-[1.1] flex-1 min-w-0 break-words">
                       {c.title}
@@ -588,6 +685,10 @@ export function Destinations({
                     <p className="text-[13px] text-fg-2 leading-[1.5] line-clamp-2">
                       {c.note}
                     </p>
+                  )}
+
+                  {c.basic_draft != null && (
+                    <CandidatePlanPreview raw={c.basic_draft} />
                   )}
 
                   <div className="mt-auto pt-4 border-t border-line flex flex-col gap-3">
@@ -681,8 +782,8 @@ export function Destinations({
               Admin
             </Badge>
             <div className="text-sm text-fg-2">
-              Lock the top candidate to kick off planning. This can&apos;t be
-              undone from here.
+              Lock the top candidate to kick off planning. You&apos;ll capture
+              trip preferences in the next step.
             </div>
           </div>
           <Button
@@ -693,6 +794,21 @@ export function Destinations({
             Lock destination
           </Button>
         </div>
+      )}
+
+      {isAdmin && ranked.length > 0 && (
+        <LockAndDraftDialog
+          open={lockDialogOpen}
+          onOpenChange={setLockDialogOpen}
+          tripId={tripId}
+          destination={ranked[0].title}
+          defaultPreferences={tripPreferences}
+          defaultCrewSize={tripTargetCrewSize ?? crewCount}
+          defaultCurrency={tripCurrency}
+          defaultBudgetPp={tripBudgetPp}
+          defaultOccasion={tripPreferences?.occasion}
+          tripDates={{ start: tripStartDate, end: tripEndDate }}
+        />
       )}
     </>
   );
