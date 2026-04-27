@@ -31,11 +31,18 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isServerAction = request.headers.has("next-action");
-  const isAuthRoute =
-    pathname.startsWith("/sign-in") ||
-    pathname.startsWith("/callback") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/join");
+
+  const PUBLIC_PREFIXES = [
+    "/sign-in",
+    "/callback",
+    "/profile",
+    "/join",
+    "/apply",
+    "/sample-trip",
+  ];
+  const isPublicRoute =
+    pathname === "/" ||
+    PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   // Server Actions are POSTed with internal Next.js headers. Redirecting them
   // from middleware turns them into an invalid action response on the client.
@@ -43,7 +50,15 @@ export async function updateSession(request: NextRequest) {
     return response;
   }
 
-  if (!user && !isAuthRoute) {
+  // Authed user landing on the public marketing root — send them to the
+  // app dashboard so they don't see the marketing page on every login.
+  if (user && pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/sign-in";
     return NextResponse.redirect(url);
@@ -51,7 +66,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && pathname === "/sign-in") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
