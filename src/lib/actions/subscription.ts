@@ -188,7 +188,7 @@ export async function createFoundingCheckoutSession(
       mode: "subscription",
       customer_email: draft.email,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/welcome?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/sign-in?from=founding-checkout&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/curated/${draft.slug}`,
       metadata: {
         kind: "founding",
