@@ -2,10 +2,7 @@
 
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/server";
-import {
-  DRAFT_COOKIE_NAME,
-  draftCookieOptions,
-} from "@/lib/teaser/cookieConfig";
+import { DRAFT_COOKIE_NAME } from "@/lib/teaser/cookieConfig";
 import type { DraftLead } from "@/lib/types";
 
 export async function readDraftFromCookie(
@@ -30,6 +27,13 @@ export async function readDraftFromCookie(
   return data ?? null;
 }
 
+/**
+ * Look up a draft by id+resume_token+slug. Returns the draft when all three
+ * line up, otherwise null. Cookie persistence on resume is intentionally
+ * not handled here. Next.js 16 disallows cookie mutations inside Server
+ * Component render, so the page only reads cookies. A follow-up Route
+ * Handler can persist the cookie when we wire the email-nudge resume flow.
+ */
 export async function validateResumeToken(
   draftId: string,
   token: string,
@@ -50,10 +54,5 @@ export async function validateResumeToken(
     console.error("validateResumeToken: lookup failed:", error);
     return null;
   }
-  if (!data) return null;
-
-  const cookieStore = await cookies();
-  cookieStore.set(DRAFT_COOKIE_NAME, data.id, draftCookieOptions());
-
-  return data;
+  return data ?? null;
 }

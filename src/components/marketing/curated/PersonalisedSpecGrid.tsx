@@ -7,9 +7,9 @@ type PersonalisedSpecGridProps = {
 
 /**
  * Four-cell grid showing the visitor's personalised spec, mirrored back
- * from the teaser output. Visually matches the typical-spec strip and
- * the SpecBlock from CuratedTripView so the gate-to-personalised flip
- * feels like the same surface, recoloured with the visitor's data.
+ * from the teaser output. Visually matches the typical-spec strip so
+ * the gate-to-personalised flip feels like the same surface, recoloured
+ * with the visitor's data.
  */
 export function PersonalisedSpecGrid({ spec, inputs: _inputs }: PersonalisedSpecGridProps) {
   const cells = [

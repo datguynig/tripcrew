@@ -99,12 +99,12 @@ function PersonalisedHeader({
 
       <div className="relative border-t-2 border-cream/15 bg-ink">
         <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-4 flex items-center justify-between gap-4">
-          <Link
-            href={`/curated/${slug}?reset=1`}
+          <a
+            href={`/api/teaser/reset?slug=${encodeURIComponent(slug)}`}
             className="font-mono uppercase tracking-[0.18em] text-[10px] sm:text-[11px] text-cream/70 hover:text-cream underline-offset-4 hover:underline"
           >
             ← Change inputs ↺
-          </Link>
+          </a>
           <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-marketing-coral">
             Draft preview
           </p>
