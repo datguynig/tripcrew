@@ -47,7 +47,7 @@ function echoInputs(inputs: TeaserInputs): string {
 }
 
 function resumeUrl(slug: string, draftId: string, resumeToken: string): string {
-  return `${siteUrl()}/curated/${slug}?resume=${draftId}&token=${resumeToken}`;
+  return `${siteUrl()}/api/teaser/resume?id=${draftId}&token=${resumeToken}&slug=${slug}`;
 }
 
 function unsubscribeUrl(draftId: string, resumeToken: string): string {
