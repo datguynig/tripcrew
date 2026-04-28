@@ -39,7 +39,7 @@ const FEATURES: FeatureTile[] = [
   {
     index: "05",
     label: "The chat",
-    title: "A group chat that ends when the trip ends.",
+    title: "The only groupchat you need for your trip.",
     body: "Photos, replies, reactions, mute toggle. Just for this trip. No more muting groups you can't leave.",
     proof: "Realtime, mutable, archived after",
   },
