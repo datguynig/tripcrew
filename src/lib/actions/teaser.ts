@@ -60,9 +60,28 @@ async function resolveClientIp(): Promise<string> {
   return "127.0.0.1";
 }
 
+/**
+ * Manual kill switch. Set TEASER_ENABLED=false in Vercel env to instantly
+ * stop new teaser generations (existing drafts and the resume flow keep
+ * working). Use when the cost-ceiling alert fires or any other reason
+ * to pause AI burn without a deploy.
+ */
+function teaserKillSwitchActive(): boolean {
+  return process.env.TEASER_ENABLED === "false";
+}
+
 export async function submitTeaserForm(
   rawInput: unknown,
 ): Promise<SubmitTeaserResult> {
+  if (teaserKillSwitchActive()) {
+    return {
+      ok: false,
+      error:
+        "We've paused new drafts for now. Apply for an invite and we'll get to you.",
+      rateLimited: true,
+    };
+  }
+
   const parsed = teaserSubmissionSchema.safeParse(rawInput);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
