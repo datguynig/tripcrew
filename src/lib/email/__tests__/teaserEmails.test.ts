@@ -56,7 +56,10 @@ test("buildTeaserConfirmationEmail includes resume link with correct query param
     inputs: FIXTURE_INPUTS,
     teaser: FIXTURE_TEASER,
   });
-  assert.match(email.text, /\/curated\/bali\?resume=draft-123&token=tok-abc/);
+  assert.match(
+    email.text,
+    /\/api\/teaser\/resume\?id=draft-123&token=tok-abc&slug=bali/,
+  );
 });
 
 test("buildTeaserConfirmationEmail includes unsubscribe link", () => {
@@ -131,7 +134,10 @@ test("buildDay7NudgeEmail includes resume + unsubscribe links", () => {
     slug: "bali",
     foundingRemaining: 100,
   });
-  assert.match(email.text, /\/curated\/bali\?resume=draft-123&token=tok-abc/);
+  assert.match(
+    email.text,
+    /\/api\/teaser\/resume\?id=draft-123&token=tok-abc&slug=bali/,
+  );
   assert.match(
     email.text,
     /\/api\/teaser\/unsubscribe\?id=draft-123&token=tok-abc/,
