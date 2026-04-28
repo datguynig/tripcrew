@@ -4,7 +4,6 @@ import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 import { submitTeaserForm } from "@/lib/actions/teaser";
-import { searchPublicAirportsAction } from "@/lib/actions/publicAirports";
 import type { AirportOption } from "@/lib/actions/airports";
 import type { CuratedTrip } from "@/lib/marketing/curatedTrips";
 import { RateLimitedNotice } from "./RateLimitedNotice";
@@ -345,7 +344,17 @@ function PublicAirportTypeahead({
     setSearchFailed(false);
     const t = setTimeout(async () => {
       try {
-        const res = await searchPublicAirportsAction({ query: trimmed });
+        const response = await fetch(
+          `/api/public-airports?q=${encodeURIComponent(trimmed)}`,
+          { method: "GET", cache: "no-store", signal: controller.signal },
+        );
+        if (!response.ok) {
+          throw new Error(`Airport search failed: ${response.status}`);
+        }
+        const res = (await response.json()) as {
+          results?: AirportOption[];
+          error?: string;
+        };
         if (controller.signal.aborted) return;
         const hits = res.results ?? [];
         setResults(hits);

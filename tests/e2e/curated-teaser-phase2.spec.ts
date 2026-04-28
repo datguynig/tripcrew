@@ -13,9 +13,24 @@
  * STRIPE_FOUNDING_PRICE_ID are not set.
  */
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 const SLUG = "bali";
 const ROUTE = `/curated/${SLUG}`;
+const GEMINI_FLOW_TIMEOUT = 60_000;
+
+async function useUniqueClientIp(page: Page) {
+  await page.setExtraHTTPHeaders({
+    "x-forwarded-for": `e2e-${randomUUID()}`,
+  });
+}
+
+async function chooseOrigin(page: Page) {
+  const fromInput = page.getByRole("combobox", { name: /01 \/ From/i });
+  await fromInput.fill("Manchester");
+  await page.getByRole("option", { name: /Manchester Airport/i }).click();
+}
 
 test.describe("curated teaser — phase 2 founding fast lane", () => {
   // Marketing surface is unauthed; clear the storage state seeded by
@@ -31,19 +46,15 @@ test.describe("curated teaser — phase 2 founding fast lane", () => {
       !process.env.STRIPE_FOUNDING_PRICE_ID,
       "Requires STRIPE_FOUNDING_PRICE_ID so the Pay button can render the live action",
     );
+    test.setTimeout(GEMINI_FLOW_TIMEOUT);
 
+    await useUniqueClientIp(page);
     await page.goto(ROUTE);
 
-    // Origin: type "MAN" into the airport typeahead, wait for the
-    // public-airports action to populate suggestions, click the first.
-    const fromInput = page.getByRole("combobox", { name: /01 \/ From/i });
-    await fromInput.fill("MAN");
-    const listbox = page.locator('[role="listbox"]');
-    await expect(listbox).toBeVisible({ timeout: 10_000 });
-    await listbox.locator('[role="option"]').first().click();
+    await chooseOrigin(page);
 
     await page.getByRole("radio", { name: "5–6" }).click();
-    await page.getByRole("radio", { name: "a week" }).click();
+    await page.getByRole("radio", { name: "a week", exact: true }).click();
     await page.getByRole("radio", { name: /£1\.5k/i }).click();
 
     const email = `teaser-founding-${Date.now()}@example.com`;
@@ -51,7 +62,7 @@ test.describe("curated teaser — phase 2 founding fast lane", () => {
     await page.getByRole("button", { name: /See my Bali/i }).click();
 
     // Personalised view rendered server-side after the cookie set.
-    await expect(page.getByText(/Draft preview/i)).toBeVisible({
+    await expect(page.getByText("Draft preview", { exact: true })).toBeVisible({
       timeout: 30_000,
     });
 

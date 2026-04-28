@@ -39,6 +39,10 @@ export async function updateSession(request: NextRequest) {
     "/join",
     "/apply",
     "/curated",
+    // Vercel BotID challenge/proxy assets. `withBotId()` rewrites this
+    // opaque path after middleware; redirecting it to /sign-in makes the
+    // browser parse HTML as c.js and breaks every protected public form.
+    "/149e9513-01fa-4fb0-aad4-566afd725d1b/2d206a39-8ed7-437e-a3be-862e0f06eea3",
   ];
   const isPublicRoute =
     pathname === "/" ||
