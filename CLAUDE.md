@@ -131,11 +131,11 @@ Implementation pointers:
 
 - Plan resolver: [src/lib/plan.ts](src/lib/plan.ts) (`getUserPlan`, `hasProAccessForTrip` — the team-share gate)
 - Gates: [src/lib/gates.ts](src/lib/gates.ts) (`canGenerateDraft`, `canDraftCandidates`, `canRefreshPrices`)
-- Stripe webhook: [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) — sole writer of `profiles.stripe_subscription_status`. Handles `customer.subscription.created` / `.updated` / `.deleted`, verifies signature against `STRIPE_WEBHOOK_SECRET`, writes via service-role client. Coerces Stripe's full status set to `(active, trialing, past_due, canceled, incomplete)`.
+- Stripe webhook: [src/app/api/stripe/webhook/route.ts](src/app/api/stripe/webhook/route.ts) — sole writer of `profiles.stripe_subscription_status`. Handles `customer.subscription.created` / `.updated` / `.deleted`, verifies signature against `STRIPE_WEBHOOK_SECRET`, writes via service-role client. Coerces Stripe's full status set to `(active, trialing, past_due, canceled, incomplete)`. `trialing` remains supported for legacy/Stripe-created rows, but Cohort 01 no longer markets or creates a free-trial subscription.
 - Checkout + Customer Portal: [src/lib/actions/subscription.ts](src/lib/actions/subscription.ts) (`createCheckoutSession`, `createBillingPortalSession`)
 - /account UI: [src/components/account/SubscriptionPanel.tsx](src/components/account/SubscriptionPanel.tsx) — branches per status
 
-Env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID` (defaults to the live Crew Plus monthly price in code). Local dev uses `stripe listen --forward-to localhost:3000/api/stripe/webhook` for the webhook signing secret.
+Env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `STRIPE_FOUNDING_PRICE_ID`. Local dev uses `stripe listen --forward-to localhost:3000/api/stripe/webhook` for the webhook signing secret.
 
 ## Notifications
 

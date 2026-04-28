@@ -58,7 +58,7 @@ export async function canGenerateDraft(
     if ((profile?.trial_generations_used ?? 0) >= TRIAL_GENERATION_CAP) {
       return {
         allowed: false,
-        reason: `Your trial includes ${TRIAL_GENERATION_CAP} AI drafts. Upgrade to Crew Plus for unlimited.`,
+        reason: `Your current access includes ${TRIAL_GENERATION_CAP} AI drafts. Upgrade to Crew Plus for more.`,
         upgrade_cta: true,
       };
     }
@@ -140,7 +140,7 @@ export async function canRefreshPrices(
     if ((profile?.trial_refreshes_used ?? 0) >= TRIAL_REFRESH_CAP) {
       return {
         allowed: false,
-        reason: `Your trial includes ${TRIAL_REFRESH_CAP} refreshes. Upgrade for unlimited.`,
+        reason: `Your current access includes ${TRIAL_REFRESH_CAP} refreshes. Upgrade for more.`,
         upgrade_cta: true,
       };
     }

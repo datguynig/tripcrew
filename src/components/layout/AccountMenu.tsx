@@ -90,7 +90,7 @@ export function AccountMenu({ profile }: Props) {
                 {profile.stripe_subscription_status === "active" &&
                   " · Crew Plus"}
                 {profile.stripe_subscription_status === "trialing" &&
-                  " · Crew Plus trial"}
+                  " · Crew Plus"}
                 {profile.stripe_subscription_status === "past_due" &&
                   " · payment needed"}
                 {profile.stripe_subscription_status === "canceled" &&

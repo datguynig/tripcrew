@@ -5,13 +5,8 @@ import { getStripe } from "@/lib/stripe/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Legacy fallback so dev/test environments without a STRIPE_PRICE_ID set
-// still produce a checkout URL. Production must set STRIPE_PRICE_ID to
-// the live Crew Plus price (see docs/pricing.md "Cutover").
-const LEGACY_PRICE_ID = "price_1TQXvUFBs06X81bmpNNuXssa";
-
-function resolvePriceId(): string {
-  return process.env.STRIPE_PRICE_ID ?? LEGACY_PRICE_ID;
+function resolvePriceId(): string | null {
+  return process.env.STRIPE_PRICE_ID ?? null;
 }
 
 function siteOrigin(request: Request): string {
@@ -62,6 +57,13 @@ export async function GET(
 
   const origin = siteOrigin(request);
   const priceId = resolvePriceId();
+  if (!priceId) {
+    console.error("crew-plus checkout: STRIPE_PRICE_ID is unset");
+    return NextResponse.json(
+      { error: "Crew Plus checkout is not configured." },
+      { status: 500 },
+    );
+  }
 
   try {
     const stripe = getStripe();

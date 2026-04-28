@@ -8,18 +8,18 @@ function isPlan(value: unknown): value is Plan {
   return value === "pro" || value === "trial" || value === "free";
 }
 
-// Mirrors the `get_user_plan` Postgres RPC (which returns "pro" for both
-// `active` and `trialing` Stripe statuses, plus the 7-day local trial via
-// `trial_started_at`). Used by the team-share gate so a free crew member
-// gets Pro coverage when any admin is paying — matches the marketing
-// promise on /account ("Buy once for your crew").
+// Mirrors the `get_user_plan` Postgres RPC. Paid Stripe states are
+// treated as Crew Plus access; `past_due` remains paid while Stripe's
+// retry/dunning flow runs. The legacy 7-day local trial branch stays
+// until old rows no longer rely on `trial_started_at`.
 function profileHasProAccess(profile: {
   stripe_subscription_status: string | null;
   trial_started_at: string | null;
 }): boolean {
   if (
     profile.stripe_subscription_status === "active" ||
-    profile.stripe_subscription_status === "trialing"
+    profile.stripe_subscription_status === "trialing" ||
+    profile.stripe_subscription_status === "past_due"
   ) {
     return true;
   }

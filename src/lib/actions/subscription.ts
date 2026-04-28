@@ -10,19 +10,8 @@ export type CheckoutResult =
 
 export type FoundingCheckoutResult = { url: string } | { error: string };
 
-// Legacy fallback so dev/test environments can run without env vars.
-// Production MUST set STRIPE_PRICE_ID to the new £9 Crew Plus price.
-// See docs/pricing.md "Cutover" section.
-const LEGACY_PRICE_ID = "price_1TQXvUFBs06X81bmpNNuXssa";
-const TRIAL_DAYS = 7;
-
-function resolvePriceId(): string {
-  const env = process.env.STRIPE_PRICE_ID;
-  if (env) return env;
-  console.warn(
-    "[subscription] STRIPE_PRICE_ID is unset — falling back to the legacy £4.99 price. Set this env var before the new pricing page goes live (docs/pricing.md Cutover).",
-  );
-  return LEGACY_PRICE_ID;
+function resolvePriceId(): string | null {
+  return process.env.STRIPE_PRICE_ID ?? null;
 }
 
 async function siteOrigin(): Promise<string> {
@@ -47,6 +36,10 @@ export async function createCheckoutSession(): Promise<CheckoutResult> {
     .maybeSingle<{ stripe_customer_id: string | null }>();
 
   const priceId = resolvePriceId();
+  if (!priceId) {
+    console.error("[subscription] STRIPE_PRICE_ID is unset.");
+    return { success: false, error: "Crew Plus checkout is not configured." };
+  }
   const origin = await siteOrigin();
 
   try {
@@ -55,7 +48,6 @@ export async function createCheckoutSession(): Promise<CheckoutResult> {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: TRIAL_DAYS,
         metadata: { user_id: user.id },
       },
       allow_promotion_codes: true,

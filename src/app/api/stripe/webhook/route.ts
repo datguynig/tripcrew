@@ -218,8 +218,8 @@ async function handleCrewPlusCheckoutCompleted(
 
   // Provision the auth user + profile. NOT a founding member — Crew Plus
   // is the standard tier; founding_crew_at stays null. Membership is
-  // identified by stripe_subscription_status === "active" plus a
-  // non-null applications.first_paid_at.
+  // identified by paid stripe_subscription_status values plus a non-null
+  // applications.first_paid_at.
   let profile: { id: string; isNew: boolean };
   try {
     profile = await provisionProfileForCheckout({

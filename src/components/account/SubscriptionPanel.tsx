@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Profile } from "@/lib/types";
 import { UpgradeButton } from "./UpgradeButton";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
@@ -6,7 +7,7 @@ type Props = {
   profile: Profile;
 };
 
-const PRICE_LABEL = "£4.99/mo";
+const PRICE_LABEL = "£9/mo";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -14,13 +15,6 @@ function formatDate(iso: string | null): string {
   if (Number.isNaN(d.getTime())) return "—";
   return d
     .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function daysUntil(iso: string | null): number | null {
-  if (!iso) return null;
-  const ms = Date.parse(iso) - Date.now();
-  if (!Number.isFinite(ms)) return null;
-  return Math.max(0, Math.ceil(ms / 86_400_000));
 }
 
 export function SubscriptionPanel({ profile }: Props) {
@@ -44,8 +38,8 @@ export function SubscriptionPanel({ profile }: Props) {
             <span className="text-accent">.</span>
           </h3>
           <p className="text-[14px] text-fg-2 leading-[1.55]">
-            {PRICE_LABEL}, 7-day free trial. Buy once for your crew. Every trip
-            you organise unlocks Crew Plus for everyone on it.
+            {PRICE_LABEL}, or £79/year. Apply once for Cohort 01. One admin
+            pays; every trip you organise unlocks Crew Plus for everyone on it.
           </p>
         </div>
         <ul className="grid gap-1.5 text-[13px] text-fg-2 leading-[1.5]">
@@ -54,30 +48,34 @@ export function SubscriptionPanel({ profile }: Props) {
           <li>· Refresh price checks anytime, cancel anytime via Stripe</li>
         </ul>
         <div className="flex items-center gap-4 flex-wrap mt-1">
-          <UpgradeButton />
-          <span className="label-xs text-fg-3">No charge during trial · cancel any time</span>
+          <Link
+            href="/apply?intent=plus"
+            className="inline-flex items-center gap-2 rounded-[3px] bg-accent px-5 h-11 text-[13px] font-semibold text-[#140400] transition-opacity hover:opacity-90 active:opacity-80"
+          >
+            Apply for Crew Plus
+            <span aria-hidden="true">→</span>
+          </Link>
+          <span className="label-xs text-fg-3">14-day refund on first-time subscriptions</span>
         </div>
       </article>
     );
   }
 
-  // Trialing — Stripe-managed trial; current_period_end is the trial end.
+  // Legacy trialing rows are still treated as paid access, but new
+  // Cohort 01 checkout no longer creates trial subscriptions.
   if (status === "trialing") {
-    const days = daysUntil(periodEnd);
     return (
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">CREW PLUS · TRIAL</span>
+          <span className="label-sm text-fg-3">CREW PLUS</span>
         </div>
         <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
-          Trial active.
+          Active.
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-          Your trial ends {formatDate(periodEnd)}
-          {days !== null ? ` (in ${days} day${days === 1 ? "" : "s"})` : ""}.
-          After that you'll be charged {PRICE_LABEL}. Cancel any time before
-          then to avoid the charge.
+          Crew Plus is active. Your current period ends {formatDate(periodEnd)}.
+          Manage billing in Stripe.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />
@@ -139,8 +137,8 @@ export function SubscriptionPanel({ profile }: Props) {
           Subscription incomplete.
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-          We didn't receive payment confirmation. Finish setup to start your
-          trial, or contact support if this looks wrong.
+          We didn't receive payment confirmation. Finish setup to activate
+          Crew Plus, or contact support if this looks wrong.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />

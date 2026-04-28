@@ -26,8 +26,7 @@ export default async function CheckoutSuccessPage() {
   // realtime / a manual refresh to catch up if the webhook hasn't landed yet.
   const status = user.profile.stripe_subscription_status;
   const periodEnd = user.profile.current_period_end;
-  const isTrialing = status === "trialing";
-  const isActive = status === "active" || isTrialing;
+  const isActive = status === "active" || status === "trialing";
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -35,11 +34,9 @@ export default async function CheckoutSuccessPage() {
         code="§ ¤"
         title="You're in."
         lead={
-          isTrialing
-            ? `Crew Plus trial active until ${formatDate(periodEnd)}. After that, £4.99/mo.`
-            : isActive
-              ? `Crew Plus is active. Next charge ${formatDate(periodEnd)}.`
-              : "Stripe is finalising your subscription. Refresh in a few seconds."
+          isActive
+            ? `Crew Plus is active. Next charge ${formatDate(periodEnd)}.`
+            : "Stripe is finalising your subscription. Refresh in a few seconds."
         }
       />
 

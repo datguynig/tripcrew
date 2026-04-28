@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function UpgradeButton({
-  label = "Start 7-day free trial →",
+  label = "Open Crew Plus checkout →",
   tone = "accent",
   size = "lg",
   variant = "primary",

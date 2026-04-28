@@ -194,7 +194,7 @@ export function buildApplicationReceivedEmail({
   const lines: string[] = [
     `We got your Crew Plus application for Cohort 01.`,
     ``,
-    `We're reviewing. Expect a decision in your inbox within 24 hours.`,
+    `We're reviewing in weekly batches. Expect a decision in your inbox within seven days.`,
   ];
 
   if (slug) {

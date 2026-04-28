@@ -75,12 +75,13 @@ export default async function CuratedAppliedPage({
         </div>
 
         <h1 className="mt-8 font-serif font-medium text-[44px] sm:text-[56px] md:text-[64px] leading-[1.02] tracking-[-0.03em] text-ink text-balance">
-          You&rsquo;ll hear within 24 hours.
+          You&rsquo;ll hear within seven days.
         </h1>
 
         <p className="mt-8 max-w-[58ch] text-[17px] sm:text-[18px] leading-[1.55] text-ink/80 text-pretty">
           We got your Crew Plus application for Cohort 01. We&rsquo;re
-          reviewing. Expect a decision in your inbox within 24 hours.
+          reviewing in weekly batches. Expect a decision in your inbox within
+          seven days.
         </p>
 
         <p className="mt-6 font-mono uppercase tracking-[0.18em] text-[11px] text-ink/60">

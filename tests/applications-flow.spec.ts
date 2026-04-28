@@ -9,7 +9,7 @@ test.describe("application flow", () => {
     const email = `e2e-${crypto.randomUUID().slice(0, 8)}@test.local`;
     await page.goto(`/apply?email=${encodeURIComponent(email)}`);
     await expect(
-      page.getByRole("heading", { name: "One last thing." }),
+      page.getByRole("heading", { name: "Tell us about your crew." }),
     ).toBeVisible();
 
     await page.getByRole("button", { name: "2-3" }).click();

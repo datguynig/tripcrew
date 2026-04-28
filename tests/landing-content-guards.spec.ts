@@ -4,10 +4,10 @@ import AxeBuilder from "@axe-core/playwright";
 const PUBLIC_ROUTES = [
   "/",
   `/apply?email=${encodeURIComponent("guards@test.local")}`,
-  "/sample-trip/lisbon",
+  "/curated/bali",
 ];
 
-const FORBIDDEN_BRANDS = [
+const FORBIDDEN_COPY = [
   "Splitwise",
   "splitwise",
   "WhatsApp",
@@ -21,6 +21,14 @@ const FORBIDDEN_BRANDS = [
   "Layla",
   "Mindtrip",
   "Roam Around",
+  "£4.99",
+  "4.99",
+  "free trial",
+  "7-day free trial",
+  "7 day free trial",
+  "No charge during trial",
+  "Trial active",
+  "Crew Plus trial",
 ];
 
 const EMOJI_RE =
@@ -36,11 +44,11 @@ test.describe("public surfaces — content guards", () => {
       expect(EMOJI_RE.test(html)).toBe(false);
     });
 
-    test(`${route} contains no competitor brand names`, async ({ page }) => {
+    test(`${route} contains no forbidden marketing copy`, async ({ page }) => {
       await page.goto(route);
       const html = await page.content();
-      for (const brand of FORBIDDEN_BRANDS) {
-        expect(html, `${route} mentions ${brand}`).not.toContain(brand);
+      for (const copy of FORBIDDEN_COPY) {
+        expect(html, `${route} contains forbidden copy: ${copy}`).not.toContain(copy);
       }
     });
 
