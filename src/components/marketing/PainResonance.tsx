@@ -66,7 +66,7 @@ export function PainResonance() {
     >
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
         <div className="flex flex-col gap-5 mb-14 md:mb-20 max-w-[640px]">
-          <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral-deep">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             You've had this exact chat
           </p>
           <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em]">
@@ -98,7 +98,7 @@ export function PainResonance() {
             Three months later, no one went.
           </p>
           <div className="h-[2px] w-12 bg-marketing-coral" />
-          <p className="font-mono uppercase tracking-[0.22em] text-[12px] text-ink/85">
+          <p className="font-mono uppercase tracking-[0.18em] text-[12px] text-ink/85">
             Tripcrew turns the chat into a trip.
           </p>
           <Link
@@ -126,12 +126,12 @@ function ChatHeader() {
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink">
             June trip · 6 people
           </p>
-          <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/80">
+          <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/80">
             14 unread · last seen Tue
           </p>
         </div>
       </div>
-      <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-ink/80">
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/80">
         Group chat
       </p>
     </div>
@@ -222,7 +222,7 @@ function Stat({
       <p className="text-[14px] leading-[1.5] text-ink/80 max-w-[28ch]">
         {body}
       </p>
-      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/65 mt-auto">
+      <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65 mt-auto">
         {attr}
       </p>
     </div>

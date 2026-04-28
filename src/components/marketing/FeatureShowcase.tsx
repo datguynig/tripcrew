@@ -61,7 +61,7 @@ export function FeatureShowcase() {
     >
       <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-24 md:py-32">
         <div className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[720px]">
-          <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral-deep">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             What you actually get
           </p>
           <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em]">
@@ -81,7 +81,7 @@ export function FeatureShowcase() {
               className="bg-cream p-7 md:p-9 flex flex-col gap-5 min-h-[320px]"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono uppercase tracking-[0.22em] text-[10px] text-ink/65">
+                <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65">
                   {feature.index}
                 </span>
                 {feature.badge === "founding" ? (
@@ -91,7 +91,7 @@ export function FeatureShowcase() {
                 ) : null}
               </div>
 
-              <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral-deep">
+              <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
                 {feature.label}
               </p>
 

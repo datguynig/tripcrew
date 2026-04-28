@@ -24,9 +24,11 @@ const STEPS: Step[] = [
   },
   {
     number: "03",
-    title: "Enjoy your trip.",
-    body: ["Bookings handled. Ledger settled.", "Time to make memories."],
-    numberClassName: "text-marketing-coral-deep",
+    title: "Land. Eat. Repeat.",
+    body: [
+      "Bookings handled. Ledger settled. Crew chat archived. Photos in the memory book.",
+    ],
+    numberClassName: "text-ink/70",
   },
 ];
 
@@ -73,7 +75,7 @@ export function HowItWorks() {
         <div className="mt-12 flex justify-center">
           <a
             href="#curated-trips"
-            className="font-mono uppercase tracking-[0.22em] text-[11px] text-ink/65 transition-opacity duration-150 hover:text-ink/80"
+            className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 transition-opacity duration-150 hover:text-ink/80"
           >
             ↓ See a curated trip
           </a>

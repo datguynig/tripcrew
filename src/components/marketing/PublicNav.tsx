@@ -47,7 +47,7 @@ export function PublicNav() {
         <div className="mx-auto max-w-[1280px] flex items-center justify-between px-6 sm:px-10 h-[64px]">
           <Link
             href="/"
-            className="font-mono uppercase tracking-[0.22em] text-[13px] text-marketing-coral-deep"
+            className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral-deep"
             aria-label="Tripcrew home"
           >
             Tripcrew
@@ -99,7 +99,7 @@ export function PublicNav() {
       {menuOpen ? (
         <div className="md:hidden fixed inset-0 z-50 bg-ink text-cream flex flex-col">
           <div className="flex items-center justify-between h-[64px] px-6 sm:px-10 border-b-2 border-cream/20">
-            <span className="font-mono uppercase tracking-[0.22em] text-[13px] text-marketing-coral">
+            <span className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral">
               Tripcrew
             </span>
             <button

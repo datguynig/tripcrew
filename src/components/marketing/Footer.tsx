@@ -28,14 +28,14 @@ export function Footer() {
           <div>
             <Link
               href="/"
-              className="font-mono uppercase tracking-[0.22em] text-[14px] text-marketing-coral"
+              className="font-mono uppercase tracking-[0.18em] text-[14px] text-marketing-coral"
             >
               Tripcrew
             </Link>
             <p className="mt-4 font-serif italic text-[18px] leading-[1.4] text-cream/85 max-w-[28ch]">
               Trips that make it out of the group chat.
             </p>
-            <p className="mt-6 font-mono uppercase tracking-[0.22em] text-[10px] text-cream/70">
+            <p className="mt-6 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70">
               Built in London.
             </p>
           </div>
@@ -46,10 +46,10 @@ export function Footer() {
         </div>
 
         <div className="mt-14 pt-6 border-t border-cream/15 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/70">
+          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70">
             © {new Date().getFullYear()} Tripcrew. Invite only.
           </p>
-          <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/70 flex items-center gap-2">
+          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70 flex items-center gap-2">
             <span
               aria-hidden="true"
               className="w-[7px] h-[7px] bg-marketing-coral"
@@ -71,7 +71,7 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-marketing-coral mb-4">
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-marketing-coral mb-4">
         {title}
       </p>
       <ul className="flex flex-col gap-3">

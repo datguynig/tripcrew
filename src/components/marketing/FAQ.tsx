@@ -35,7 +35,7 @@ export function FAQ() {
   return (
     <section id="faq" className="bg-cream text-ink border-t-2 border-ink">
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
-        <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral-deep mb-6">
+        <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep mb-6">
           Questions
         </p>
         <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em] mb-14 max-w-[20ch]">
@@ -46,13 +46,13 @@ export function FAQ() {
           {FAQ_ITEMS.map((item) => (
             <li key={item.question} className="border-b-2 border-ink">
               <details className="group">
-                <summary className="cursor-pointer list-none flex items-center justify-between gap-6 py-6 sm:py-8">
+                <summary className="cursor-pointer list-none flex items-start justify-between gap-6 py-6 sm:py-8">
                   <h3 className="font-serif text-[22px] sm:text-[28px] leading-[1.15] tracking-[-0.015em]">
                     {item.question}
                   </h3>
                   <span
                     aria-hidden="true"
-                    className="shrink-0 w-9 h-9 border-2 border-ink flex items-center justify-center font-mono text-[16px] transition-transform duration-200 group-open:rotate-45"
+                    className="shrink-0 mt-1 w-9 h-9 border-2 border-ink flex items-center justify-center font-mono text-[16px] transition-transform duration-200 group-open:rotate-45"
                   >
                     +
                   </span>
@@ -65,7 +65,7 @@ export function FAQ() {
           ))}
         </ul>
 
-        <p className="mt-12 font-mono uppercase tracking-[0.22em] text-[11px] text-ink/70">
+        <p className="mt-12 font-mono uppercase tracking-[0.18em] text-[11px] text-ink/70">
           Still have questions?{" "}
           <a
             href="mailto:hello@tripcrew.app"

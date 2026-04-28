@@ -146,15 +146,15 @@ function CohortBadge({
           aria-hidden="true"
           className="w-[10px] h-[10px] bg-marketing-coral"
         />
-        <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/85">
+        <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/85">
           Cohort 01 · invite only
         </p>
       </div>
       <div className="flex items-baseline justify-between gap-4">
-        <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/65">
+        <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65">
           Founding crew
         </p>
-        <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream">
+        <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream">
           {claimed} / 500 claimed
         </p>
       </div>
@@ -165,7 +165,7 @@ function CohortBadge({
         />
       </div>
       {showApplicants ? (
-        <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/70 mt-1">
+        <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70 mt-1">
           {applicantCount.toLocaleString("en-GB")} on the waitlist
         </p>
       ) : null}

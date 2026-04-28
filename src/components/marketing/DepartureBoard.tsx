@@ -92,7 +92,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
       <div className="mx-auto max-w-[1400px] px-6 sm:px-10 py-24 md:py-32">
         <div className="flex items-end justify-between gap-6 mb-12">
           <div>
-            <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral mb-3">
+            <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral mb-3">
               Curated by us · five starter trips
             </p>
             <h2 className="font-serif text-[36px] md:text-[52px] lg:text-[60px] leading-[1.02] tracking-[-0.025em] max-w-[20ch]">
@@ -121,7 +121,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
                   {trip.city}
                 </h3>
                 <div className="h-[2px] w-12 bg-marketing-coral" />
-                <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-cream">
+                <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream">
                   {trip.country} · {trip.totalDays} days · {trip.crewLabel}
                 </p>
                 <p className="text-[15px] sm:text-[16px] leading-[1.5] text-cream/85 italic font-serif max-w-[44ch]">
@@ -208,7 +208,7 @@ function BoardCue({ index, total }: { index: number; total: number }) {
         aria-hidden="true"
         className="w-[10px] h-[10px] bg-marketing-coral animate-pulse"
       />
-      <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream">
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream">
         Now boarding · {String(index + 1).padStart(2, "0")} of{" "}
         {String(total).padStart(2, "0")}
       </p>
