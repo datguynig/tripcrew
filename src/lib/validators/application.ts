@@ -21,6 +21,7 @@ export const fullApplicationSchema = applicationAnswersSchema.extend({
   utm_source: z.string().max(120).optional(),
   utm_campaign: z.string().max(120).optional(),
   referrer: z.string().max(2048).optional(),
+  draft_lead_id: z.string().uuid().nullish(),
 });
 
 export type ApplicationAnswers = z.infer<typeof applicationAnswersSchema>;

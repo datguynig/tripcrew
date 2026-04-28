@@ -178,3 +178,44 @@ export async function sendTeaserConfirmation(
 export async function sendDay7Nudge(input: TeaserEmail): Promise<void> {
   await sendViaResend(input, "teaserDay7Nudge");
 }
+
+export type BuildApplicationReceivedInput = {
+  email: string;
+  // The originating draft's slug, used to deep-link the skip-the-queue
+  // founding-checkout. When null (cold apply with no draft), the email
+  // omits the founding-spot upsell rather than guessing a slug.
+  slug: string | null;
+};
+
+export function buildApplicationReceivedEmail({
+  email,
+  slug,
+}: BuildApplicationReceivedInput): TeaserEmail {
+  const lines: string[] = [
+    `We got your Crew Plus application for Cohort 01.`,
+    ``,
+    `We're reviewing. Expect a decision in your inbox within 24 hours.`,
+  ];
+
+  if (slug) {
+    lines.push(
+      ``,
+      `Don't want to wait? Skip the queue with a founding spot. £179/year, price-locked for life, 500 limited:`,
+      `${siteUrl()}/curated/${slug}/founding-checkout`,
+    );
+  }
+
+  lines.push(``, `— Tripcrew`);
+
+  return {
+    to: email,
+    subject: `We got your Crew Plus application for Cohort 01.`,
+    text: lines.join("\n"),
+  };
+}
+
+export async function sendApplicationReceived(
+  input: TeaserEmail,
+): Promise<void> {
+  await sendViaResend(input, "applicationReceived");
+}
