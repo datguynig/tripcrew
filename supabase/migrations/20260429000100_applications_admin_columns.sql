@@ -11,6 +11,8 @@ alter table applications add column admin_notes text;
 alter table profiles add column is_founder boolean not null default false;
 
 create index applications_rejected_at_idx on applications(rejected_at) where rejected_at is not null;
+-- Deferred from 20260429000000_applications_table.sql — needs rejected_at to exist first.
+create index applications_pending_idx on applications(created_at desc) where approved_at is null and rejected_at is null;
 
 -- Founder reads. Service-role bypasses RLS for server actions; this policy
 -- supports anything the founder reads via their own session (e.g. the

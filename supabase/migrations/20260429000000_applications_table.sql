@@ -30,8 +30,9 @@ create table if not exists applications (
 );
 
 create index applications_user_id_idx on applications(user_id) where user_id is not null;
-create index applications_pending_idx on applications(created_at desc) where approved_at is null and rejected_at is null;
 create index applications_invite_token_idx on applications(invite_token) where invite_token is not null;
+-- applications_pending_idx is created in 20260429000100_applications_admin_columns.sql,
+-- once the rejected_at column it references exists.
 
 alter table applications enable row level security;
 
