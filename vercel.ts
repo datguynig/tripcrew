@@ -5,28 +5,26 @@ export const config: VercelConfig = {
   crons: [
     {
       // Auto-finalises Cohort 01 applications past their 24-hour review
-      // window. Every 15 minutes is fine — the cron is idempotent (the
-      // UPDATE filters on decision_finalised_at IS NULL) and a slightly
-      // delayed finalisation is preferable to a too-early one.
+      // window. Daily at 09:00 UTC (Hobby-tier limit). Means an application
+      // submitted at 09:01 UTC waits up to ~48h for auto-finalise (24h SLA
+      // + 24h cron gap) — acceptable for v1; tighten by upgrading Vercel
+      // to Pro and changing this back to */15.
       path: "/api/cron/finalise-applications",
-      schedule: "*/15 * * * *",
+      schedule: "0 9 * * *",
     },
     {
       // Day-7 nudge for draft_leads that captured a teaser but never
-      // applied. Hourly cadence — the eligibility filter (created_at older
-      // than 7 days, no nudge_sent_at, no unsubscribed_at, no application)
-      // means most runs do nothing; we only want a small lag from the 7-day
-      // boundary to first send.
+      // applied. Daily at 10:00 UTC. Hourly precision doesn't matter for
+      // a 7-day-out drip — once-per-day fits Hobby tier.
       path: "/api/cron/teaser-day-7-nudge",
-      schedule: "0 * * * *",
+      schedule: "0 10 * * *",
     },
     {
-      // Cost-ceiling alarm for the curated-teaser AI flow. Sums
-      // ai_usage.estimated_cost_gbp over the last 24h; if total > £40 it
-      // emails AI_BETA_OWNER_EMAIL. Every 6 hours is enough — the alarm
-      // fires off a sustained burst, not a single rogue request.
+      // Cost-ceiling alarm for the curated-teaser AI flow. Daily at 11:00
+      // UTC. £40/24h is a sustained-burst alert, not a real-time circuit
+      // breaker, so daily is fine.
       path: "/api/cron/teaser-cost-alert",
-      schedule: "0 */6 * * *",
+      schedule: "0 11 * * *",
     },
   ],
 };
