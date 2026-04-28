@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { estimateGeminiCostGBP, generateJson } from "@/lib/ai/gemini";
 import { logTeaserAiUsage } from "@/lib/ai/usage";
@@ -169,17 +170,24 @@ export async function submitTeaserForm(
     });
   }
 
-  void sendTeaserConfirmation(
-    buildTeaserConfirmationEmail({
-      email,
-      draftId: inserted.id,
-      resumeToken: inserted.resume_token,
-      slug,
-      inputs,
-      teaser,
-    }),
-  ).catch((err) => {
-    console.error("submitTeaserForm: confirmation email failed:", err);
+  // Use after() so the email is dispatched once the response is on the
+  // wire. Plain fire-and-forget (`void ...catch`) can be cut off when
+  // Vercel freezes the serverless function at response time.
+  after(async () => {
+    try {
+      await sendTeaserConfirmation(
+        buildTeaserConfirmationEmail({
+          email,
+          draftId: inserted.id,
+          resumeToken: inserted.resume_token,
+          slug,
+          inputs,
+          teaser,
+        }),
+      );
+    } catch (err) {
+      console.error("submitTeaserForm: confirmation email failed:", err);
+    }
   });
 
   return { ok: true, draftId: inserted.id, teaser };
