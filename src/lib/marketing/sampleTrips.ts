@@ -24,6 +24,7 @@ export type SampleScheduleRow = {
 export type SampleTrip = {
   slug: string;
   city: string;
+  country: string;
   iata: string;
   occasionLine: string;
   datesLabel: string;
@@ -44,13 +45,22 @@ export type SampleTrip = {
   heroPhotoCredit: { name: string; href: string };
   latitude: number;
   longitude: number;
+  // Editorial framing on the landing rotator. "Why we picked it" gives the
+  // visitor a reason to slow down on each card without bloating the spec.
+  curatorPick: string;
+  // Drives the per-trip CTA destination on the landing rotator.
+  // /apply pre-seeds the application form with the trip's vibes.
+  applyVibes: string;
 };
 
 const TRIPS: readonly SampleTrip[] = [
   {
     slug: "mallorca",
     city: "Mallorca",
+    country: "Spain",
     iata: "PMI",
+    curatorPick: "For the crew that wants Med heat, cliff jumps, and slow Sunday lunches.",
+    applyVibes: "beach,foodie",
     occasionLine: "Six friends. Six days. June.",
     datesLabel: "14 to 19 June",
     durationLabel: "6 days",
@@ -66,10 +76,10 @@ const TRIPS: readonly SampleTrip[] = [
     latitude: 39.5696,
     longitude: 2.6502,
     heroPhotoUrl:
-      "https://images.unsplash.com/photo-1559348349-86f1f65817fe?auto=format&fit=crop&w=1600&q=80",
+      "https://images.unsplash.com/photo-1602002418816-5c0aeef426aa?auto=format&fit=crop&w=1600&q=80",
     heroPhotoCredit: {
-      name: "Stephane Hurbe",
-      href: "https://unsplash.com/photos/_kvkyiaKjxQ",
+      name: "Anna Sullivan",
+      href: "https://unsplash.com/photos/SbOC7CN9j_w",
     },
     specCells: [
       { label: "Per head", value: "£820" },
@@ -99,7 +109,10 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "rio",
     city: "Rio de Janeiro",
+    country: "Brazil",
     iata: "GIG",
+    curatorPick: "For the crew that wants the loudest week of the year. Sequins, samba, sunrise.",
+    applyVibes: "music,carnival",
     occasionLine: "Six friends. Carnival. Sequins on.",
     datesLabel: "5 to 12 February",
     durationLabel: "7 days",
@@ -148,7 +161,10 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "athens",
     city: "Athens",
+    country: "Greece",
     iata: "ATH",
+    curatorPick: "For the crew that wants culture without the August crowds. Late-summer Aegean energy.",
+    applyVibes: "culture,foodie",
     occasionLine: "Six friends. Six days. Late summer.",
     datesLabel: "5 to 11 September",
     durationLabel: "6 days",
@@ -197,7 +213,10 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "bali",
     city: "Bali",
+    country: "Indonesia",
     iata: "DPS",
+    curatorPick: "For the crew that needs to slow down. Surf in the morning, rice terraces in the afternoon.",
+    applyVibes: "wellness,surf",
     occasionLine: "Six friends. Nine days. Wellness mode.",
     datesLabel: "18 to 26 April",
     durationLabel: "9 days",
@@ -246,7 +265,10 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "lagos",
     city: "Lagos",
+    country: "Nigeria",
     iata: "LOS",
+    curatorPick: "For the crew that wants Detty December. Live bands, beach boats, never sleep.",
+    applyVibes: "music,foodie",
     occasionLine: "Six friends. Eight days. Detty December.",
     datesLabel: "20 to 27 December",
     durationLabel: "8 days",

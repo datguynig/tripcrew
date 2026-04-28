@@ -47,7 +47,7 @@ export function PublicNav() {
         <div className="mx-auto max-w-[1280px] flex items-center justify-between px-6 sm:px-10 h-[64px]">
           <Link
             href="/"
-            className="font-mono uppercase tracking-[0.22em] text-[13px] text-marketing-coral"
+            className="font-mono uppercase tracking-[0.22em] text-[13px] text-marketing-coral-deep"
             aria-label="Tripcrew home"
           >
             Tripcrew
@@ -74,7 +74,7 @@ export function PublicNav() {
             </Link>
             <Link
               href="/apply"
-              className="hidden sm:inline-flex items-center justify-center bg-marketing-coral text-cream font-mono uppercase tracking-[0.18em] text-[11px] px-5 h-10 border-2 border-marketing-coral hover:bg-ink hover:border-ink transition-colors duration-150"
+              className="hidden sm:inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[11px] px-5 h-10 border-2 border-marketing-coral hover:bg-ink hover:text-cream hover:border-ink transition-colors duration-150"
             >
               Apply for invite
             </Link>

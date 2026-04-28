@@ -22,6 +22,13 @@
   --color-cream: #f5f1e8;
   --color-ink: #0a0a0a;
   --color-marketing-coral: #ff5e3a;
+  /* Darker coral variant for text on cream surfaces. The bright coral
+     #ff5e3a hits only 2.69:1 against #f5f1e8 (fails WCAG AA). This deep
+     variant clears 5.4:1 against cream while staying recognisably the
+     same brand accent. Use this for kickers, link text, and tags
+     rendered against the cream marketing background. Use the bright
+     #ff5e3a for backgrounds, decorative squares/rules, and text on ink. */
+  --color-marketing-coral-deep: #b8391c;
 
   --font-sans: var(--font-sans), "Inter Tight", sans-serif;
   --font-mono: var(--font-mono), "JetBrains Mono", monospace;

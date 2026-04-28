@@ -35,7 +35,7 @@ export function FAQ() {
   return (
     <section id="faq" className="bg-cream text-ink border-t-2 border-ink">
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
-        <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral mb-6">
+        <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral-deep mb-6">
           Questions
         </p>
         <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em] mb-14 max-w-[20ch]">
@@ -65,11 +65,11 @@ export function FAQ() {
           ))}
         </ul>
 
-        <p className="mt-12 font-mono uppercase tracking-[0.22em] text-[11px] text-ink/55">
+        <p className="mt-12 font-mono uppercase tracking-[0.22em] text-[11px] text-ink/70">
           Still have questions?{" "}
           <a
             href="mailto:hello@tripcrew.app"
-            className="text-marketing-coral underline-offset-4 hover:underline"
+            className="text-marketing-coral-deep underline underline-offset-4 hover:no-underline"
           >
             hello@tripcrew.app
           </a>

@@ -8,17 +8,17 @@ import { SAMPLE_TRIPS, type SampleTrip } from "@/lib/marketing/sampleTrips";
 
 const ROTATE_INTERVAL_MS = 5500;
 
-type FlipKey = "iata" | "datesLabel" | "perHead" | "vibesLabel";
+type FlipKey = "destination" | "datesLabel" | "perHead" | "vibesLabel";
 
 const FLIP_FIELDS: { key: FlipKey; label: string }[] = [
-  { key: "iata", label: "Destination" },
+  { key: "destination", label: "Destination" },
   { key: "datesLabel", label: "Dates" },
   { key: "perHead", label: "Per head" },
   { key: "vibesLabel", label: "Vibes" },
 ];
 
 function fieldValue(trip: SampleTrip, key: FlipKey): string {
-  if (key === "iata") return trip.iata;
+  if (key === "destination") return `${trip.city}, ${trip.country}`;
   if (key === "datesLabel") return trip.datesLabel;
   if (key === "vibesLabel") return trip.vibesLabel;
   return `£${trip.perHeadAmount.toLocaleString("en-GB")}`;
@@ -80,7 +80,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
       ref={sectionRef}
       id="sample-trips"
       aria-roledescription="carousel"
-      aria-label="Sample trips by Tripcrew"
+      aria-label="Five curated starter trips by Tripcrew"
       tabIndex={0}
       onKeyDown={onKeyDown}
       onMouseEnter={() => setPaused(true)}
@@ -90,15 +90,19 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
       className="relative w-full bg-ink text-cream focus:outline-none"
     >
       <div className="mx-auto max-w-[1400px] px-6 sm:px-10 pt-20 pb-12 md:pt-28 md:pb-16">
-        <div className="flex items-end justify-between gap-6 mb-10">
+        <div className="flex items-end justify-between gap-6 mb-12">
           <div>
             <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral mb-3">
-              Sample trips · live board
+              Curated by us · five starter trips
             </p>
-            <h2 className="font-serif text-[36px] md:text-[52px] lg:text-[60px] leading-[1.02] tracking-[-0.025em] max-w-[18ch]">
-              Five trips. Plotted by AI.<br />
-              <span className="text-cream/60">Locked in by real crews.</span>
+            <h2 className="font-serif text-[36px] md:text-[52px] lg:text-[60px] leading-[1.02] tracking-[-0.025em] max-w-[20ch]">
+              The first five trips, hand-picked for the founding crews.
             </h2>
+            <p className="mt-5 text-[16px] md:text-[17px] leading-[1.55] text-cream/70 max-w-[58ch]">
+              Apply once and the AI plans any of them, scaled to your budget,
+              your dates, your crew. Vibes change. Schedule changes. The plan is
+              yours, not a template.
+            </p>
           </div>
         </div>
 
@@ -111,20 +115,23 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
               <FlipRow trip={trip} reduceMotion={reduceMotion} />
             </div>
 
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
-              <div className="flex flex-col gap-3 max-w-[36ch]">
-                <h3 className="font-serif text-[44px] sm:text-[64px] lg:text-[88px] leading-[0.95] tracking-[-0.035em] text-cream">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
+              <div className="flex flex-col gap-3 max-w-[40ch]">
+                <h3 className="font-serif text-[44px] sm:text-[64px] lg:text-[88px] leading-[0.92] tracking-[-0.035em] text-cream">
                   {trip.city}
                 </h3>
                 <div className="h-[2px] w-12 bg-marketing-coral" />
-                <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-cream/85">
-                  {trip.occasionLine}
+                <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-cream">
+                  {trip.country} · {trip.totalDays} days · {trip.crewLabel}
+                </p>
+                <p className="text-[15px] sm:text-[16px] leading-[1.5] text-cream/85 italic font-serif max-w-[44ch]">
+                  {trip.curatorPick}
                 </p>
                 <ul className="flex flex-wrap gap-2 mt-2">
                   {trip.highlights.map((h) => (
                     <li
                       key={h}
-                      className="border border-cream/30 bg-ink/40 px-3 py-1.5 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/85"
+                      className="border border-cream/40 bg-ink/55 px-3 py-1.5 font-mono uppercase tracking-[0.18em] text-[10px] text-cream"
                     >
                       {h}
                     </li>
@@ -132,12 +139,20 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
                 </ul>
               </div>
 
-              <Link
-                href={`/sample-trip/${trip.slug}`}
-                className="self-start sm:self-end inline-flex items-center justify-center bg-cream text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-cream hover:bg-transparent hover:text-cream transition-colors duration-150"
-              >
-                Explore the full trip →
-              </Link>
+              <div className="flex flex-col gap-3 sm:items-end">
+                <Link
+                  href={`/apply?intent=plus&seed=${trip.slug}&vibes=${trip.applyVibes}`}
+                  className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream transition-colors duration-150 whitespace-nowrap"
+                >
+                  Plan my {trip.city} trip →
+                </Link>
+                <Link
+                  href={`/sample-trip/${trip.slug}`}
+                  className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 hover:text-cream underline-offset-4 hover:underline"
+                >
+                  Or browse the full plan
+                </Link>
+              </div>
             </div>
           </div>
         </article>
@@ -180,8 +195,8 @@ function BoardBackground({
           priority
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/50 to-ink/30" />
-      <div className="absolute inset-0 bg-gradient-to-r from-ink/65 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/60 to-ink/35" />
+      <div className="absolute inset-0 bg-gradient-to-r from-ink/75 via-ink/15 to-transparent" />
     </>
   );
 }
@@ -193,7 +208,7 @@ function BoardCue({ index, total }: { index: number; total: number }) {
         aria-hidden="true"
         className="w-[10px] h-[10px] bg-marketing-coral animate-pulse"
       />
-      <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/85">
+      <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream">
         Now boarding · {String(index + 1).padStart(2, "0")} of{" "}
         {String(total).padStart(2, "0")}
       </p>
@@ -211,7 +226,7 @@ function FlipRow({
   return (
     <dl
       aria-live="polite"
-      className="hidden sm:grid grid-cols-4 gap-2 max-w-[640px] w-full"
+      className="hidden sm:grid grid-cols-4 gap-2 max-w-[680px] w-full"
     >
       {FLIP_FIELDS.map((field, i) => (
         <FlipTile
@@ -238,14 +253,14 @@ function FlipTile({
   reduceMotion: boolean;
 }) {
   return (
-    <div className="bg-ink/85 border border-cream/25 px-3 py-3 backdrop-blur-sm">
-      <dt className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/55 mb-1.5">
+    <div className="bg-ink/85 border border-cream/30 px-3 py-3 backdrop-blur-sm">
+      <dt className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/70 mb-1.5">
         {label}
       </dt>
       <dd
         style={{ animationDelay: `${delayMs}ms` }}
         className={
-          "font-serif text-[18px] sm:text-[22px] leading-none tracking-[-0.01em] text-cream " +
+          "font-serif text-[16px] sm:text-[18px] leading-[1.15] tracking-[-0.005em] text-cream " +
           (reduceMotion ? "" : "motion-safe:animate-tc-flip origin-top")
         }
       >
@@ -257,13 +272,13 @@ function FlipTile({
 
 function PhotoCredit({ trip }: { trip: SampleTrip }) {
   return (
-    <p className="mt-4 font-mono uppercase tracking-[0.18em] text-[9px] text-cream/40">
+    <p className="mt-4 font-mono uppercase tracking-[0.18em] text-[9px] text-cream/70">
       Photo ·{" "}
       <a
         href={trip.heroPhotoCredit.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="underline-offset-4 hover:text-cream/70 hover:underline"
+        className="underline-offset-4 hover:text-cream/80 hover:underline"
       >
         {trip.heroPhotoCredit.name} on Unsplash
       </a>
@@ -281,48 +296,51 @@ function ThumbStrip({
   onSelect: (index: number) => void;
 }) {
   return (
-    <ul className="mt-10 grid grid-cols-2 sm:grid-cols-5 gap-3" role="tablist">
+    <div
+      className="mt-10 grid grid-cols-2 sm:grid-cols-5 gap-3"
+      role="tablist"
+      aria-label="Curated trips"
+    >
       {trips.map((entry, index) => {
         const active = index === activeIndex;
         return (
-          <li key={entry.slug}>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-label={`Show ${entry.city}`}
-              onClick={() => onSelect(index)}
+          <button
+            key={entry.slug}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            aria-label={`Show ${entry.city}, ${entry.country}`}
+            onClick={() => onSelect(index)}
+            className={
+              "group relative w-full aspect-[4/3] overflow-hidden border-2 transition-colors duration-150 " +
+              (active
+                ? "border-marketing-coral"
+                : "border-cream/15 hover:border-cream/45")
+            }
+          >
+            <Image
+              src={entry.heroPhotoUrl}
+              alt={`${entry.city}, ${entry.country}`}
+              fill
+              sizes="(min-width: 640px) 240px, 50vw"
               className={
-                "group relative w-full aspect-[4/3] overflow-hidden border-2 transition-colors duration-150 " +
-                (active
-                  ? "border-marketing-coral"
-                  : "border-cream/15 hover:border-cream/40")
+                "object-cover transition-opacity duration-150 " +
+                (active ? "opacity-100" : "opacity-65 group-hover:opacity-90")
               }
-            >
-              <Image
-                src={entry.heroPhotoUrl}
-                alt={entry.city}
-                fill
-                sizes="(min-width: 640px) 240px, 50vw"
-                className={
-                  "object-cover transition-opacity duration-150 " +
-                  (active ? "opacity-100" : "opacity-60 group-hover:opacity-90")
-                }
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between">
-                <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream">
-                  {entry.iata}
-                </span>
-                <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/70">
-                  {entry.city}
-                </span>
-              </div>
-            </button>
-          </li>
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex flex-col gap-0.5 text-left">
+              <span className="font-serif text-[16px] leading-none tracking-[-0.01em] text-cream">
+                {entry.city}
+              </span>
+              <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/85">
+                {entry.country}
+              </span>
+            </div>
+          </button>
         );
       })}
-    </ul>
+    </div>
   );
 }
 

@@ -1,10 +1,10 @@
-import { BuiltInPublic } from "@/components/marketing/BuiltInPublic";
 import { DepartureBoard } from "@/components/marketing/DepartureBoard";
 import { FAQ } from "@/components/marketing/FAQ";
 import { FeatureShowcase } from "@/components/marketing/FeatureShowcase";
 import { Footer } from "@/components/marketing/Footer";
 import { Hero } from "@/components/marketing/Hero";
 import { HowItWorks } from "@/components/marketing/HowItWorks";
+import { PainResonance } from "@/components/marketing/PainResonance";
 import { PricingReveal } from "@/components/marketing/PricingReveal";
 import { getApplicationCount } from "@/lib/actions/applications";
 import {
@@ -32,13 +32,10 @@ export default async function LandingPage() {
         featuredTrip={featuredTrip}
         foundingRemaining={foundingRemaining}
       />
+      <PainResonance />
       <HowItWorks />
       <DepartureBoard initialIndex={initialIndex >= 0 ? initialIndex : 0} />
       <FeatureShowcase />
-      <BuiltInPublic
-        applicantCount={applicantCount}
-        foundingRemaining={foundingRemaining}
-      />
       <PricingReveal foundingRemaining={foundingRemaining} />
       <FAQ />
       <Footer />

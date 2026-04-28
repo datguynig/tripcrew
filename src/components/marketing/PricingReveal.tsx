@@ -38,20 +38,20 @@ function PricingCard({
 
   const mutedDescription = isFree ? "text-ink/70" : "text-cream/70";
   const periodColor = isFree ? "text-ink/60" : "text-cream/60";
-  const arrowColor = isFree ? "text-ink/40" : "text-cream/40";
+  const arrowColor = isFree ? "text-ink/70" : "text-cream/70";
   const bulletColor = isFree ? "text-ink/85" : "text-cream/85";
-  const subColor = isFree ? "text-ink/55" : "text-cream/55";
+  const subColor = isFree ? "text-ink/70" : "text-cream/70";
 
   const ctaClass = isFree
     ? "bg-ink text-cream border-2 border-ink hover:bg-transparent hover:text-ink"
     : isPlus
-      ? "bg-marketing-coral text-cream border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream"
-      : "bg-cream text-ink border-2 border-cream hover:bg-marketing-coral hover:text-cream hover:border-marketing-coral";
+      ? "bg-marketing-coral text-ink border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream"
+      : "bg-cream text-ink border-2 border-cream hover:bg-marketing-coral hover:text-ink hover:border-marketing-coral";
 
   return (
     <div className={`relative ${bgClass} p-8 flex flex-col`}>
       {ribbon ? (
-        <div className="absolute top-0 right-0 px-3 py-1.5 bg-marketing-coral text-cream font-mono uppercase tracking-[0.18em] text-[10px]">
+        <div className="absolute top-0 right-0 px-3 py-1.5 bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[10px]">
           {ribbon}
         </div>
       ) : null}
