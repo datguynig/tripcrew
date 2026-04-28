@@ -10,7 +10,7 @@ const STEPS: Step[] = [
     number: "01",
     title: "Apply for an invite.",
     body: [
-      "One email. Three quick questions on the next screen. We approve in batches.",
+      "Five quick questions. 90 seconds. Approved in weekly batches.",
     ],
     numberClassName: "text-ink/70",
   },
@@ -36,6 +36,14 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-24 md:py-32">
+        <div className="flex flex-col gap-3 mb-12 max-w-[640px]">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
+            How it works
+          </p>
+          <h2 className="font-serif text-[36px] md:text-[52px] leading-[1.02] tracking-[-0.025em]">
+            Three steps. One trip out the door.
+          </h2>
+        </div>
         <div className="grid grid-cols-1 border-2 border-ink md:grid-cols-3">
           {STEPS.map((step, index) => {
             const isLastColumn = index === STEPS.length - 1;
