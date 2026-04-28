@@ -51,26 +51,54 @@ export async function provisionProfileForCheckout(params: {
   }
 
   // 2. Upsert the profile. `name` is required by the schema check
-  // constraint (length 1..60) — derive a placeholder from the local
-  // part of the email; the user updates it on first sign-in via /profile.
-  const placeholderName = derivePlaceholderName(params.email);
-  const profilePayload: Record<string, unknown> = {
-    id: userId,
-    name: placeholderName,
-    stripe_customer_id: params.customerId,
-    stripe_subscription_status: "active",
-  };
-  if (params.isFoundingMember) {
-    profilePayload.is_founder = true;
-    profilePayload.founding_crew_at = new Date().toISOString();
-  }
-
-  const { error: upsertErr } = await supabase
+  // constraint (length 1..60) and we don't want to clobber an existing
+  // user's display name on a stripe-event replay — so we branch on
+  // whether the row already exists.
+  //
+  // Founding-cohort membership is stamped via `founding_crew_at`, NOT
+  // `is_founder`. The latter is the platform-admin gate for
+  // /admin/applications/* and stays reserved for the platform founder
+  // account (see 20260429000100_applications_admin_columns.sql + the
+  // founding_crew_flag migration). Mixing the two would grant every
+  // paying founding-tier customer admin access.
+  const { data: existingProfile } = await supabase
     .from("profiles")
-    .upsert(profilePayload, { onConflict: "id", ignoreDuplicates: false });
+    .select("id, founding_crew_at")
+    .eq("id", userId)
+    .maybeSingle<{ id: string; founding_crew_at: string | null }>();
 
-  if (upsertErr) {
-    throw new Error(`profiles upsert failed: ${upsertErr.message}`);
+  if (existingProfile) {
+    const updatePayload: Record<string, unknown> = {
+      stripe_customer_id: params.customerId,
+      stripe_subscription_status: "active",
+    };
+    if (params.isFoundingMember && !existingProfile.founding_crew_at) {
+      updatePayload.founding_crew_at = new Date().toISOString();
+    }
+    const { error: updateErr } = await supabase
+      .from("profiles")
+      .update(updatePayload)
+      .eq("id", userId);
+    if (updateErr) {
+      throw new Error(`profiles update failed: ${updateErr.message}`);
+    }
+  } else {
+    const placeholderName = derivePlaceholderName(params.email);
+    const insertPayload: Record<string, unknown> = {
+      id: userId,
+      name: placeholderName,
+      stripe_customer_id: params.customerId,
+      stripe_subscription_status: "active",
+    };
+    if (params.isFoundingMember) {
+      insertPayload.founding_crew_at = new Date().toISOString();
+    }
+    const { error: insertErr } = await supabase
+      .from("profiles")
+      .insert(insertPayload);
+    if (insertErr) {
+      throw new Error(`profiles insert failed: ${insertErr.message}`);
+    }
   }
 
   return { id: userId, isNew };
