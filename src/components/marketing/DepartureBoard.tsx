@@ -159,18 +159,12 @@ function FeatureCard({
             <span aria-hidden="true" className="mx-3 text-cream/40">·</span>
             {trip.vibesLabel}
           </p>
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
-            <Link
-              href={`/apply?intent=plus&seed=${trip.slug}&vibes=${trip.applyVibes}`}
-              className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream transition-colors duration-150 whitespace-nowrap self-start"
-            >
-              Apply for a {trip.city} plan →
-            </Link>
+          <div className="mt-4">
             <Link
               href={`/curated/${trip.slug}`}
-              className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/85 hover:text-cream underline-offset-4 hover:underline whitespace-nowrap"
+              className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream transition-colors duration-150 whitespace-nowrap"
             >
-              See the full plan →
+              Plan your {trip.city} →
             </Link>
           </div>
         </div>
