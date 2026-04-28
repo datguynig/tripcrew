@@ -2,12 +2,17 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireFounder, FounderForbiddenError } from "@/lib/auth/founder";
 import {
   buildWelcomeEmail,
   sendWelcomeEmail,
 } from "@/lib/email/welcomeEmail";
+import {
+  buildApplicationApprovedEmail,
+  sendApplicationApproved,
+} from "@/lib/email/teaserEmails";
 import type { ApplicationPain } from "@/lib/types";
 
 type ApproveResult = { ok: true } | { ok?: false; error: string };
@@ -54,6 +59,8 @@ export async function approveApplication(
       approved_by: founderId,
       invite_token: inviteToken,
       invite_sent_at: now,
+      decision_finalised_at: now,
+      decision_finalised_by: "admin",
     })
     .eq("id", applicationId);
 
@@ -62,10 +69,13 @@ export async function approveApplication(
     return { error: "Could not approve. Try again." };
   }
 
-  // The /sign-in page does not yet read ?invite= and link the resulting
-  // user back to applications.user_id. Until that handler ships, the
-  // applicant signs in normally and the user_id link is a manual SQL
-  // backfill. Tracked in roadmap.md under "Onboarding & lifecycle".
+  // Phase 3 (Crew Plus checkout flow) supersedes the old magic-link-only
+  // welcome email: the approved-application email now drives the
+  // applicant straight into Stripe Checkout via
+  // /api/applications/{id}/checkout. The legacy welcomeEmail is kept as
+  // a redundant safety-net send so any tooling that still expects the
+  // pain-themed welcome copy keeps working — the checkout email is the
+  // primary CTA the applicant sees.
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tripcrew.app";
   const magicLinkUrl = `${baseUrl}/sign-in?invite=${inviteToken}`;
 
@@ -83,6 +93,23 @@ export async function approveApplication(
     // the email manually rather than re-approving and double-stamping.
     return { error: "Approved but email failed. Resend manually." };
   }
+
+  // Fire the Crew Plus checkout email through after() so the founder's
+  // approve click returns immediately. Failures are logged but don't
+  // poison the approval — the applicant can be re-emailed manually.
+  const recipientEmail = application.email;
+  after(async () => {
+    try {
+      await sendApplicationApproved(
+        buildApplicationApprovedEmail({
+          email: recipientEmail,
+          applicationId,
+        }),
+      );
+    } catch (err) {
+      console.error("approveApplication: approved-email send failed:", err);
+    }
+  });
 
   revalidatePath("/admin/applications/queue");
   revalidatePath(`/admin/applications/${applicationId}`);

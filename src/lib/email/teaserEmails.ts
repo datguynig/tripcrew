@@ -219,3 +219,64 @@ export async function sendApplicationReceived(
 ): Promise<void> {
   await sendViaResend(input, "applicationReceived");
 }
+
+export type BuildApplicationApprovedInput = {
+  email: string;
+  applicationId: string;
+};
+
+export function buildApplicationApprovedEmail({
+  email,
+  applicationId,
+}: BuildApplicationApprovedInput): TeaserEmail {
+  const checkoutUrl = `${siteUrl()}/api/applications/${applicationId}/checkout`;
+  return {
+    to: email,
+    subject: `You're in. Crew Plus, Cohort 01.`,
+    text: [
+      `You're in. Welcome to Crew Plus, Cohort 01.`,
+      ``,
+      `Tap to set up billing and get started:`,
+      checkoutUrl,
+      ``,
+      `Once payment lands, you'll get a sign-in link by email and we'll seed your first trip from the draft you saved.`,
+      ``,
+      `— Tripcrew`,
+    ].join("\n"),
+  };
+}
+
+export async function sendApplicationApproved(
+  input: TeaserEmail,
+): Promise<void> {
+  await sendViaResend(input, "applicationApproved");
+}
+
+export type BuildApplicationSoftRejectedInput = {
+  email: string;
+};
+
+export function buildApplicationSoftRejectedEmail({
+  email,
+}: BuildApplicationSoftRejectedInput): TeaserEmail {
+  return {
+    to: email,
+    subject: `An update on your Crew Plus application.`,
+    text: [
+      `Thanks for applying to Tripcrew.`,
+      ``,
+      `We're matching applicants in waves. You're queued for the next one. We'll be in touch when there's space.`,
+      ``,
+      `In the meantime, a founding spot still skips the queue:`,
+      `${siteUrl()}/#pricing`,
+      ``,
+      `— Tripcrew`,
+    ].join("\n"),
+  };
+}
+
+export async function sendApplicationSoftRejected(
+  input: TeaserEmail,
+): Promise<void> {
+  await sendViaResend(input, "applicationSoftRejected");
+}

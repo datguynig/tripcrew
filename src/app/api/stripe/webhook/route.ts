@@ -169,6 +169,117 @@ async function applySubscription(
   }
 }
 
+async function handleCrewPlusCheckoutCompleted(
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  const applicationId = session.metadata?.application_id;
+  // draft_lead_id is intentionally optional — applications submitted via
+  // the cold /apply form (no draft) still flow through Crew Plus checkout.
+  const draftLeadIdRaw = session.metadata?.draft_lead_id;
+  const draftLeadId =
+    typeof draftLeadIdRaw === "string" && draftLeadIdRaw.length > 0
+      ? draftLeadIdRaw
+      : null;
+
+  if (!applicationId) {
+    console.error(
+      "crew-plus webhook: session missing application_id metadata",
+      session.id,
+    );
+    return;
+  }
+
+  const supabase = createServiceClient();
+
+  const { data: application, error: appErr } = await supabase
+    .from("applications")
+    .select("id, email")
+    .eq("id", applicationId)
+    .maybeSingle<{ id: string; email: string }>();
+  if (appErr || !application) {
+    console.error(
+      "crew-plus webhook: application lookup failed",
+      applicationId,
+      appErr,
+    );
+    return;
+  }
+
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : session.customer?.id;
+  if (!customerId) {
+    console.error("crew-plus webhook: session missing customer id", session.id);
+    return;
+  }
+
+  const email = session.customer_email ?? application.email;
+
+  // Provision the auth user + profile. NOT a founding member — Crew Plus
+  // is the standard tier; founding_crew_at stays null. Membership is
+  // identified by stripe_subscription_status === "active" plus a
+  // non-null applications.first_paid_at.
+  let profile: { id: string; isNew: boolean };
+  try {
+    profile = await provisionProfileForCheckout({
+      email,
+      customerId,
+      isFoundingMember: false,
+    });
+  } catch (err) {
+    console.error("crew-plus webhook: provisionProfileForCheckout failed", err);
+    return;
+  }
+
+  // Pre-seed the first trip from the draft when one is linked.
+  if (draftLeadId) {
+    const { data: draft, error: draftErr } = await supabase
+      .from("draft_leads")
+      .select("*")
+      .eq("id", draftLeadId)
+      .maybeSingle<DraftLead>();
+    if (draftErr || !draft) {
+      console.error(
+        "crew-plus webhook: draft lookup failed",
+        draftLeadId,
+        draftErr,
+      );
+    } else {
+      try {
+        await createFirstTripFromDraft(profile.id, draft);
+      } catch (err) {
+        console.error(
+          "crew-plus webhook: createFirstTripFromDraft failed",
+          err,
+        );
+        // Non-fatal — the user can still create a trip manually.
+      }
+    }
+  }
+
+  // Stamp first_paid_at + the user_id link so the application row tracks
+  // the lifecycle. Bypasses the email-matched stamp in applySubscription
+  // by going through the application id directly.
+  const { error: stampErr } = await supabase
+    .from("applications")
+    .update({
+      first_paid_at: new Date().toISOString(),
+      user_id: profile.id,
+    })
+    .eq("id", applicationId);
+  if (stampErr) {
+    console.error(
+      "crew-plus webhook: applications stamp update failed",
+      stampErr,
+    );
+  }
+
+  // Fire the magic link last. Don't await — the customer is already on
+  // the Stripe success page; sendMagicLink swallows its own errors.
+  void sendMagicLink(email);
+}
+
 async function handleFoundingCheckoutCompleted(
   session: Stripe.Checkout.Session,
 ): Promise<void> {
@@ -288,8 +399,11 @@ export async function POST(request: Request): Promise<Response> {
         break;
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.metadata?.kind === "founding") {
+        const kind = session.metadata?.kind;
+        if (kind === "founding") {
           await handleFoundingCheckoutCompleted(session);
+        } else if (kind === "crew_plus") {
+          await handleCrewPlusCheckoutCompleted(session);
         }
         break;
       }
