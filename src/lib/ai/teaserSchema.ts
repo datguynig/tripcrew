@@ -26,6 +26,8 @@ export const teaserOutputSchema = z.object({
   weather: z.string().min(1).max(200),
 });
 
+export type TeaserOutput = z.infer<typeof teaserOutputSchema>;
+
 export function parseTeaserOutput(raw: unknown) {
   return teaserOutputSchema.parse(raw);
 }

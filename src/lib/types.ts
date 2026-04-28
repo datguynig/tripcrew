@@ -476,20 +476,8 @@ export type TeaserInputs = {
   budget: "500" | "1000" | "1500" | "2000+";
 };
 
-export type TeaserOutput = {
-  spec: {
-    perHead: string;
-    crew: string;
-    origin: string;
-    vibes: string;
-  };
-  hero_paragraph: string;
-  days: Array<{ day: string; place: string; note: string }>;
-  stay: { neighbourhood: string; priceBand: string };
-  flights: { priceBand: string };
-  bookings_count: number;
-  weather: string;
-};
+import type { TeaserOutput } from "@/lib/ai/teaserSchema";
+export type { TeaserOutput };
 
 export type DraftLead = {
   id: string;
