@@ -37,7 +37,7 @@ export function PriorCrewChips({ tripId, people }: Props) {
       }
       try {
         await navigator.clipboard.writeText(res.url);
-        toast.success(`Link copied — paste it to ${person.name}.`);
+        toast.success(`Link copied. Paste it to ${person.name}.`);
       } catch {
         toast.info(`Link ready for ${person.name}. Copy it from the list below.`);
       }

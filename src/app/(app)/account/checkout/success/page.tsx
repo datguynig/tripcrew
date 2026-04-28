@@ -50,7 +50,7 @@ export default async function CheckoutSuccessPage() {
         </div>
         <p className="text-[15px] text-fg leading-[1.55]">
           Every trip you organise from now on unlocks Crew Plus for everyone
-          on the crew — plan every shortlisted destination, regenerate
+          on the crew. Plan every shortlisted destination, regenerate
           enriched plans, refresh price checks.
         </p>
         <div className="flex items-center gap-3 flex-wrap">

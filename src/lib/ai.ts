@@ -158,7 +158,7 @@ const MAX_PLACES_REQUESTS = 20;
 const SYSTEM_PROMPT = [
   "You are the trip-planning assistant for Tripcrew, a collaborative",
   "group-trip app. A crew just locked a destination. Draft the trip so",
-  "it feels alive in one click — hero copy, logistics, a day-by-day",
+  "it feels alive in one click. Hero copy, logistics, a day-by-day",
   "schedule, activity shortlist, and bookings the crew should make.",
   "",
   "Rules:",
@@ -184,11 +184,11 @@ const SYSTEM_PROMPT = [
   "  \"The rule\" (a single destination-specific constraint, e.g.",
   "  \"Systembolaget by Fri 3pm\" for Stockholm).",
   "  For the budget cell, return `amount` as a plain number (e.g. 950)",
-  "  and omit the currency symbol from `value` — the app formats it with",
+  "  and omit the currency symbol from `value`. The app formats it with",
   "  the crew's currency. Omit `amount` on all other cells.",
   "",
   "Output: when you have enough information, respond with a SINGLE",
-  "JSON object matching this exact shape, nothing else — no prose",
+  "JSON object matching this exact shape, nothing else. No prose",
   "before or after:",
   "",
   "{",
@@ -240,7 +240,7 @@ function buildUserPrompt(ctx: DraftContext): string {
         `origin_metro: ${ctx.origin.metro} (any of: ${(ctx.origin.metroAirports ?? []).join(", ")})`,
       );
       lines.push(
-        "Use the IATA metro code in the flights cell (e.g. 'LON → ARN, ~2h25') rather than committing to a specific airport — the crew may fly from any of the listed airports.",
+        "Use the IATA metro code in the flights cell (e.g. 'LON → ARN, ~2h25') rather than committing to a specific airport. The crew may fly from any of the listed airports.",
       );
     } else {
       lines.push(
@@ -381,7 +381,7 @@ export async function draftReplacement(
 
   const systemInstruction = [
     "You are the trip-planning assistant for Tripcrew. One item in the",
-    "trip plan needs a replacement — draft exactly one new item that is",
+    "trip plan needs a replacement. Draft exactly one new item that is",
     "different from the one being replaced AND different from the other",
     "items already in the plan. Ground specific venues via searchPlaces.",
     "Voice: tight, editorial, Monocle-style.",
@@ -395,7 +395,7 @@ export async function draftReplacement(
           '{ "activity": { "title": string, "meta": string, "category": "day"|"night" } }',
         ].join("\n")
       : [
-          "Output ONLY one booking — an actionable reservation the crew",
+          "Output ONLY one booking. An actionable reservation the crew",
           "needs to make in advance.",
           "",
           'Respond with a SINGLE JSON object, no prose:',
@@ -564,7 +564,7 @@ async function runGeminiLoop<T>({
 function buildSurfaceSystemPrompt(surface: DraftSurface): string {
   const shared = [
     "You are the trip-planning assistant for Tripcrew, a collaborative",
-    "group-trip app. The crew has already drafted this trip once — you",
+    "group-trip app. The crew has already drafted this trip once. You",
     "are re-drafting a single section. Stay consistent with the other",
     "sections already in place. Use the searchPlaces tool for any",
     "specific venue you name.",
@@ -658,7 +658,7 @@ function buildSurfaceUserPrompt(input: SurfaceDraftInput): string {
   if (includeActivities) {
     lines.push("", "existing activities (sample):");
     for (const a of existing.activities!.slice(0, 8)) {
-      lines.push(`- ${a.title}${a.meta ? ` — ${a.meta}` : ""}`);
+      lines.push(`- ${a.title}${a.meta ? ` · ${a.meta}` : ""}`);
     }
   }
   if (includeBookings) {

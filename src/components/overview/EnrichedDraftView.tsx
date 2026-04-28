@@ -102,7 +102,7 @@ export function EnrichedDraftView({
                           className="text-fg hover:text-accent transition-colors"
                         >
                           <span className="font-medium">{hotel.area}</span>
-                          <span className="text-fg-3"> — {hotel.description}</span>
+                          <span className="text-fg-3"> · {hotel.description}</span>
                           <span className="text-accent ml-1">↗</span>
                         </a>
                       </li>
@@ -165,7 +165,7 @@ export function EnrichedDraftView({
                                   <span className="font-medium text-fg">{act.name}</span>
                                 )}
                                 {act.description && (
-                                  <span className="text-fg-3"> — {act.description}</span>
+                                  <span className="text-fg-3"> · {act.description}</span>
                                 )}
                                 {act.bookAhead && (
                                   <span className="ml-2 text-[11px] uppercase tracking-wider text-accent border border-accent/40 px-1.5 py-0.5 inline-block whitespace-nowrap align-baseline">

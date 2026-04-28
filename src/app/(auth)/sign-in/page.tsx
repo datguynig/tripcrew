@@ -46,7 +46,7 @@ function SignInInner() {
         </h1>
 
         <p className="text-fg-2 text-base leading-[1.5] mb-8">
-          One app for the crew — dates, votes, bookings, money, photos.
+          One app for the crew. Dates, votes, bookings, money, photos.
         </p>
 
         {mode === "signin" && <PasswordForm mode="signin" next={next} />}

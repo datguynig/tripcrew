@@ -97,7 +97,7 @@ export function LockAndDraftDialog({
       }
       onOpenChange(false);
       if (autoDraft) {
-        toast.success("Drafting your trip — should land in ~15 seconds.");
+        toast.success("Drafting your trip. Should land in ~15 seconds.");
       } else {
         toast.success("Locked. You can draft any time from the trip page.");
       }

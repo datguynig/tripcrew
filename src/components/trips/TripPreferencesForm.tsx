@@ -296,7 +296,7 @@ export function TripPreferencesForm({
         <textarea
           value={value.notes ?? ""}
           onChange={(e) => update({ notes: e.target.value || undefined })}
-          placeholder="Anything the AI should know — accessibility, dietaries, in-jokes, must-haves"
+          placeholder="Anything the AI should know: accessibility, dietaries, in-jokes, must-haves"
           rows={3}
           maxLength={400}
           className={`${INPUT} resize-none`}
@@ -316,7 +316,7 @@ export function TripPreferencesForm({
 
         {pins.length === 0 && (
           <p className="text-[13px] text-fg-3 leading-[1.55]">
-            Optional. Add specific things you want in the plan — match days,
+            Optional. Add specific things you want in the plan: match days,
             big-deal dinners, skydiving on someone&apos;s birthday. The AI
             schedules around them.
           </p>
@@ -431,7 +431,7 @@ function PinCard({
       <textarea
         value={pin.notes ?? ""}
         onChange={(e) => onChange({ notes: e.target.value || null })}
-        placeholder="Notes (optional) — booking link, prep, gear, weather-dependent"
+        placeholder="Notes (optional): booking link, prep, gear, weather-dependent"
         rows={2}
         maxLength={300}
         className={`${INPUT} resize-none text-[13px]`}

@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "TripCrew",
-  description: "Plan trips with your crew — dates, votes, bookings, money, photos.",
+  description: "Plan trips with your crew. Dates, votes, bookings, money, photos.",
 };
 
 export default function RootLayout({

@@ -44,7 +44,7 @@ export function SubscriptionPanel({ profile }: Props) {
             <span className="text-accent">.</span>
           </h3>
           <p className="text-[14px] text-fg-2 leading-[1.55]">
-            {PRICE_LABEL}, 7-day free trial. Buy once for your crew — every trip
+            {PRICE_LABEL}, 7-day free trial. Buy once for your crew. Every trip
             you organise unlocks Crew Plus for everyone on it.
           </p>
         </div>

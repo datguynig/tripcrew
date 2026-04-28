@@ -63,7 +63,7 @@ export function LockAndDraftSection({
         lead={
           hasDraft
             ? "Built from the brief above."
-            : "An AI-drafted plan grounded in live places — where to stay, day-by-day itinerary, what to book ahead, and a budget range."
+            : "An AI-drafted plan grounded in live places: where to stay, day-by-day itinerary, what to book ahead, and a budget range."
         }
       />
 

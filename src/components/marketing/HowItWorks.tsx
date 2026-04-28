@@ -32,7 +32,7 @@ const STEPS: Step[] = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-cream text-ink border-y-2 border-ink">
+    <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-16 md:py-20">
         <div className="grid grid-cols-1 border-2 border-ink md:grid-cols-3">
           {STEPS.map((step, index) => {
@@ -72,7 +72,7 @@ export function HowItWorks() {
 
         <div className="mt-12 flex justify-center">
           <a
-            href="#sample-trip"
+            href="#sample-trips"
             className="font-mono uppercase tracking-[0.22em] text-[11px] text-ink/50 transition-opacity duration-150 hover:text-ink/80"
           >
             ↓ See a sample trip

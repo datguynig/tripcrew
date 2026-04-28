@@ -219,7 +219,7 @@ export function Schedule({
                     editable={!!isAdmin}
                     maxLength={500}
                     ariaLabel={`Edit day ${i + 1} body`}
-                    emptyLabel="Body — two sentences. Name specific venues."
+                    emptyLabel="Body. Two sentences. Name specific venues."
                     className="text-fg-2 text-[14px] leading-[1.55]"
                   />
                 </div>

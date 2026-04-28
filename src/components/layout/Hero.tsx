@@ -138,7 +138,7 @@ export function Hero({
             editable={isAdmin}
             maxLength={300}
             ariaLabel="Edit trip subtitle"
-            emptyLabel="Add a subtitle — one line, editorial."
+            emptyLabel="Add a subtitle. One line, editorial."
             className="block"
           />
         </div>

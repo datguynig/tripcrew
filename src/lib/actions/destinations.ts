@@ -168,7 +168,7 @@ export async function removeCandidate(id: string) {
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
-  if (!data) return { error: "Could not remove — not found or not permitted" };
+  if (!data) return { error: "Could not remove. Not found or not permitted" };
   await revalidateTrip(data.trip_id);
   return { ok: true };
 }
