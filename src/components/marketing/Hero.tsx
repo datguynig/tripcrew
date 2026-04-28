@@ -1,6 +1,15 @@
-import Image from "next/image";
 import Link from "next/link";
 
+import {
+  AnimatedHeadline,
+  AnimatedSubhead,
+  HeroBackdrop,
+  HeroCTAGroup,
+  HeroEyebrow,
+  HeroFeaturedReveal,
+  HeroFootnote,
+  KenBurnsImage,
+} from "@/components/marketing/HeroMotion";
 import type { CuratedTrip } from "@/lib/marketing/curatedTrips";
 
 type HeroProps = {
@@ -18,56 +27,59 @@ export function Hero({
 
   return (
     <section className="relative overflow-hidden bg-cream text-ink">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
-        aria-hidden="true"
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(184,57,28,0.55)_0%,transparent_60%)]" />
-      </div>
+      <HeroBackdrop />
 
       <div className="relative mx-auto max-w-[1100px] px-6 sm:px-10 pt-20 pb-24 sm:pt-28 lg:pt-36 lg:pb-32">
         <div className="flex flex-col items-center text-center">
-          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
-            <span aria-hidden="true" className="inline-block w-[8px] h-[8px] bg-marketing-coral-deep mr-3 align-middle" />
+          <HeroEyebrow className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             Invite-only · Cohort 01
-          </p>
+          </HeroEyebrow>
 
-          <h1 className="mt-8 font-serif font-medium leading-[0.95] tracking-[-0.035em] text-[56px] sm:text-[80px] lg:text-[104px] max-w-[14ch]">
-            Your crew&rsquo;s trip, fully planned.
-          </h1>
+          <AnimatedHeadline className="mt-8 font-serif font-medium leading-[0.95] tracking-[-0.035em] text-[56px] sm:text-[80px] lg:text-[104px] max-w-[14ch]" />
 
-          <p className="mt-8 max-w-[44ch] text-[19px] leading-[1.5] text-ink/75 sm:text-[22px]">
-            AI drafts. Your crew picks. The trip{" "}
-            <em className="font-serif italic text-ink">finally</em> leaves the chat.
-          </p>
+          <AnimatedSubhead className="mt-8 max-w-[44ch] text-[19px] leading-[1.5] text-ink/75 sm:text-[22px]" />
 
-          <div className="mt-10 flex flex-col sm:flex-row items-center gap-5">
+          <HeroCTAGroup className="mt-10 flex flex-col sm:flex-row items-center gap-5">
             <Link
               href="/apply"
-              className="inline-flex items-center justify-center bg-ink text-cream font-mono uppercase tracking-[0.18em] text-[12px] h-[56px] px-8 border-2 border-ink hover:bg-marketing-coral hover:text-ink hover:border-marketing-coral transition-colors duration-150 whitespace-nowrap"
+              className="group inline-flex items-center justify-center bg-ink text-cream font-mono uppercase tracking-[0.18em] text-[12px] h-[56px] px-8 border-2 border-ink hover:bg-marketing-coral hover:text-ink hover:border-marketing-coral transition-colors duration-150 whitespace-nowrap"
             >
-              Apply for an invite →
+              Apply for an invite
+              <span
+                aria-hidden="true"
+                className="ml-2 inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
+              >
+                →
+              </span>
             </Link>
             <a
               href="#featured-plan"
-              className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 hover:text-ink underline-offset-4 hover:underline"
+              className="group font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 hover:text-ink underline-offset-4 hover:underline"
             >
-              ↓ See a curated plan
+              <span
+                aria-hidden="true"
+                className="inline-block mr-1 transition-transform duration-200 ease-out group-hover:translate-y-[2px]"
+              >
+                ↓
+              </span>
+              See a curated plan
             </a>
-          </div>
+          </HeroCTAGroup>
 
-          <p className="mt-7 font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65">
+          <HeroFootnote className="mt-7 font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65">
             {claimed > 0
               ? `${claimed.toLocaleString("en-GB")} / 500 founding spots claimed`
               : "500 founding spots open"}
             {applicantCount > 0
               ? ` · ${applicantCount.toLocaleString("en-GB")} on the waitlist`
               : ""}
-          </p>
+          </HeroFootnote>
         </div>
 
         <div id="featured-plan" className="mt-20 sm:mt-24">
-          <FeaturedTripPlan trip={featuredTrip} />
+          <HeroFeaturedReveal>
+            <FeaturedTripPlan trip={featuredTrip} />
+          </HeroFeaturedReveal>
         </div>
       </div>
     </section>
@@ -80,7 +92,7 @@ function FeaturedTripPlan({ trip }: { trip: CuratedTrip }) {
   return (
     <article className="mx-auto max-w-[940px] border-2 border-ink bg-cream shadow-[8px_8px_0_0_rgba(26,22,20,0.08)]">
       <div className="relative aspect-[16/9] overflow-hidden border-b-2 border-ink">
-        <Image
+        <KenBurnsImage
           src={trip.heroPhotoUrl}
           alt={`${trip.city}, ${trip.country}`}
           fill
@@ -169,9 +181,15 @@ function FeaturedTripPlan({ trip }: { trip: CuratedTrip }) {
           </p>
           <Link
             href={`/curated/${trip.slug}`}
-            className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[11px] h-[48px] px-6 border-2 border-marketing-coral hover:bg-ink hover:text-cream hover:border-ink transition-colors duration-150 whitespace-nowrap self-start"
+            className="group inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[11px] h-[48px] px-6 border-2 border-marketing-coral hover:bg-ink hover:text-cream hover:border-ink transition-colors duration-150 whitespace-nowrap self-start"
           >
-            See the full {trip.city} plan →
+            See the full {trip.city} plan
+            <span
+              aria-hidden="true"
+              className="ml-2 inline-block transition-transform duration-200 ease-out group-hover:translate-x-1"
+            >
+              →
+            </span>
           </Link>
         </div>
       </div>

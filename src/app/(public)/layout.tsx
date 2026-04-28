@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 
 import { PublicNav } from "@/components/marketing/PublicNav";
+import { ScrollProgress } from "@/components/motion";
+import { MotionRoot } from "@/lib/motion";
 
 export const metadata: Metadata = {
   title: "Tripcrew. Trips that make it out of the group chat.",
@@ -14,9 +16,12 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-cream text-ink min-h-screen">
-      <PublicNav />
-      {children}
-    </div>
+    <MotionRoot>
+      <div className="bg-cream text-ink min-h-screen">
+        <ScrollProgress />
+        <PublicNav />
+        {children}
+      </div>
+    </MotionRoot>
   );
 }

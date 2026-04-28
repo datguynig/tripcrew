@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { RevealOnView } from "@/components/motion";
+
 type Tier = {
   name: string;
   price: string;
@@ -86,17 +88,19 @@ export function PricingReveal({
       className="bg-ink text-cream border-t-2 border-cream/15"
     >
       <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-24 md:py-32">
-        <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral mb-6">
-          Membership
-        </p>
-        <h2 className="font-serif text-[44px] md:text-[64px] leading-[0.98] tracking-[-0.025em] max-w-[20ch] mb-20 md:mb-24">
-          Three ways in.{" "}
-          <span className="font-serif italic">One invite to claim.</span>
-        </h2>
+        <RevealOnView>
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral mb-6">
+            Membership
+          </p>
+          <h2 className="font-serif text-[44px] md:text-[64px] leading-[0.98] tracking-[-0.025em] max-w-[20ch] mb-20 md:mb-24">
+            Three ways in.{" "}
+            <span className="font-serif italic">One invite to claim.</span>
+          </h2>
+        </RevealOnView>
 
         <div className="grid grid-cols-1 md:grid-cols-3 md:divide-x md:divide-cream/15">
-          {tiers.map((tier) => (
-            <TierColumn key={tier.name} tier={tier} />
+          {tiers.map((tier, index) => (
+            <TierColumn key={tier.name} tier={tier} index={index} />
           ))}
         </div>
       </div>
@@ -104,19 +108,30 @@ export function PricingReveal({
   );
 }
 
-function TierColumn({ tier }: { tier: Tier }) {
+function TierColumn({ tier, index }: { tier: Tier; index: number }) {
   return (
-    <div className="relative flex flex-col py-12 md:py-0 md:px-10 border-t border-cream/15 md:border-t-0 first:border-t-0">
+    <RevealOnView
+      delay={index * 0.12}
+      className="relative flex flex-col py-12 md:py-0 md:px-10 border-t border-cream/15 md:border-t-0 first:border-t-0"
+    >
       <div className="min-h-[28px] mb-7 flex items-start">
         {tier.recommended ? (
-          <span className="inline-flex items-center bg-marketing-coral text-ink px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px]">
+          <RevealOnView
+            as="span"
+            delay={index * 0.12 + 0.2}
+            className="inline-flex items-center bg-marketing-coral text-ink px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px]"
+          >
             Most crews pick
-          </span>
+          </RevealOnView>
         ) : null}
         {tier.scarcityChip ? (
-          <span className="inline-flex items-center bg-transparent text-marketing-coral px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px] border-2 border-marketing-coral">
+          <RevealOnView
+            as="span"
+            delay={index * 0.12 + 0.2}
+            className="inline-flex items-center bg-transparent text-marketing-coral px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px] border-2 border-marketing-coral"
+          >
             {tier.scarcityChip}
-          </span>
+          </RevealOnView>
         ) : null}
       </div>
 
@@ -158,8 +173,13 @@ function TierColumn({ tier }: { tier: Tier }) {
       </Link>
 
       <ul className="flex flex-col gap-3 border-t border-cream/15 pt-9">
-        {tier.bullets.map((bullet) => (
-          <li key={bullet} className="flex items-start gap-3">
+        {tier.bullets.map((bullet, bulletIndex) => (
+          <RevealOnView
+            as="li"
+            key={bullet}
+            delay={index * 0.12 + 0.25 + bulletIndex * 0.05}
+            className="flex items-start gap-3"
+          >
             <span
               aria-hidden="true"
               className="font-mono text-[14px] leading-[1.4] text-marketing-coral shrink-0"
@@ -169,9 +189,9 @@ function TierColumn({ tier }: { tier: Tier }) {
             <span className="text-[14px] leading-[1.5] text-cream/85">
               {bullet}
             </span>
-          </li>
+          </RevealOnView>
         ))}
       </ul>
-    </div>
+    </RevealOnView>
   );
 }

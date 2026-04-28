@@ -1,3 +1,5 @@
+import { RevealOnView, ScaleYOnView } from "@/components/motion";
+
 type Step = {
   number: string;
   title: string;
@@ -26,7 +28,7 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-24 md:py-32">
-        <div className="flex flex-col gap-5 mb-16 md:mb-20 max-w-[760px]">
+        <RevealOnView className="flex flex-col gap-5 mb-16 md:mb-20 max-w-[760px]">
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             How it works
           </p>
@@ -34,18 +36,24 @@ export function HowItWorks() {
             What it takes to{" "}
             <span className="font-serif italic">finally</span> leave the chat.
           </h2>
-        </div>
+        </RevealOnView>
         <ol className="border-t-2 border-ink">
           {STEPS.map((step, index) => {
             const isLast = index === STEPS.length - 1;
             return (
-              <li
+              <RevealOnView
+                as="li"
                 key={step.number}
+                delay={index * 0.09}
                 className={[
-                  "grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-6 md:gap-12 py-10 md:py-14",
+                  "relative grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-6 md:gap-12 py-10 md:py-14 md:pl-6",
                   isLast ? "border-b-2 border-ink" : "border-b border-ink/15",
                 ].join(" ")}
               >
+                <ScaleYOnView
+                  className="hidden md:block absolute left-0 top-10 bottom-10 w-[3px] origin-top bg-marketing-coral"
+                  delay={index * 0.09}
+                />
                 <p className="font-mono uppercase tracking-[0.18em] text-[12px] text-marketing-coral-deep md:pt-3">
                   {step.number}
                 </p>
@@ -60,7 +68,7 @@ export function HowItWorks() {
                 <p className="hidden md:block font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65 md:pt-3 md:text-right">
                   Step {String(index + 1).padStart(2, "0")} of 03
                 </p>
-              </li>
+              </RevealOnView>
             );
           })}
         </ol>

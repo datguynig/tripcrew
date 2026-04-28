@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CountUp, RevealOnView } from "@/components/motion";
+
 type ChatMessage = {
   initials: string;
   name: string;
@@ -32,7 +34,7 @@ export function PainResonance() {
       className="bg-cream text-ink border-y-2 border-ink"
     >
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
-        <div className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[760px]">
+        <RevealOnView className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[760px]">
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             You know how this ends
           </p>
@@ -42,24 +44,39 @@ export function PainResonance() {
               Most trips never leave it.
             </span>
           </h2>
-        </div>
+        </RevealOnView>
 
         <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-12 md:gap-16 items-start">
-          <div className="border-2 border-ink bg-cream p-5 sm:p-7 md:p-8">
+          <RevealOnView
+            className="border-2 border-ink bg-cream p-5 sm:p-7 md:p-8"
+            delay={0.08}
+          >
             <ChatHeader />
             <ol className="flex flex-col gap-5 mt-6">
               {MESSAGES.map((message, index) => (
-                <li key={`${message.initials}-${index}`}>
+                <RevealOnView
+                  as="li"
+                  key={`${message.initials}-${index}`}
+                  delay={0.28 + index * 0.32}
+                  amount={0.45}
+                >
                   <ChatRow message={message} />
-                </li>
+                </RevealOnView>
               ))}
             </ol>
-            <ReadReceipt />
-          </div>
+            <RevealOnView delay={1.15} amount={0.4}>
+              <ReadReceipt />
+            </RevealOnView>
+          </RevealOnView>
 
           <div className="flex flex-col gap-8">
-            <Diagnosis />
-            <div className="border-t-2 border-ink/15 pt-7 flex flex-col gap-4">
+            <RevealOnView delay={0.18}>
+              <Diagnosis />
+            </RevealOnView>
+            <RevealOnView
+              className="border-t-2 border-ink/15 pt-7 flex flex-col gap-4"
+              delay={0.28}
+            >
               <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink">
                 Tripcrew turns the chat into a trip.
               </p>
@@ -69,7 +86,7 @@ export function PainResonance() {
               >
                 Apply for an invite →
               </Link>
-            </div>
+            </RevealOnView>
           </div>
         </div>
       </div>
@@ -91,7 +108,7 @@ function ChatHeader() {
             June trip · 6 people
           </p>
           <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65">
-            14 unread · last seen Tue
+            <CountUp to={14} /> unread · last seen Tue
           </p>
         </div>
       </div>

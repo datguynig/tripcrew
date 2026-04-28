@@ -1,3 +1,5 @@
+import { RevealOnView } from "@/components/motion";
+
 type FeatureTile = {
   index: string;
   label: string;
@@ -60,7 +62,7 @@ export function FeatureShowcase() {
       className="bg-cream text-ink border-t-2 border-ink"
     >
       <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-24 md:py-32">
-        <div className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[720px]">
+        <RevealOnView className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[720px]">
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
             What you actually get
           </p>
@@ -71,22 +73,28 @@ export function FeatureShowcase() {
             Six tools, from booking to landing. Built for the friend who&rsquo;s
             always the planner.
           </p>
-        </div>
+        </RevealOnView>
 
         <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-ink border-2 border-ink">
-          {FEATURES.map((feature) => (
-            <li
+          {FEATURES.map((feature, index) => (
+            <RevealOnView
+              as="li"
               key={feature.index}
-              className="bg-cream p-7 md:p-9 flex flex-col gap-5 min-h-[320px]"
+              delay={index * 0.07}
+              className="group bg-cream p-7 md:p-9 flex flex-col gap-5 min-h-[320px]"
             >
               <div className="flex items-center justify-between">
                 <span className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65">
                   {feature.index}
                 </span>
                 {feature.badge === "founding" ? (
-                  <span className="font-mono uppercase tracking-[0.18em] text-[9px] text-marketing-coral-deep border border-marketing-coral-deep px-2 py-1">
+                  <RevealOnView
+                    as="span"
+                    delay={index * 0.07 + 0.2}
+                    className="font-mono uppercase tracking-[0.18em] text-[9px] text-marketing-coral-deep border border-marketing-coral-deep px-2 py-1"
+                  >
                     Founding only
-                  </span>
+                  </RevealOnView>
                 ) : null}
               </div>
 
@@ -102,10 +110,14 @@ export function FeatureShowcase() {
                 {feature.body}
               </p>
 
-              <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65 pt-3 border-t border-ink/15">
+              <p className="relative font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65 pt-3 border-t border-ink/15">
+                <span
+                  aria-hidden="true"
+                  className="absolute left-0 top-[-1px] h-px w-full origin-left scale-x-0 bg-marketing-coral transition-transform duration-200 ease-out group-hover:scale-x-100"
+                />
                 {feature.proof}
               </p>
-            </li>
+            </RevealOnView>
           ))}
         </ul>
       </div>

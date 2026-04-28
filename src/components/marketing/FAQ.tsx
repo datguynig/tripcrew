@@ -1,3 +1,5 @@
+import { RevealOnView } from "@/components/motion";
+
 type FaqItem = {
   question: string;
   answer: string;
@@ -36,7 +38,7 @@ export function FAQ() {
     <section id="faq" className="bg-cream text-ink border-t-2 border-ink">
       <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-24 md:py-32">
         <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-20">
-          <div className="md:sticky md:top-24 md:self-start">
+          <RevealOnView className="md:sticky md:top-24 md:self-start">
             <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep mb-5">
               Questions
             </p>
@@ -52,7 +54,7 @@ export function FAQ() {
                 → hello@tripcrew.app
               </a>
             </p>
-          </div>
+          </RevealOnView>
 
           <ul className="border-t border-ink/15">
             {FAQ_ITEMS.map((item) => (
