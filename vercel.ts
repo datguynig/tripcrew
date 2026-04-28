@@ -11,6 +11,14 @@ export const config: VercelConfig = {
       path: "/api/cron/finalise-applications",
       schedule: "*/15 * * * *",
     },
-    // Phase 4 will add the day-7 nudge cron here.
+    {
+      // Day-7 nudge for draft_leads that captured a teaser but never
+      // applied. Hourly cadence — the eligibility filter (created_at older
+      // than 7 days, no nudge_sent_at, no unsubscribed_at, no application)
+      // means most runs do nothing; we only want a small lag from the 7-day
+      // boundary to first send.
+      path: "/api/cron/teaser-day-7-nudge",
+      schedule: "0 * * * *",
+    },
   ],
 };
