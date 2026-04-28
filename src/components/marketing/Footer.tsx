@@ -4,12 +4,12 @@ const PRODUCT_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#curated-trips", label: "Curated trips" },
   { href: "#features", label: "Features" },
-  { href: "#pricing", label: "Pricing" },
+  { href: "#pricing", label: "Membership" },
   { href: "#faq", label: "FAQ" },
 ];
 
 const COMPANY_LINKS = [
-  { href: "/apply", label: "Apply for invite" },
+  { href: "/apply", label: "Apply" },
   { href: "/sign-in", label: "Sign in" },
   { href: "mailto:hello@tripcrew.app", label: "Contact" },
 ];
@@ -22,21 +22,21 @@ const LEGAL_LINKS = [
 
 export function Footer() {
   return (
-    <footer className="bg-ink text-cream border-t-2 border-cream/20">
-      <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-16 md:py-20">
-        <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr_1fr_1fr] gap-12">
-          <div>
+    <footer className="bg-ink text-cream border-t-2 border-cream/15">
+      <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-20 md:py-24">
+        <div className="grid grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr] gap-12 md:gap-10">
+          <div className="col-span-2 md:col-span-1">
             <Link
               href="/"
-              className="font-mono uppercase tracking-[0.18em] text-[14px] text-marketing-coral"
+              className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral"
             >
               Tripcrew
             </Link>
-            <p className="mt-4 font-serif italic text-[18px] leading-[1.4] text-cream/85 max-w-[28ch]">
-              Trips that make it out of the group chat.
-            </p>
-            <p className="mt-6 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70">
-              Built in London.
+            <p className="mt-10 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 max-w-[24ch]">
+              Be the first to{" "}
+              <span className="font-serif italic normal-case tracking-normal text-[16px] text-cream">
+                board.
+              </span>
             </p>
           </div>
 
@@ -45,16 +45,31 @@ export function Footer() {
           <FooterColumn title="Legal" links={LEGAL_LINKS} />
         </div>
 
-        <div className="mt-14 pt-6 border-t border-cream/15 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70">
+        <div className="mt-20 pt-6 border-t border-cream/15 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65">
             © {new Date().getFullYear()} Tripcrew. Invite only.
           </p>
-          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70 flex items-center gap-2">
-            <span
-              aria-hidden="true"
-              className="w-[7px] h-[7px] bg-marketing-coral"
-            />
-            All systems good
+          <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 flex items-center gap-3">
+            <Link
+              href="/legal/privacy"
+              className="hover:text-cream underline-offset-4 hover:underline"
+            >
+              Privacy
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link
+              href="/legal/terms"
+              className="hover:text-cream underline-offset-4 hover:underline"
+            >
+              Terms
+            </Link>
+            <span aria-hidden="true">·</span>
+            <Link
+              href="/legal/cookies"
+              className="hover:text-cream underline-offset-4 hover:underline"
+            >
+              Cookies
+            </Link>
           </p>
         </div>
       </div>
@@ -71,7 +86,7 @@ function FooterColumn({
 }) {
   return (
     <div>
-      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-marketing-coral mb-4">
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/55 mb-5">
         {title}
       </p>
       <ul className="flex flex-col gap-3">
@@ -79,7 +94,7 @@ function FooterColumn({
           <li key={link.href}>
             <Link
               href={link.href}
-              className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/75 hover:text-cream underline-offset-4 hover:underline"
+              className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream hover:text-marketing-coral transition-colors duration-150"
             >
               {link.label}
             </Link>

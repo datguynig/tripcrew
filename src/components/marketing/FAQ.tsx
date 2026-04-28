@@ -34,46 +34,60 @@ const FAQ_ITEMS: FaqItem[] = [
 export function FAQ() {
   return (
     <section id="faq" className="bg-cream text-ink border-t-2 border-ink">
-      <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
-        <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep mb-6">
-          Questions
-        </p>
-        <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em] mb-14 max-w-[20ch]">
-          Five questions, before you apply.
-        </h2>
+      <div className="mx-auto max-w-[1280px] px-6 sm:px-10 py-24 md:py-32">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-12 md:gap-20">
+          <div className="md:sticky md:top-24 md:self-start">
+            <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep mb-5">
+              Questions
+            </p>
+            <h2 className="font-serif text-[44px] md:text-[64px] leading-[0.98] tracking-[-0.025em]">
+              Five questions, <span className="font-serif italic">before you apply.</span>
+            </h2>
+            <p className="mt-10 font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 max-w-[28ch]">
+              More to ask.{" "}
+              <a
+                href="mailto:hello@tripcrew.app"
+                className="text-marketing-coral-deep underline underline-offset-4 hover:no-underline"
+              >
+                → hello@tripcrew.app
+              </a>
+            </p>
+          </div>
 
-        <ul className="border-t-2 border-ink">
-          {FAQ_ITEMS.map((item) => (
-            <li key={item.question} className="border-b-2 border-ink">
-              <details className="group">
-                <summary className="cursor-pointer list-none flex items-start justify-between gap-6 py-6 sm:py-8">
-                  <h3 className="font-serif text-[22px] sm:text-[28px] leading-[1.15] tracking-[-0.015em]">
-                    {item.question}
-                  </h3>
-                  <span
-                    aria-hidden="true"
-                    className="shrink-0 mt-1 w-9 h-9 border-2 border-ink flex items-center justify-center font-mono text-[16px] transition-transform duration-200 group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </summary>
-                <p className="pb-8 pr-14 text-[15px] sm:text-[17px] leading-[1.6] text-ink/75 max-w-[64ch]">
-                  {item.answer}
-                </p>
-              </details>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-12 font-mono uppercase tracking-[0.18em] text-[11px] text-ink/70">
-          Still have questions?{" "}
-          <a
-            href="mailto:hello@tripcrew.app"
-            className="text-marketing-coral-deep underline underline-offset-4 hover:no-underline"
-          >
-            hello@tripcrew.app
-          </a>
-        </p>
+          <ul className="border-t border-ink/15">
+            {FAQ_ITEMS.map((item) => (
+              <li key={item.question} className="border-b border-ink/15">
+                <details className="group">
+                  <summary className="cursor-pointer list-none flex items-start justify-between gap-6 py-7 sm:py-8">
+                    <h3 className="font-serif text-[22px] sm:text-[26px] leading-[1.2] tracking-[-0.015em] flex-1">
+                      {item.question}
+                    </h3>
+                    <span
+                      aria-hidden="true"
+                      className="shrink-0 mt-2 inline-flex items-center justify-center w-7 h-7 transition-transform duration-200 group-open:rotate-180 text-marketing-coral-deep"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="square"
+                        strokeLinejoin="miter"
+                      >
+                        <polyline points="4,7 10,13 16,7" />
+                      </svg>
+                    </span>
+                  </summary>
+                  <p className="pb-8 pr-12 text-[15px] sm:text-[17px] leading-[1.6] text-ink/80 max-w-[64ch]">
+                    {item.answer}
+                  </p>
+                </details>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </section>
   );
