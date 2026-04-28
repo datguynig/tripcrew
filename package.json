@@ -18,6 +18,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.3",
+    "botid": "^1.5.11",
     "date-fns": "^4.1.0",
     "heic2any": "^0.0.4",
     "next": "16.2.4",

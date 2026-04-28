@@ -2,6 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { after } from "next/server";
+import { checkBotId } from "botid/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { estimateGeminiCostGBP, generateJson } from "@/lib/ai/gemini";
 import { logTeaserAiUsage } from "@/lib/ai/usage";
@@ -74,6 +75,24 @@ export async function submitTeaserForm(
   const trip = getCuratedTripBySlug(slug);
   if (!trip) {
     return { ok: false, error: "Unknown trip" };
+  }
+
+  // Vercel BotID — invisible challenge against scraper abuse. Returns
+  // `isBot: false` in local dev and on platforms outside Vercel
+  // (see https://vercel.com/docs/botid/local-development-behavior),
+  // so the production gate adds protection without breaking dev. Errors
+  // from the SDK fall through as a soft pass — better to let humans
+  // through than to nuke conversion if BotID is misconfigured.
+  try {
+    const verification = await checkBotId();
+    if (verification.isBot) {
+      return {
+        ok: false,
+        error: "Bot detection failed. Please try again.",
+      };
+    }
+  } catch (err) {
+    console.error("submitTeaserForm: BotID check failed:", err);
   }
 
   const ip = await resolveClientIp();
