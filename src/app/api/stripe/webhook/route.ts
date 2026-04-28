@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
+import {
+  createFirstTripFromDraft,
+  provisionProfileForCheckout,
+  sendMagicLink,
+} from "@/lib/auth/checkoutProvisioning";
+import type { DraftLead } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -163,6 +169,93 @@ async function applySubscription(
   }
 }
 
+async function handleFoundingCheckoutCompleted(
+  session: Stripe.Checkout.Session,
+): Promise<void> {
+  const reservationId = session.metadata?.reservation_id;
+  const draftLeadId = session.metadata?.draft_lead_id;
+
+  if (!reservationId || !draftLeadId) {
+    console.error(
+      "founding checkout session missing metadata",
+      session.id,
+      session.metadata,
+    );
+    return;
+  }
+
+  const supabase = createServiceClient();
+
+  // 1. Consume the reservation. This is the source of truth that the
+  // seat is taken — even if downstream provisioning fails, the seat
+  // stays consumed (the human can be unblocked manually) rather than
+  // leaving the seat available for another claimant after we've already
+  // taken their money.
+  const { error: consumeErr } = await supabase
+    .from("founding_reservations")
+    .update({ consumed: true })
+    .eq("id", reservationId);
+  if (consumeErr) {
+    console.error("founding webhook: reservation consume failed", consumeErr);
+    // Continue anyway — the customer paid, we still need to provision.
+  }
+
+  // 2. Read the draft so we can seed the user's first trip.
+  const { data: draft, error: draftErr } = await supabase
+    .from("draft_leads")
+    .select("*")
+    .eq("id", draftLeadId)
+    .maybeSingle<DraftLead>();
+  if (draftErr || !draft) {
+    console.error(
+      "founding webhook: draft lookup failed",
+      draftLeadId,
+      draftErr,
+    );
+    return;
+  }
+
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : session.customer?.id;
+  const email = session.customer_email ?? draft.email;
+  if (!customerId) {
+    console.error(
+      "founding webhook: session missing customer id",
+      session.id,
+    );
+    return;
+  }
+
+  // 3. Provision the auth user + profile.
+  let profile: { id: string; isNew: boolean };
+  try {
+    profile = await provisionProfileForCheckout({
+      email,
+      customerId,
+      isFoundingMember: true,
+    });
+  } catch (err) {
+    console.error("founding webhook: provisionProfileForCheckout failed", err);
+    return;
+  }
+
+  // 4. Create their first trip pre-seeded with the draft's inputs.
+  try {
+    await createFirstTripFromDraft(profile.id, draft);
+  } catch (err) {
+    console.error("founding webhook: createFirstTripFromDraft failed", err);
+    // Non-fatal: the profile is provisioned, the user can still create
+    // a trip manually. Surface for ops review.
+  }
+
+  // 5. Fire the magic link. Don't await — the user gets the Stripe
+  // success page redirect immediately and the email follows. Failures
+  // are logged inside sendMagicLink itself.
+  void sendMagicLink(email);
+}
+
 export async function POST(request: Request): Promise<Response> {
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
@@ -193,10 +286,17 @@ export async function POST(request: Request): Promise<Response> {
       case "customer.subscription.deleted":
         await applySubscription(event.data.object as Stripe.Subscription, false);
         break;
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.metadata?.kind === "founding") {
+          await handleFoundingCheckoutCompleted(session);
+        }
+        break;
+      }
       default:
         // Acknowledge unhandled events so Stripe doesn't retry. We
         // narrow the surface deliberately — this handler only owns
-        // subscription state on profiles.
+        // subscription state on profiles + the Founding fast lane.
         break;
     }
   } catch (err) {
