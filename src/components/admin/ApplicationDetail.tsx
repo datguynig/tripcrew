@@ -15,12 +15,16 @@ import {
   BUDGET_ATTITUDE_LABEL,
 } from "@/lib/applications/answerLabels";
 import { timeAgo } from "@/lib/applications/timeAgo";
-import type { Application } from "@/lib/types";
+import { timeRemainingPhrase } from "@/lib/applications/timeRemaining";
+import type { Application, DraftLead, TeaserInputs } from "@/lib/types";
+
+type DraftSummary = Pick<DraftLead, "id" | "slug" | "inputs" | "resume_token">;
 
 type Props = {
   application: Application;
   score: number;
   scoreExplanation: string;
+  draft: DraftSummary | null;
 };
 
 type Status = "pending" | "approved" | "rejected";
@@ -31,10 +35,32 @@ function deriveStatus(application: Application): Status {
   return "pending";
 }
 
+const CREW_LABEL: Record<TeaserInputs["crew"], string> = {
+  "2": "2",
+  "3-4": "3–4",
+  "5-6": "5–6",
+  "7+": "7+",
+};
+
+const WHEN_LABEL: Record<TeaserInputs["when"], string> = {
+  weekend: "a weekend",
+  week: "a week",
+  "two-weeks": "two weeks",
+  flexible: "flexible",
+};
+
+const BUDGET_LABEL: Record<TeaserInputs["budget"], string> = {
+  "500": "~£500",
+  "1000": "~£1k",
+  "1500": "~£1.5k",
+  "2000+": "~£2k+",
+};
+
 export function ApplicationDetail({
   application,
   score,
   scoreExplanation,
+  draft,
 }: Props) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -137,6 +163,8 @@ export function ApplicationDetail({
           />
         </section>
 
+        <CapturedDraftSection draft={draft} />
+
         <section className="flex flex-col gap-4 border-t border-cream/15 pt-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-cream">
             Score
@@ -208,7 +236,11 @@ export function ApplicationDetail({
         </section>
 
         {status === "pending" && (
-          <section className="flex flex-col gap-4 border-t border-cream/15 pt-8">
+          <section className="flex flex-col gap-6 border-t border-cream/15 pt-8">
+            <ProvisionalDecisionBlock
+              decision={application.provisional_decision}
+              autoDecisionAt={application.auto_decision_at}
+            />
             {error && (
               <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-red-400">
                 {error}
@@ -256,6 +288,93 @@ function AnswerBlock({
         {prompt}
       </p>
       <p className="font-serif text-[22px] leading-snug text-cream">{answer}</p>
+    </div>
+  );
+}
+
+function CapturedDraftSection({ draft }: { draft: DraftSummary | null }) {
+  if (!draft) {
+    return (
+      <section className="border-t border-cream/15 pt-8">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-cream/45">
+          No draft attached · cold-form applicant.
+        </p>
+      </section>
+    );
+  }
+
+  const teaserHref = `/api/teaser/resume?id=${draft.id}&token=${draft.resume_token}&slug=${draft.slug}`;
+
+  return (
+    <section className="flex flex-col gap-5 border-t border-cream/15 pt-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-cream">
+          Captured draft
+          <span className="px-2 text-cream/40">·</span>
+          <span className="normal-case tracking-normal text-cream/65">
+            {draft.slug}
+          </span>
+        </p>
+        <a
+          href={teaserHref}
+          className="font-mono text-[11px] uppercase tracking-[0.18em] text-marketing-coral underline-offset-4 hover:underline"
+        >
+          View their teaser →
+        </a>
+      </div>
+
+      <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
+        <DraftField label="Origin" value={draft.inputs.origin || "—"} />
+        <DraftField label="Crew" value={CREW_LABEL[draft.inputs.crew]} />
+        <DraftField label="When" value={WHEN_LABEL[draft.inputs.when]} />
+        <DraftField label="Budget" value={BUDGET_LABEL[draft.inputs.budget]} />
+      </dl>
+    </section>
+  );
+}
+
+function DraftField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <dt className="font-mono text-[10px] uppercase tracking-[0.18em] text-cream/45">
+        {label}
+      </dt>
+      <dd className="font-serif text-[18px] leading-snug text-cream">
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function ProvisionalDecisionBlock({
+  decision,
+  autoDecisionAt,
+}: {
+  decision: "approve" | "reject" | null;
+  autoDecisionAt: string | null;
+}) {
+  if (decision === null) return null;
+
+  const tone =
+    decision === "approve" ? "text-marketing-coral" : "text-cream";
+  const word = decision === "approve" ? "Approve" : "Reject";
+
+  return (
+    <div className="flex flex-col gap-3 border-l-2 border-marketing-coral pl-5">
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-cream/65">
+        Provisional decision
+      </p>
+      <p
+        className={`font-serif text-[36px] leading-[1] tracking-[-0.02em] ${tone}`}
+      >
+        {word}
+      </p>
+      {autoDecisionAt ? (
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-cream/55">
+          Auto-finalises in {timeRemainingPhrase(autoDecisionAt)} unless you
+          act.
+        </p>
+      ) : null}
     </div>
   );
 }

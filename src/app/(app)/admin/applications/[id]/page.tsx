@@ -6,9 +6,11 @@ import {
   scoreExplanation,
 } from "@/lib/applications/scoring";
 import { ApplicationDetail } from "@/components/admin/ApplicationDetail";
-import type { Application } from "@/lib/types";
+import type { Application, DraftLead } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+
+type DraftSummary = Pick<DraftLead, "id" | "slug" | "inputs" | "resume_token">;
 
 export default async function ApplicationDetailPage({
   params,
@@ -33,6 +35,16 @@ export default async function ApplicationDetailPage({
 
   if (!application) notFound();
 
+  let draft: DraftSummary | null = null;
+  if (application.draft_lead_id) {
+    const { data } = await supabase
+      .from("draft_leads")
+      .select("id, slug, inputs, resume_token")
+      .eq("id", application.draft_lead_id)
+      .maybeSingle<DraftSummary>();
+    draft = data ?? null;
+  }
+
   const score = scoreApplication({
     trips_per_year: application.trips_per_year,
     role: application.role,
@@ -49,6 +61,7 @@ export default async function ApplicationDetailPage({
       application={application}
       score={score}
       scoreExplanation={explanation}
+      draft={draft}
     />
   );
 }

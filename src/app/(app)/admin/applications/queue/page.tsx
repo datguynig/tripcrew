@@ -40,12 +40,24 @@ type QueueRow = Pick<
   | "budget_attitude"
   | "approved_at"
   | "rejected_at"
+  | "provisional_decision"
+  | "auto_decision_at"
+  | "decision_finalised_at"
+  | "draft_lead_id"
 >;
 
 type DecoratedRow = {
   application: Pick<
     Application,
-    "id" | "email" | "created_at" | "role" | "budget_attitude"
+    | "id"
+    | "email"
+    | "created_at"
+    | "role"
+    | "budget_attitude"
+    | "provisional_decision"
+    | "auto_decision_at"
+    | "decision_finalised_at"
+    | "draft_lead_id"
   >;
   score: number;
 };
@@ -70,36 +82,47 @@ export default async function ApplicationsQueuePage({ searchParams }: PageProps)
   let query = supabase
     .from("applications")
     .select(
-      "id, email, created_at, trips_per_year, role, pain, budget_attitude, approved_at, rejected_at",
-    )
-    .order("created_at", { ascending: false });
+      "id, email, created_at, trips_per_year, role, pain, budget_attitude, approved_at, rejected_at, provisional_decision, auto_decision_at, decision_finalised_at, draft_lead_id",
+    );
 
   if (filter === "pending") {
-    query = query.is("approved_at", null).is("rejected_at", null);
+    query = query
+      .is("approved_at", null)
+      .is("rejected_at", null)
+      .order("auto_decision_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false });
   } else if (filter === "approved") {
-    query = query.not("approved_at", "is", null);
+    query = query
+      .not("approved_at", "is", null)
+      .order("created_at", { ascending: false });
   } else if (filter === "rejected") {
-    query = query.not("rejected_at", "is", null);
+    query = query
+      .not("rejected_at", "is", null)
+      .order("created_at", { ascending: false });
+  } else {
+    query = query.order("created_at", { ascending: false });
   }
 
   const { data: rows } = await query.returns<QueueRow[]>();
 
-  const decorated: DecoratedRow[] = (rows ?? [])
-    .map((row) => ({
-      application: {
-        id: row.id,
-        email: row.email,
-        created_at: row.created_at,
-        role: row.role as ApplicationRole,
-        budget_attitude: row.budget_attitude as ApplicationBudgetAttitude,
-      },
-      score: scoreApplication({
-        trips_per_year: row.trips_per_year as ApplicationTripsPerYear,
-        role: row.role as ApplicationRole,
-        budget_attitude: row.budget_attitude as ApplicationBudgetAttitude,
-      }),
-    }))
-    .sort((a, b) => b.score - a.score);
+  const decorated: DecoratedRow[] = (rows ?? []).map((row) => ({
+    application: {
+      id: row.id,
+      email: row.email,
+      created_at: row.created_at,
+      role: row.role as ApplicationRole,
+      budget_attitude: row.budget_attitude as ApplicationBudgetAttitude,
+      provisional_decision: row.provisional_decision,
+      auto_decision_at: row.auto_decision_at,
+      decision_finalised_at: row.decision_finalised_at,
+      draft_lead_id: row.draft_lead_id,
+    },
+    score: scoreApplication({
+      trips_per_year: row.trips_per_year as ApplicationTripsPerYear,
+      role: row.role as ApplicationRole,
+      budget_attitude: row.budget_attitude as ApplicationBudgetAttitude,
+    }),
+  }));
 
   const [{ count: pendingCount }, { count: totalCount }] = await Promise.all([
     supabase
@@ -157,10 +180,10 @@ export default async function ApplicationsQueuePage({ searchParams }: PageProps)
                   Submitted
                 </th>
                 <th className="px-4 py-3 text-left font-mono text-[10px] font-normal uppercase tracking-[0.18em] text-cream/50">
-                  Role
+                  Provisional
                 </th>
                 <th className="px-4 py-3 text-left font-mono text-[10px] font-normal uppercase tracking-[0.18em] text-cream/50">
-                  Budget
+                  Expires
                 </th>
                 <th className="px-4 py-3 text-left font-mono text-[10px] font-normal uppercase tracking-[0.18em] text-cream/50">
                   Score

@@ -7,12 +7,21 @@ import { approveApplication } from "@/lib/actions/approveApplication";
 import { rejectApplication } from "@/lib/actions/rejectApplication";
 import { MAX_SCORE } from "@/lib/applications/scoring";
 import { timeAgo } from "@/lib/applications/timeAgo";
+import { timeRemaining } from "@/lib/applications/timeRemaining";
 import type { Application } from "@/lib/types";
 
 type Props = {
   application: Pick<
     Application,
-    "id" | "email" | "created_at" | "role" | "budget_attitude"
+    | "id"
+    | "email"
+    | "created_at"
+    | "role"
+    | "budget_attitude"
+    | "provisional_decision"
+    | "auto_decision_at"
+    | "decision_finalised_at"
+    | "draft_lead_id"
   >;
   score: number;
 };
@@ -66,11 +75,17 @@ export function ApplicationRow({ application, score }: Props) {
       <td className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-cream/45">
         {timeAgo(application.created_at)}
       </td>
-      <td className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-cream/75">
-        {application.role}
+      <td className="px-4 py-3">
+        <ProvisionalChip
+          decision={application.provisional_decision}
+          finalisedAt={application.decision_finalised_at}
+        />
       </td>
-      <td className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-cream/75">
-        {application.budget_attitude}
+      <td className="px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em]">
+        <ExpiresLabel
+          autoDecisionAt={application.auto_decision_at}
+          finalisedAt={application.decision_finalised_at}
+        />
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-3">
@@ -106,5 +121,60 @@ export function ApplicationRow({ application, score }: Props) {
         </div>
       </td>
     </tr>
+  );
+}
+
+function ProvisionalChip({
+  decision,
+  finalisedAt,
+}: {
+  decision: "approve" | "reject" | null;
+  finalisedAt: string | null;
+}) {
+  if (finalisedAt !== null) {
+    return (
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-cream/40">
+        Finalised
+      </span>
+    );
+  }
+  if (decision === null) {
+    return (
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-cream/30">
+        —
+      </span>
+    );
+  }
+  const tone =
+    decision === "approve" ? "text-marketing-coral" : "text-cream/55";
+  return (
+    <span
+      className={`inline-flex items-center gap-2 border border-current px-2 py-1 font-mono text-[10px] uppercase tracking-[0.18em] ${tone}`}
+    >
+      <span aria-hidden="true">·</span>
+      Provisional · {decision}
+    </span>
+  );
+}
+
+function ExpiresLabel({
+  autoDecisionAt,
+  finalisedAt,
+}: {
+  autoDecisionAt: string | null;
+  finalisedAt: string | null;
+}) {
+  if (finalisedAt !== null) {
+    return <span className="text-cream/30">—</span>;
+  }
+  if (autoDecisionAt === null) {
+    return <span className="text-cream/30">—</span>;
+  }
+  const label = timeRemaining(autoDecisionAt);
+  const urgent = label === "EXPIRES NOW" || label === "EXPIRED";
+  return (
+    <span className={urgent ? "text-marketing-coral" : "text-cream/65"}>
+      {label}
+    </span>
   );
 }
