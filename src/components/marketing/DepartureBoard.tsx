@@ -139,28 +139,27 @@ function FeatureCard({
           priority
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/55 to-ink/15" />
-      <div className="absolute inset-0 bg-gradient-to-r from-ink/70 via-ink/10 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-ink via-ink/65 to-transparent" />
 
       <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10">
-        <div className="flex flex-col gap-3 max-w-[40ch]">
+        <div className="flex flex-col gap-4 max-w-[44ch]">
           <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/85">
             {trip.country}
           </p>
-          <h3 className="font-serif text-[56px] sm:text-[80px] lg:text-[104px] leading-[0.9] tracking-[-0.035em] text-cream">
+          <h3 className="font-serif text-[56px] sm:text-[80px] lg:text-[104px] leading-[0.88] tracking-[-0.035em] text-cream">
             {trip.city}
           </h3>
-          <p className="font-serif italic text-[16px] sm:text-[18px] leading-[1.3] text-cream/90 max-w-[42ch]">
+          <p className="font-serif italic text-[17px] sm:text-[20px] leading-[1.3] text-cream max-w-[42ch]">
             {trip.tagline}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 font-mono uppercase tracking-[0.18em] text-[11px] text-cream">
-            <span>£{trip.perHeadAmount.toLocaleString("en-GB")} pp</span>
-            <span aria-hidden="true" className="text-cream/40">·</span>
-            <span>{trip.crewLabel}</span>
-            <span aria-hidden="true" className="text-cream/40">·</span>
-            <span>{trip.vibesLabel}</span>
-          </div>
-          <div className="mt-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/85">
+            £{trip.perHeadAmount.toLocaleString("en-GB")} pp
+            <span aria-hidden="true" className="mx-3 text-cream/40">·</span>
+            {trip.crewLabel}
+            <span aria-hidden="true" className="mx-3 text-cream/40">·</span>
+            {trip.vibesLabel}
+          </p>
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
             <Link
               href={`/apply?intent=plus&seed=${trip.slug}&vibes=${trip.applyVibes}`}
               className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream transition-colors duration-150 whitespace-nowrap self-start"
@@ -169,9 +168,9 @@ function FeatureCard({
             </Link>
             <Link
               href={`/curated/${trip.slug}`}
-              className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/70 hover:text-cream underline-offset-4 hover:underline"
+              className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/85 hover:text-cream underline-offset-4 hover:underline whitespace-nowrap"
             >
-              See the full plan
+              See the full plan →
             </Link>
           </div>
         </div>
@@ -198,15 +197,15 @@ function PeekCard({
         src={trip.heroPhotoUrl}
         alt=""
         fill
-        sizes="(min-width: 1024px) 240px, 50vw"
-        className="object-cover opacity-65 group-hover:opacity-90 transition-opacity duration-150"
+        sizes="(min-width: 1024px) 480px, (min-width: 768px) 320px, 100vw"
+        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/40 to-ink/15" />
-      <div className="absolute inset-0 flex flex-col justify-end p-5">
-        <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/65 mb-2">
+      <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-ink via-ink/55 to-transparent" />
+      <div className="absolute inset-0 flex flex-col justify-end p-5 sm:p-6">
+        <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/85 mb-2.5">
           Up next
         </p>
-        <p className="font-serif text-[28px] leading-none tracking-[-0.02em] text-cream">
+        <p className="font-serif text-[26px] sm:text-[32px] leading-[0.95] tracking-[-0.02em] text-cream">
           {trip.city}
         </p>
         <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-cream/85 mt-1.5">

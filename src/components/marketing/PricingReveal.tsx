@@ -3,7 +3,8 @@ import Link from "next/link";
 type Tier = {
   name: string;
   price: string;
-  unit: string;
+  priceSuffix: string;
+  billing: string;
   tagline: string;
   description: string;
   bullets: string[];
@@ -17,7 +18,8 @@ function getTiers(foundingRemaining: number): Tier[] {
     {
       name: "Free",
       price: "£0",
-      unit: "Forever",
+      priceSuffix: "",
+      billing: "Forever · no card required",
       tagline: "Try it.",
       description: "See your invited trips. Get the AI summary draft.",
       bullets: [
@@ -29,8 +31,9 @@ function getTiers(foundingRemaining: number): Tier[] {
     },
     {
       name: "Crew Plus",
-      price: "£79",
-      unit: "/year · £9/mo monthly",
+      price: "£9",
+      priceSuffix: "/mo",
+      billing: "£79 / year · save 27%",
       tagline: "AI plans your trip.",
       description: "One admin pays. The whole crew gets in.",
       recommended: true,
@@ -47,7 +50,8 @@ function getTiers(foundingRemaining: number): Tier[] {
     {
       name: "Founding Crew",
       price: "£179",
-      unit: "/year · price-locked for life",
+      priceSuffix: "/year",
+      billing: "Price-locked for life · founding-only",
       tagline: "Your AI travel concierge.",
       description: "Dream trips, zero effort. Founding members shape the product.",
       scarcityChip: `${foundingRemaining} of 500 seats remain`,
@@ -99,42 +103,49 @@ export function PricingReveal({
 
 function TierColumn({ tier }: { tier: Tier }) {
   return (
-    <div className="relative flex flex-col px-0 py-10 md:px-9 md:py-0 border-t-2 first:border-t-0 md:first:border-t-0 md:border-t-0 border-cream/15">
-      {tier.recommended ? (
-        <span className="absolute -top-3 left-0 md:left-9 inline-flex items-center bg-marketing-coral text-ink px-3 py-1.5 font-mono uppercase tracking-[0.18em] text-[10px]">
-          Most crews pick
-        </span>
-      ) : null}
-      {tier.scarcityChip ? (
-        <span className="absolute -top-3 left-0 md:left-9 inline-flex items-center bg-cream text-ink px-3 py-1.5 font-mono uppercase tracking-[0.18em] text-[10px] border-2 border-cream">
-          {tier.scarcityChip}
-        </span>
-      ) : null}
+    <div className="relative flex flex-col py-12 md:py-0 md:px-10 border-t border-cream/15 md:border-t-0 first:border-t-0">
+      <div className="min-h-[28px] mb-7 flex items-start">
+        {tier.recommended ? (
+          <span className="inline-flex items-center bg-marketing-coral text-ink px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px]">
+            Most crews pick
+          </span>
+        ) : null}
+        {tier.scarcityChip ? (
+          <span className="inline-flex items-center bg-transparent text-marketing-coral px-3 h-7 font-mono uppercase tracking-[0.18em] text-[10px] border-2 border-marketing-coral">
+            {tier.scarcityChip}
+          </span>
+        ) : null}
+      </div>
 
-      <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream mb-8">
+      <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream mb-10">
         {tier.name}
       </p>
 
-      <div className="flex items-baseline gap-3 mb-2">
-        <p className="font-serif font-medium text-[88px] md:text-[112px] leading-[0.85] tracking-[-0.04em]">
+      <div className="flex items-end gap-2 mb-3">
+        <p className="font-serif font-medium text-[88px] md:text-[104px] leading-[0.85] tracking-[-0.04em]">
           {tier.price}
         </p>
+        {tier.priceSuffix ? (
+          <p className="font-mono uppercase tracking-[0.18em] text-[12px] text-cream/85 mb-3">
+            {tier.priceSuffix}
+          </p>
+        ) : null}
       </div>
-      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 mb-8">
-        {tier.unit}
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 mb-9">
+        {tier.billing}
       </p>
 
-      <p className="font-serif italic text-[20px] md:text-[22px] leading-[1.2] text-cream mb-3">
+      <p className="font-serif italic text-[22px] md:text-[24px] leading-[1.15] text-cream mb-3">
         {tier.tagline}
       </p>
-      <p className="text-[15px] leading-[1.5] text-cream/75 mb-8 max-w-[34ch]">
+      <p className="text-[15px] leading-[1.5] text-cream/75 mb-10 max-w-[34ch]">
         {tier.description}
       </p>
 
       <Link
         href={tier.cta.href}
         className={[
-          "inline-flex items-center justify-center font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-5 mb-10 whitespace-nowrap transition-colors duration-150",
+          "inline-flex items-center justify-center font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-5 mb-12 whitespace-nowrap transition-colors duration-150",
           tier.recommended
             ? "bg-marketing-coral text-ink border-2 border-marketing-coral hover:bg-cream hover:border-cream"
             : "bg-cream text-ink border-2 border-cream hover:bg-marketing-coral hover:border-marketing-coral",
@@ -143,7 +154,7 @@ function TierColumn({ tier }: { tier: Tier }) {
         {tier.cta.label}
       </Link>
 
-      <ul className="flex flex-col gap-3 border-t border-cream/15 pt-8">
+      <ul className="flex flex-col gap-3 border-t border-cream/15 pt-9">
         {tier.bullets.map((bullet) => (
           <li key={bullet} className="flex items-start gap-3">
             <span

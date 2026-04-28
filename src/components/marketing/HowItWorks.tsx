@@ -26,6 +26,15 @@ export function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
       <div className="mx-auto w-full max-w-[1200px] px-6 py-24 md:py-32">
+        <div className="flex flex-col gap-5 mb-16 md:mb-20 max-w-[760px]">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
+            How it works
+          </p>
+          <h2 className="font-serif text-[44px] md:text-[64px] leading-[0.98] tracking-[-0.025em]">
+            From group chat to{" "}
+            <span className="font-serif italic">runway,</span> in three weeks.
+          </h2>
+        </div>
         <ol className="border-t-2 border-ink">
           {STEPS.map((step, index) => {
             const isLast = index === STEPS.length - 1;
