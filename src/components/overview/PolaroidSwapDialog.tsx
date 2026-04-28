@@ -82,7 +82,7 @@ export function PolaroidSwapDialog({
       <DialogContent className="!w-[min(520px,calc(100vw-32px))]">
         <DialogTitle>Reorder slot {slotIndex + 1}</DialogTitle>
         <DialogDescription>
-          Pick the slot to swap this polaroid with. Both stay in the stack — they just trade positions.
+          Pick the slot to swap this polaroid with. Both stay in the stack. They just trade positions.
         </DialogDescription>
 
         <div className="grid grid-cols-4 max-[520px]:grid-cols-2 gap-3">

@@ -98,7 +98,7 @@ export function NewTripForm() {
       <Field
         label="Destination candidates"
         name="candidates"
-        helper="Pick from real places. Skip if unsure — crew can propose later."
+        helper="Pick from real places. Skip if unsure. Crew can propose later."
       >
         <CandidatesEditor />
       </Field>
@@ -106,7 +106,7 @@ export function NewTripForm() {
       <Field
         label="Vote deadline"
         name="voteDeadline"
-        helper="Optional soft deadline — shown to the crew, not enforced"
+        helper="Optional soft deadline. Shown to the crew, not enforced"
       >
         <DateTimePicker name="voteDeadline" />
       </Field>

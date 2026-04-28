@@ -63,7 +63,7 @@ export async function refreshPrices(
   if (!serpApiEnabled()) {
     return {
       success: false,
-      error: "Live pricing isn't configured — admin needs to set SERPAPI_KEY.",
+      error: "Live pricing isn't configured. Admin needs to set SERPAPI_KEY.",
       upgradeCta: false,
     };
   }

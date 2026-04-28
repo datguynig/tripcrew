@@ -12,7 +12,7 @@ const STEPS: Step[] = [
     body: [
       "One email. Three quick questions on the next screen. We approve in batches.",
     ],
-    numberClassName: "text-ink/40",
+    numberClassName: "text-ink/70",
   },
   {
     number: "02",
@@ -20,20 +20,22 @@ const STEPS: Step[] = [
     body: [
       "Pick a city, lock the dates, pull the people in. The AI drafts the plan; the crew votes on what stays.",
     ],
-    numberClassName: "text-ink/40",
+    numberClassName: "text-ink/70",
   },
   {
     number: "03",
-    title: "Enjoy your trip.",
-    body: ["Bookings handled. Ledger settled.", "Time to make memories."],
-    numberClassName: "text-marketing-coral",
+    title: "Land. Eat. Repeat.",
+    body: [
+      "Bookings handled. Ledger settled. Crew chat archived. Photos in the memory book.",
+    ],
+    numberClassName: "text-ink/70",
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section className="bg-cream text-ink border-y-2 border-ink">
-      <div className="mx-auto w-full max-w-[1200px] px-6 py-16 md:py-20">
+    <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
+      <div className="mx-auto w-full max-w-[1200px] px-6 py-24 md:py-32">
         <div className="grid grid-cols-1 border-2 border-ink md:grid-cols-3">
           {STEPS.map((step, index) => {
             const isLastColumn = index === STEPS.length - 1;
@@ -49,7 +51,7 @@ export function HowItWorks() {
               >
                 <div
                   className={[
-                    "font-mono uppercase tracking-[0.18em] text-[56px] leading-none",
+                    "font-mono uppercase tracking-[0.18em] text-[40px] sm:text-[56px] leading-none",
                     step.numberClassName,
                   ].join(" ")}
                 >
@@ -72,10 +74,10 @@ export function HowItWorks() {
 
         <div className="mt-12 flex justify-center">
           <a
-            href="#sample-trip"
-            className="font-mono uppercase tracking-[0.22em] text-[11px] text-ink/50 transition-opacity duration-150 hover:text-ink/80"
+            href="#curated-trips"
+            className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 transition-opacity duration-150 hover:text-ink/80"
           >
-            ↓ See a sample trip
+            ↓ See a curated trip
           </a>
         </div>
       </div>

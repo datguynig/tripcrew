@@ -34,7 +34,7 @@ export type AirportOption = {
 function metroToOption(m: AirportMetro): AirportOption {
   return {
     id: `metro:${m.iata}`,
-    name: `${m.name} — all airports`,
+    name: `${m.name} · all airports`,
     address: m.airports.map((a) => a.iata).join(" · "),
     latitude: m.latitude,
     longitude: m.longitude,

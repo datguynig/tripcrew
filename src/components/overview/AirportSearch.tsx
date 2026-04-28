@@ -27,7 +27,7 @@ export function AirportSearch({
   onSelect,
   onClear,
   selected = null,
-  placeholder = "Search airport — e.g. Heathrow, LHR",
+  placeholder = "Search airport (e.g. Heathrow, LHR)",
   autoFocus = false,
 }: Props) {
   const [query, setQuery] = useState(selected?.name ?? "");

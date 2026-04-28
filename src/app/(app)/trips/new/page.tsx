@@ -12,7 +12,7 @@ export default async function NewTripPage() {
       <SectionHeader
         code="§ 00"
         title="New trip."
-        lead="Name it. Dates and destination can wait — the crew can vote on those."
+        lead="Name it. Dates and destination can wait. The crew can vote on those."
       />
       <NewTripForm />
     </section>

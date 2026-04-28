@@ -26,10 +26,10 @@ export function PlanBadge({ profile }: Props) {
       ? "PAST DUE"
       : "CREW PLUS";
   const aria = isTrial
-    ? "Crew Plus trial active — manage subscription"
+    ? "Crew Plus trial active · manage subscription"
     : isPastDue
-      ? "Crew Plus payment past due — update billing"
-      : "Crew Plus active — manage subscription";
+      ? "Crew Plus payment past due · update billing"
+      : "Crew Plus active · manage subscription";
 
   const className = isPastDue
     ? "bg-err/15 text-err border border-err/40"

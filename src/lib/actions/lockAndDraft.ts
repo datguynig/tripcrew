@@ -363,7 +363,8 @@ export async function generateLockAndDraft(
 
     return { success: true, draft, tier };
   } catch (err) {
-    await supabase.rpc("refund_generation_counters", {
+    const service = await createServiceClient();
+    await service.rpc("refund_generation_counters", {
       p_user_id: userId,
       p_trip_id: tripId,
       p_is_trial: userPlan === "trial",
@@ -380,11 +381,52 @@ export async function generateLockAndDraft(
       errorMessage: message,
     });
 
-    console.error("generateLockAndDraft failed:", err);
+    console.error("[generateLockAndDraft] failed", {
+      tripId,
+      tripSlug: trip.slug,
+      tier,
+      model: getGeminiModelName(),
+      message,
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+
     return {
       success: false,
-      error: "We could not generate a draft right now. Please try again in a minute.",
+      error: classifyDraftError(err),
       upgradeCta: false,
     };
   }
+}
+
+function classifyDraftError(err: unknown): string {
+  const message = err instanceof Error ? err.message : String(err);
+  const lower = message.toLowerCase();
+
+  if (lower.includes("gemini_api_key not configured")) {
+    return "Drafting is offline. Engineering has been notified.";
+  }
+  if (lower.includes("gemini returned non-json")) {
+    return "The AI returned an unexpected format. Please retry.";
+  }
+  if (
+    lower.includes("model") &&
+    (lower.includes("not found") || lower.includes("not supported"))
+  ) {
+    return "The AI model is unavailable right now. Please retry shortly.";
+  }
+  if (lower.includes("zoderror") || (err instanceof Error && err.name === "ZodError")) {
+    return "The AI's response did not match the expected shape. Please retry.";
+  }
+  if (lower.includes("rate") && lower.includes("limit")) {
+    return "AI rate limit reached. Please wait 60 seconds and retry.";
+  }
+  if (
+    lower.includes("fetch failed") ||
+    lower.includes("network") ||
+    lower.includes("econnreset")
+  ) {
+    return "Network blip reaching the AI. Please retry.";
+  }
+
+  return "Drafting failed. Please retry in a moment.";
 }

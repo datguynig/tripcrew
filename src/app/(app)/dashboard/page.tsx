@@ -47,7 +47,7 @@ export default async function Dashboard() {
             No trips yet
           </div>
           <div className="text-[17px] text-fg-2 mb-6 max-w-[420px] mx-auto">
-            Start planning — invite your crew, vote on the destination, split
+            Start planning. Invite your crew, vote on the destination, split
             the money.
           </div>
           <Link

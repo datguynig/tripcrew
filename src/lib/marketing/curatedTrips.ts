@@ -1,10 +1,14 @@
-// Five sample trips that rotate on the public landing page. Each has a
-// permanent /sample-trip/<slug> URL for sharing — visitors paste the URL
-// into their group chat as part of the acquisition motion.
+// Five sample trips that anchor the public landing page. Each has a
+// permanent /curated/<slug> URL for sharing — visitors paste the
+// URL into their group chat as part of the acquisition motion.
 //
-// pickFeaturedSampleTrip() picks one based on UTC day-of-year mod 5 so
-// the page is deterministic per day (cacheable) and rotates through all
-// five over a working week. Returning visitors see fresh content.
+// pickFeaturedCuratedTrip() picks one based on UTC day-of-year mod 5 so
+// the page is deterministic per day (cacheable) and rotates through
+// all five over a working week. Returning visitors see fresh content.
+//
+// The DepartureBoard rotator on the landing page also flips through
+// all five in-place, so the page never feels static even on a single
+// pageview.
 
 export type SampleSpecCell = {
   label: string;
@@ -17,9 +21,11 @@ export type SampleScheduleRow = {
   note: string;
 };
 
-export type SampleTrip = {
+export type CuratedTrip = {
   slug: string;
   city: string;
+  country: string;
+  iata: string;
   occasionLine: string;
   datesLabel: string;
   durationLabel: string;
@@ -31,20 +37,32 @@ export type SampleTrip = {
   specCells: readonly SampleSpecCell[];
   schedule: readonly SampleScheduleRow[];
   highlights: readonly string[];
-  // Currency code for the per-head value, used by the /sample-trip/[slug]
-  // page when rendering the spec grid via TripPreview.
   currency: "GBP";
   perHeadAmount: number;
   origin: string;
   vibesMeta: string;
+  heroPhotoUrl: string;
+  heroPhotoCredit: { name: string; href: string };
+  latitude: number;
+  longitude: number;
+  // Editorial framing on the landing rotator. "Why we picked it" gives the
+  // visitor a reason to slow down on each card without bloating the spec.
+  curatorPick: string;
+  // Drives the per-trip CTA destination on the landing rotator.
+  // /apply pre-seeds the application form with the trip's vibes.
+  applyVibes: string;
 };
 
-const TRIPS: readonly SampleTrip[] = [
+const TRIPS: readonly CuratedTrip[] = [
   {
     slug: "mallorca",
     city: "Mallorca",
+    country: "Spain",
+    iata: "PMI",
+    curatorPick: "For the crew that wants Med heat, cliff jumps, and slow Sunday lunches.",
+    applyVibes: "beach,foodie",
     occasionLine: "Six friends. Six days. June.",
-    datesLabel: "Jun 14 — Jun 19",
+    datesLabel: "14 to 19 June",
     durationLabel: "6 days",
     crewLabel: "6 crew",
     vibesLabel: "Beach · Foodie",
@@ -55,6 +73,14 @@ const TRIPS: readonly SampleTrip[] = [
     currency: "GBP",
     origin: "LHR",
     vibesMeta: "Beach · Foodie",
+    latitude: 39.5696,
+    longitude: 2.6502,
+    heroPhotoUrl:
+      "https://images.unsplash.com/photo-1602002418816-5c0aeef426aa?auto=format&fit=crop&w=1600&q=80",
+    heroPhotoCredit: {
+      name: "Anna Sullivan",
+      href: "https://unsplash.com/photos/SbOC7CN9j_w",
+    },
     specCells: [
       { label: "Per head", value: "£820" },
       { label: "Crew", value: "6" },
@@ -83,8 +109,12 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "rio",
     city: "Rio de Janeiro",
+    country: "Brazil",
+    iata: "GIG",
+    curatorPick: "For the crew that wants the loudest week of the year. Sequins, samba, sunrise.",
+    applyVibes: "music,carnival",
     occasionLine: "Six friends. Carnival. Sequins on.",
-    datesLabel: "Feb 5 — Feb 12",
+    datesLabel: "5 to 12 February",
     durationLabel: "7 days",
     crewLabel: "6 crew",
     vibesLabel: "Carnival · Music",
@@ -95,6 +125,14 @@ const TRIPS: readonly SampleTrip[] = [
     currency: "GBP",
     origin: "LHR",
     vibesMeta: "Carnival · Music",
+    latitude: -22.9068,
+    longitude: -43.1729,
+    heroPhotoUrl:
+      "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?auto=format&fit=crop&w=1600&q=80",
+    heroPhotoCredit: {
+      name: "Agustin Diaz",
+      href: "https://unsplash.com/photos/aerial-photo-of-rio",
+    },
     specCells: [
       { label: "Per head", value: "£1,500" },
       { label: "Crew", value: "6" },
@@ -110,7 +148,7 @@ const TRIPS: readonly SampleTrip[] = [
       {
         day: "Day 2",
         place: "Sambódromo opening",
-        note: "Get dressed — sequins not optional. Ringside seats at the Sambódromo. Out till sunrise.",
+        note: "Get dressed. Sequins not optional. Ringside seats at the Sambódromo. Out till sunrise.",
       },
       {
         day: "Day 3",
@@ -123,8 +161,12 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "athens",
     city: "Athens",
+    country: "Greece",
+    iata: "ATH",
+    curatorPick: "For the crew that wants culture without the August crowds. Late-summer Aegean energy.",
+    applyVibes: "culture,foodie",
     occasionLine: "Six friends. Six days. Late summer.",
-    datesLabel: "Sep 5 — Sep 11",
+    datesLabel: "5 to 11 September",
     durationLabel: "6 days",
     crewLabel: "6 crew",
     vibesLabel: "Culture · Foodie",
@@ -135,6 +177,14 @@ const TRIPS: readonly SampleTrip[] = [
     currency: "GBP",
     origin: "LHR",
     vibesMeta: "Culture · Foodie",
+    latitude: 37.9838,
+    longitude: 23.7275,
+    heroPhotoUrl:
+      "https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=1600&q=80",
+    heroPhotoCredit: {
+      name: "Spencer Davis",
+      href: "https://unsplash.com/@spencerdavis",
+    },
     specCells: [
       { label: "Per head", value: "£680" },
       { label: "Crew", value: "6" },
@@ -163,8 +213,12 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "bali",
     city: "Bali",
+    country: "Indonesia",
+    iata: "DPS",
+    curatorPick: "For the crew that needs to slow down. Surf in the morning, rice terraces in the afternoon.",
+    applyVibes: "wellness,surf",
     occasionLine: "Six friends. Nine days. Wellness mode.",
-    datesLabel: "Apr 18 — Apr 26",
+    datesLabel: "18 to 26 April",
     durationLabel: "9 days",
     crewLabel: "6 crew",
     vibesLabel: "Wellness · Surf",
@@ -175,6 +229,14 @@ const TRIPS: readonly SampleTrip[] = [
     currency: "GBP",
     origin: "LHR",
     vibesMeta: "Wellness · Surf",
+    latitude: -8.4095,
+    longitude: 115.1889,
+    heroPhotoUrl:
+      "https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1600&q=80",
+    heroPhotoCredit: {
+      name: "Niklas Weiss",
+      href: "https://unsplash.com/@niklasweiss",
+    },
     specCells: [
       { label: "Per head", value: "£1,500" },
       { label: "Crew", value: "6" },
@@ -203,8 +265,12 @@ const TRIPS: readonly SampleTrip[] = [
   {
     slug: "lagos",
     city: "Lagos",
+    country: "Nigeria",
+    iata: "LOS",
+    curatorPick: "For the crew that wants Detty December. Live bands, beach boats, never sleep.",
+    applyVibes: "music,foodie",
     occasionLine: "Six friends. Eight days. Detty December.",
-    datesLabel: "Dec 20 — Dec 27",
+    datesLabel: "20 to 27 December",
     durationLabel: "8 days",
     crewLabel: "6 crew",
     vibesLabel: "Music · Foodie",
@@ -215,6 +281,14 @@ const TRIPS: readonly SampleTrip[] = [
     currency: "GBP",
     origin: "LHR",
     vibesMeta: "Music · Foodie",
+    latitude: 6.5244,
+    longitude: 3.3792,
+    heroPhotoUrl:
+      "https://images.unsplash.com/photo-1618828665011-0abd973f7bb8?auto=format&fit=crop&w=1600&q=80",
+    heroPhotoCredit: {
+      name: "Tope Asokere",
+      href: "https://unsplash.com/@topedotcom",
+    },
     specCells: [
       { label: "Per head", value: "£1,200" },
       { label: "Crew", value: "6" },
@@ -225,7 +299,7 @@ const TRIPS: readonly SampleTrip[] = [
       {
         day: "Day 1",
         place: "Victoria Island arrival",
-        note: "Land at LOS. Apartment on Victoria Island. First night easy — beach club on the lagoon, Afrobeats till late.",
+        note: "Land at LOS. Apartment on Victoria Island. First night easy. Beach club on the lagoon, Afrobeats till late.",
       },
       {
         day: "Day 2",
@@ -242,9 +316,9 @@ const TRIPS: readonly SampleTrip[] = [
   },
 ] as const;
 
-export const SAMPLE_TRIPS = TRIPS;
+export const CURATED_TRIPS = TRIPS;
 
-export function pickFeaturedSampleTrip(now: Date = new Date()): SampleTrip {
+export function pickFeaturedCuratedTrip(now: Date = new Date()): CuratedTrip {
   const utcStart = Date.UTC(now.getUTCFullYear(), 0, 0);
   const utcNow = Date.UTC(
     now.getUTCFullYear(),
@@ -256,6 +330,6 @@ export function pickFeaturedSampleTrip(now: Date = new Date()): SampleTrip {
   return TRIPS[index]!;
 }
 
-export function getSampleTripBySlug(slug: string): SampleTrip | null {
+export function getCuratedTripBySlug(slug: string): CuratedTrip | null {
   return TRIPS.find((t) => t.slug === slug) ?? null;
 }

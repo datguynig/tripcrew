@@ -1,16 +1,16 @@
 import { notFound } from "next/navigation";
 import { TripPreview } from "@/components/trips/TripPreview";
-import { getSampleTripBySlug } from "@/lib/marketing/sampleTrips";
+import { getCuratedTripBySlug } from "@/lib/marketing/curatedTrips";
 
 export const dynamic = "force-dynamic";
 
-export default async function SampleTripPage({
+export default async function CuratedTripPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const trip = getSampleTripBySlug(slug);
+  const trip = getCuratedTripBySlug(slug);
 
   if (!trip) notFound();
 
@@ -35,7 +35,7 @@ export default async function SampleTripPage({
       visibleDays={trip.visibleDays}
       variant={{
         kind: "sample",
-        ribbonLabel: `Sample trip · ${trip.city}`,
+        ribbonLabel: `Curated trip · ${trip.city}`,
       }}
     />
   );

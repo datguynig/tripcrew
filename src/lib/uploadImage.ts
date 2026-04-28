@@ -67,7 +67,7 @@ export async function uploadPostImage(
     return {
       ok: false,
       error: "too_large",
-      message: "Image too large — max 8 MB.",
+      message: "Image too large. Max 8 MB.",
     };
   }
   const heic = isHeic(file);

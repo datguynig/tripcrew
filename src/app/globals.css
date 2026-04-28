@@ -22,6 +22,13 @@
   --color-cream: #f5f1e8;
   --color-ink: #0a0a0a;
   --color-marketing-coral: #ff5e3a;
+  /* Darker coral variant for text on cream surfaces. The bright coral
+     #ff5e3a hits only 2.69:1 against #f5f1e8 (fails WCAG AA). This deep
+     variant clears 5.4:1 against cream while staying recognisably the
+     same brand accent. Use this for kickers, link text, and tags
+     rendered against the cream marketing background. Use the bright
+     #ff5e3a for backgrounds, decorative squares/rules, and text on ink. */
+  --color-marketing-coral-deep: #b8391c;
 
   --font-sans: var(--font-sans), "Inter Tight", sans-serif;
   --font-mono: var(--font-mono), "JetBrains Mono", monospace;
@@ -256,6 +263,40 @@ body {
 
 .animate-skeleton {
   animation: skeleton-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes tc-flip {
+  0% {
+    transform: perspective(600px) rotateX(-90deg);
+    opacity: 0;
+  }
+  60% {
+    transform: perspective(600px) rotateX(8deg);
+    opacity: 1;
+  }
+  100% {
+    transform: perspective(600px) rotateX(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-tc-flip {
+  animation: tc-flip 0.55s cubic-bezier(0.6, 0, 0.2, 1) both;
+}
+
+@keyframes tc-fade {
+  0% {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-tc-fade {
+  animation: tc-fade 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .hero-radial {
