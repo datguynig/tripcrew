@@ -292,8 +292,11 @@ export function TeaserForm({ trip }: { trip: CuratedTrip }) {
 
 /**
  * Cream-themed airport typeahead used by the public marketing form.
- * Mirrors the structure of `AirportSearch.tsx` but skips the auth-gated
- * action and uses cream/ink tokens instead of the dark app shell.
+ * Based on `AirportSearch.tsx` but skips the auth-gated action, uses
+ * cream/ink tokens instead of the dark app shell, and adds a manual-
+ * IATA fallback (Enter/blur on a 3-letter code synthesises an option)
+ * so visitors can still progress when the Places call fails — there's
+ * no auth-gated retry path here.
  */
 function PublicAirportTypeahead({
   selected,
@@ -329,6 +332,7 @@ function PublicAirportTypeahead({
     if (trimmed.length < 2) {
       setResults([]);
       setOpen(false);
+      setSearchFailed(false);
       return;
     }
     if (justPickedRef.current !== null && justPickedRef.current === query) {
@@ -368,10 +372,8 @@ function PublicAirportTypeahead({
     if (selected && v !== selected.name) onClear();
   };
 
-  // Manual-IATA fallback. If the typeahead is unreachable (Places call
-  // failed) the user can still progress by typing a 3-letter airport
-  // code; on blur/Enter we synthesise a minimal option so the submit
-  // button enables.
+  // Only the failed-search path; in normal operation the user picks
+  // from the dropdown and this is a no-op.
   const tryAcceptManualIata = () => {
     if (selected) return;
     if (!searchFailed) return;
@@ -383,6 +385,7 @@ function PublicAirportTypeahead({
       address: code,
       latitude: null,
       longitude: null,
+      metro: code,
     };
     onSelect(synthetic);
   };
@@ -482,6 +485,7 @@ function PublicAirportTypeahead({
                 role="option"
                 aria-selected={active}
                 onMouseEnter={() => setHighlight(i)}
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleSelect(a)}
                 className={classes(
                   "relative w-full text-left pl-6 pr-5 py-3.5 flex items-center gap-4 transition-colors",
