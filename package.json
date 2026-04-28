@@ -36,6 +36,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vercel/config": "^0.2.1",
     "dotenv": "^17.4.2",
     "supabase": "^2.92.1",
     "tailwindcss": "^4",
