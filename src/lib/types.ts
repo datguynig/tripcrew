@@ -467,6 +467,11 @@ export type Application = {
   utm_source: string | null;
   utm_campaign: string | null;
   referrer: string | null;
+  draft_lead_id: string | null;
+  provisional_decision: "approve" | "reject" | null;
+  auto_decision_at: string | null;
+  decision_finalised_at: string | null;
+  decision_finalised_by: "admin" | "cron" | null;
 };
 
 export type TeaserInputs = {
