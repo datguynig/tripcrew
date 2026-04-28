@@ -20,5 +20,13 @@ export const config: VercelConfig = {
       path: "/api/cron/teaser-day-7-nudge",
       schedule: "0 * * * *",
     },
+    {
+      // Cost-ceiling alarm for the curated-teaser AI flow. Sums
+      // ai_usage.estimated_cost_gbp over the last 24h; if total > £40 it
+      // emails AI_BETA_OWNER_EMAIL. Every 6 hours is enough — the alarm
+      // fires off a sustained burst, not a single rogue request.
+      path: "/api/cron/teaser-cost-alert",
+      schedule: "0 */6 * * *",
+    },
   ],
 };
