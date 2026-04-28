@@ -28,7 +28,10 @@ TripCrew is a Next.js + Supabase app for planning group trips with a shared crew
 ## Main routes
 
 - `/sign-in`: sign in, sign up, or request a magic link
-- `/`: trip dashboard
+- `/`: public invite-only landing page
+- `/dashboard`: trip dashboard
+- `/apply`: Crew Plus application
+- `/curated/[slug]`: curated trip teaser flow
 - `/trips/new`: create a trip
 - `/trips/[slug]/destinations`: destination proposal and voting
 - `/trips/[slug]`: trip overview once a destination is locked

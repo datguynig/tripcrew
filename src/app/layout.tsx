@@ -28,6 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${interTight.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
