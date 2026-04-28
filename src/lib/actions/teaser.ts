@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { after } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { estimateGeminiCostGBP, generateJson } from "@/lib/ai/gemini";
@@ -40,9 +40,27 @@ type InsertedRow = {
   resume_token: string;
 };
 
+/**
+ * Resolve the request's client IP from the standard Vercel/proxy headers.
+ * `x-forwarded-for` may contain a comma-separated chain (`client, proxy1,
+ * proxy2`); we take the first entry as the originating client. Falls back
+ * to `x-real-ip` then `127.0.0.1` so server-side tests and local dev
+ * always have a stable value.
+ */
+async function resolveClientIp(): Promise<string> {
+  const h = await headers();
+  const forwardedFor = h.get("x-forwarded-for");
+  if (forwardedFor) {
+    const first = forwardedFor.split(",")[0]?.trim();
+    if (first) return first;
+  }
+  const realIp = h.get("x-real-ip");
+  if (realIp) return realIp.trim();
+  return "127.0.0.1";
+}
+
 export async function submitTeaserForm(
   rawInput: unknown,
-  ip: string,
 ): Promise<SubmitTeaserResult> {
   const parsed = teaserSubmissionSchema.safeParse(rawInput);
   if (!parsed.success) {
@@ -58,6 +76,7 @@ export async function submitTeaserForm(
     return { ok: false, error: "Unknown trip" };
   }
 
+  const ip = await resolveClientIp();
   let ipHash: string;
   try {
     ipHash = hashIp(ip);
