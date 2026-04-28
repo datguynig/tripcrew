@@ -63,9 +63,9 @@ export function Hero({
               </span>
             </h1>
 
-            <p className="mt-6 max-w-[36ch] text-[17px] leading-relaxed text-cream/80 sm:text-[19px]">
-              Pick a city. Pull your crew. The plan writes itself. Bookings,
-              ledger, chat. All in one place.
+            <p className="mt-6 max-w-[38ch] text-[17px] leading-relaxed text-cream/80 sm:text-[19px]">
+              Stop planning in the group chat. One place for decisions, plans,
+              money, and updates. The AI drafts the trip. Your crew locks it in.
             </p>
 
             <form

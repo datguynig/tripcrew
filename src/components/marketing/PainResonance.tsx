@@ -6,7 +6,6 @@ type ChatMessage = {
   time: string;
   body: string;
   alignment: "left" | "right";
-  tone?: "muted";
 };
 
 const MESSAGES: ChatMessage[] = [
@@ -45,14 +44,6 @@ const MESSAGES: ChatMessage[] = [
     body: "actually might bow out, niece's christening",
     alignment: "left",
   },
-  {
-    initials: "PR",
-    name: "Priya",
-    time: "Two weeks later",
-    body: "…",
-    alignment: "right",
-    tone: "muted",
-  },
 ];
 
 export function PainResonance() {
@@ -85,7 +76,10 @@ export function PainResonance() {
               </li>
             ))}
           </ol>
+          <ReadReceipt />
         </div>
+
+        <EvidenceRow />
 
         <div className="mt-12 md:mt-16 flex flex-col items-center gap-8 text-center">
           <p className="font-serif italic text-[28px] md:text-[36px] leading-[1.15] tracking-[-0.02em] max-w-[26ch]">
@@ -145,16 +139,12 @@ function ChatRow({
   message: ChatMessage;
   index: number;
 }) {
-  const fade = index >= 4 ? "opacity-80" : "opacity-100";
+  const fade = index >= 4 ? "opacity-85" : "opacity-100";
   const isRight = message.alignment === "right";
   const wrapperJustify = isRight ? "justify-end" : "justify-start";
   const bubbleBg = isRight
     ? "bg-ink text-cream"
     : "bg-cream text-ink border-2 border-ink";
-  const bubbleTone =
-    message.tone === "muted"
-      ? "italic text-ink/80 bg-cream border-2 border-dashed border-ink/40"
-      : "";
 
   return (
     <div className={`flex ${wrapperJustify} ${fade}`}>
@@ -163,16 +153,14 @@ function ChatRow({
           isRight ? "flex-row-reverse" : ""
         }`}
       >
-        <Avatar initials={message.initials} muted={message.tone === "muted"} />
+        <Avatar initials={message.initials} />
         <div className={`flex flex-col gap-1 ${isRight ? "items-end" : "items-start"}`}>
           <div className="flex items-center gap-2 font-mono uppercase tracking-[0.18em] text-[9px] text-ink/80">
             <span className="text-ink">{message.name}</span>
             <span aria-hidden="true">·</span>
             <span>{message.time}</span>
           </div>
-          <div
-            className={`px-4 py-3 text-[14px] sm:text-[15px] leading-[1.45] ${bubbleBg} ${bubbleTone}`}
-          >
+          <div className={`px-4 py-3 text-[14px] sm:text-[15px] leading-[1.45] ${bubbleBg}`}>
             {message.body}
           </div>
         </div>
@@ -181,22 +169,79 @@ function ChatRow({
   );
 }
 
-function Avatar({
-  initials,
-  muted = false,
+function EvidenceRow() {
+  return (
+    <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-3 border-2 border-ink/15">
+      <Stat
+        figure="1 in 5"
+        body="friend trips ends a friendship over money."
+        attr="Experian, 2024"
+      />
+      <Stat
+        figure="1 in 4"
+        body="crews actually set a budget before the trip."
+        attr="Experian, 2024"
+        bordered
+      />
+      <Stat
+        figure="73%"
+        body="of trip planners list affordability as the top stressor."
+        attr="Family Travel Association, 2025"
+        bordered
+      />
+    </div>
+  );
+}
+
+function Stat({
+  figure,
+  body,
+  attr,
+  bordered = false,
 }: {
-  initials: string;
-  muted?: boolean;
+  figure: string;
+  body: string;
+  attr: string;
+  bordered?: boolean;
 }) {
+  return (
+    <div
+      className={
+        "p-6 sm:p-7 flex flex-col gap-3 " +
+        (bordered ? "sm:border-l-2 sm:border-ink/15 border-t-2 sm:border-t-0 border-ink/15" : "")
+      }
+    >
+      <p className="font-serif text-[36px] md:text-[44px] leading-none tracking-[-0.025em]">
+        {figure}
+      </p>
+      <p className="text-[14px] leading-[1.5] text-ink/80 max-w-[28ch]">
+        {body}
+      </p>
+      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/65 mt-auto">
+        {attr}
+      </p>
+    </div>
+  );
+}
+
+function ReadReceipt() {
+  return (
+    <div className="mt-8 flex flex-col items-end gap-1.5">
+      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/70">
+        Priya · seen Tue 14:42 · never replied
+      </p>
+      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/70">
+        No new messages for 14 days.
+      </p>
+    </div>
+  );
+}
+
+function Avatar({ initials }: { initials: string }) {
   return (
     <span
       aria-hidden="true"
-      className={
-        "shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-mono uppercase tracking-[0.04em] text-[10px] " +
-        (muted
-          ? "bg-cream text-ink/80 border-2 border-dashed border-ink/40"
-          : "bg-ink text-cream")
-      }
+      className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-mono uppercase tracking-[0.04em] text-[10px] bg-ink text-cream"
     >
       {initials}
     </span>
