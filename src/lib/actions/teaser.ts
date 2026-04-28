@@ -62,6 +62,9 @@ export async function submitTeaserForm(
 
   const supabase = createServiceClient();
 
+  // Lifetime cap of 2 per IP. The count→insert window is intentionally not
+  // transactional: worst case a parallel submitter wins a third row, which
+  // is cheaper than serialising every form submit on a global lock.
   const { count, error: countError } = await supabase
     .from("draft_leads")
     .select("id", { count: "exact", head: true })

@@ -4,7 +4,8 @@ export type UsageFeature =
   | "lock_and_draft_basic"
   | "lock_and_draft_enriched"
   | "price_refresh"
-  | "candidate_draft_basic";
+  | "candidate_draft_basic"
+  | "curated_teaser";
 
 export interface UsageRecord {
   userId: string;
