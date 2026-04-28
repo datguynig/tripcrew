@@ -33,11 +33,11 @@ export function Hero({
           </p>
 
           <h1 className="mt-8 font-serif font-medium leading-[0.95] tracking-[-0.035em] text-[56px] sm:text-[80px] lg:text-[104px] max-w-[14ch]">
-            The crew trip, fully planned.
+            Your crew&rsquo;s trip, fully planned.
           </h1>
 
-          <p className="mt-8 max-w-[42ch] text-[17px] leading-[1.55] text-ink/75 sm:text-[19px]">
-            Apply once. The AI drafts the whole trip. Your crew locks it in.
+          <p className="mt-8 max-w-[42ch] text-[19px] leading-[1.5] text-ink/75 sm:text-[22px]">
+            AI drafts. Your crew picks. The trip leaves the chat.
           </p>
 
           <div className="mt-10 flex flex-col sm:flex-row items-center gap-5">
