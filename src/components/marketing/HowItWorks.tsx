@@ -31,8 +31,8 @@ export function HowItWorks() {
             How it works
           </p>
           <h2 className="font-serif text-[44px] md:text-[64px] leading-[0.98] tracking-[-0.025em]">
-            From group chat to{" "}
-            <span className="font-serif italic">runway,</span> in three weeks.
+            What it takes to{" "}
+            <span className="font-serif italic">finally</span> leave the chat.
           </h2>
         </div>
         <ol className="border-t-2 border-ink">

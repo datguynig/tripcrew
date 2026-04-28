@@ -46,7 +46,7 @@ export function Hero({
               href="/apply"
               className="inline-flex items-center justify-center bg-ink text-cream font-mono uppercase tracking-[0.18em] text-[12px] h-[56px] px-8 border-2 border-ink hover:bg-marketing-coral hover:text-ink hover:border-marketing-coral transition-colors duration-150 whitespace-nowrap"
             >
-              Apply to plan your version →
+              Apply for an invite →
             </Link>
             <a
               href="#featured-plan"

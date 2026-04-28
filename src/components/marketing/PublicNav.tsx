@@ -76,7 +76,7 @@ export function PublicNav() {
               href="/apply"
               className="hidden sm:inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[11px] px-5 h-10 border-2 border-marketing-coral hover:bg-ink hover:text-cream hover:border-ink transition-colors duration-150"
             >
-              Apply for invite
+              Apply for an invite
             </Link>
             <button
               type="button"
@@ -136,7 +136,7 @@ export function PublicNav() {
               onClick={() => setMenuOpen(false)}
               className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] border-2 border-marketing-coral"
             >
-              Apply for invite
+              Apply for an invite
             </Link>
             <Link
               href="/sign-in"

@@ -42,10 +42,10 @@ function Header({ trip }: { trip: CuratedTrip }) {
 
       <div className="relative mx-auto max-w-[1100px] px-6 sm:px-10 pt-28 pb-20 sm:pt-36 sm:pb-28 lg:pt-44 lg:pb-32">
         <Link
-          href="/"
+          href="/#curated-trips"
           className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/75 hover:text-cream underline-offset-4 hover:underline"
         >
-          ← Back to all curated trips
+          ← All curated trips
         </Link>
 
         <div className="mt-8 flex items-center gap-3">
@@ -349,15 +349,18 @@ function ApplyBlock({ trip }: { trip: CuratedTrip }) {
               href={`/apply?intent=plus&seed=${trip.slug}&vibes=${trip.applyVibes}`}
               className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[56px] px-8 border-2 border-marketing-coral hover:bg-cream hover:border-cream transition-colors duration-150 whitespace-nowrap"
             >
-              Plan my {trip.city} trip →
+              Apply for a {trip.city} plan →
             </Link>
             <Link
-              href="/apply"
+              href="/#curated-trips"
               className="font-mono uppercase tracking-[0.18em] text-[11px] text-cream/70 hover:text-cream underline-offset-4 hover:underline"
             >
-              ↓ Or pick a different starting point
+              ↓ Browse other curated plans
             </Link>
           </div>
+          <p className="mt-4 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/55 max-w-[52ch]">
+            Crew Plus · £9 / mo · one admin pays, the whole crew gets in.
+          </p>
         </div>
       </div>
     </section>

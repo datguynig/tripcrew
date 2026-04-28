@@ -27,7 +27,7 @@ function getTiers(foundingRemaining: number): Tier[] {
         "View crew trips you're invited to",
         "Crew chat + photos",
       ],
-      cta: { label: "Apply for invite →", href: "/apply" },
+      cta: { label: "Apply for an invite →", href: "/apply" },
     },
     {
       name: "Crew Plus",
@@ -38,8 +38,8 @@ function getTiers(foundingRemaining: number): Tier[] {
       description: "One admin pays. The whole crew gets in.",
       recommended: true,
       bullets: [
-        "AI plans the whole trip. The trip actually happens.",
-        "One admin pays. Pro covers the whole crew.",
+        "Drafts a plan from your origin, budget, dates, vibe.",
+        "Use it on every trip. No per-trip cost.",
         'Bookings in one place. No more "who has the link?"',
         "Money sorted in-trip. One less app to juggle.",
         "A chat just for this trip. Not another group to mute.",
@@ -54,7 +54,10 @@ function getTiers(foundingRemaining: number): Tier[] {
       billing: "Price-locked for life · founding-only",
       tagline: "Your AI travel concierge.",
       description: "Dream trips, zero effort. Founding members shape the product.",
-      scarcityChip: `${foundingRemaining} of 500 seats remain`,
+      scarcityChip:
+        foundingRemaining >= 500
+          ? "Founding cohort · 500 seats"
+          : `${foundingRemaining} of 500 seats remain`,
       bullets: [
         "Everything in Crew Plus",
         "Plan by talking. Conversational AI, no more forms.",

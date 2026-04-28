@@ -13,41 +13,41 @@ const FEATURES: FeatureTile[] = [
     label: "The plan",
     title: "Plan the trip, not just the itinerary.",
     body: "AI drafts a grounded plan from your origin, crew size, budget and vibes. Spec grid, day-by-day schedule, hotel picks, bookings checklist. Built in 15 seconds, scoped to your crew.",
-    proof: "Powered by Gemini 3 + Google Places",
+    proof: "Powered by Gemini 3 · Google Places",
   },
   {
     index: "02",
     label: "The vote",
-    title: "Loudest voice doesn't win.",
-    body: "Every destination candidate has photos, notes, and a yes / maybe / no vote. Late joiners catch up at a glance. The lock reflects the crew, not the loudest reply.",
-    proof: "Yes / maybe / no, realtime, one tap",
+    title: "Plans don't stall on a silent crew.",
+    body: "Every destination has photos, notes, and a yes / maybe / no vote. Late joiners catch up at a glance. Silence doesn't get to veto.",
+    proof: "Yes / maybe / no · one tap",
   },
   {
     index: "03",
     label: "The bookings",
-    title: "One checklist. Everyone ticks.",
-    body: "Flights, accommodation, restaurants, activities. All in one shared list the whole crew can see, edit, and tick off as the trip locks in.",
-    proof: "Shared, realtime, admin-light",
+    title: "You're not the only one booking.",
+    body: "Flights, accommodation, restaurants, activities. One shared list the whole crew can see, edit, and tick off.",
+    proof: "Shared · live · admin-light",
   },
   {
     index: "04",
     label: "The ledger",
-    title: "No more spreadsheets plus panic.",
+    title: "Money sorted. No one has to chase.",
     body: "Log a spend in two taps. Per-person balances update live. No spreadsheets, no exports, no awkward reimbursement chats after the trip.",
-    proof: "Realtime ledger, auto-split, GBP / EUR / USD",
+    proof: "Auto-split · GBP / EUR / USD",
   },
   {
     index: "05",
     label: "The chat",
     title: "The only groupchat you need for your trip.",
-    body: "Photos, replies, reactions, mute toggle. Just for this trip. No more muting groups you can't leave.",
-    proof: "Realtime, mutable, archived after",
+    body: "Photos, replies, reactions. Just for this trip. No more muting groups you can't leave.",
+    proof: "Mutable · archived after the trip",
   },
   {
     index: "06",
     label: "The memory book",
-    title: "Auto-built when the trip ends.",
-    body: "Photos, schedule, the highlights. Stitched into a real keepsake the day after you fly home.",
+    title: "A keepsake, the morning after.",
+    body: "Photos, schedule, highlights, stitched into something you'll still open in five years.",
     proof: "Founding Crew · ships in M3",
     badge: "founding",
   },
@@ -65,12 +65,11 @@ export function FeatureShowcase() {
             What you actually get
           </p>
           <h2 className="font-serif text-[40px] md:text-[56px] leading-[1.02] tracking-[-0.025em]">
-            More than an AI itinerary.
+            The trip, sorted.
           </h2>
           <p className="text-[17px] leading-[1.55] text-ink/70 max-w-[58ch]">
-            Six tools that hold the trip together from booking to landing. Built
-            so the admin works less, the crew shows up, and the trip actually
-            happens.
+            Six tools, from booking to landing. Built for the friend who&rsquo;s
+            always the planner.
           </p>
         </div>
 

@@ -20,7 +20,7 @@ const MESSAGES: ChatMessage[] = [
     initials: "TM",
     name: "Tom",
     time: "Wed 22:17",
-    body: "flights have doubled lol",
+    body: "i'm in. who's booking?",
     alignment: "right",
   },
 ];
@@ -34,12 +34,12 @@ export function PainResonance() {
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
         <div className="flex flex-col gap-6 mb-16 md:mb-20 max-w-[760px]">
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
-            You&apos;ve had this exact chat
+            You know how this ends
           </p>
           <h2 className="font-serif text-[44px] md:text-[64px] leading-[1.0] tracking-[-0.025em]">
             Six friends. One chat.{" "}
             <span className="font-serif italic">
-              No trip ever leaves it.
+              Most trips never leave it.
             </span>
           </h2>
         </div>
@@ -58,11 +58,7 @@ export function PainResonance() {
           </div>
 
           <div className="flex flex-col gap-8">
-            <Stat
-              figure="1 in 5"
-              body="friend trips ends a friendship over money."
-              attr="Experian, 2024"
-            />
+            <Diagnosis />
             <div className="border-t-2 border-ink/15 pt-7 flex flex-col gap-4">
               <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink">
                 Tripcrew turns the chat into a trip.
@@ -149,25 +145,15 @@ function ReadReceipt() {
   );
 }
 
-function Stat({
-  figure,
-  body,
-  attr,
-}: {
-  figure: string;
-  body: string;
-  attr: string;
-}) {
+function Diagnosis() {
   return (
-    <div className="flex flex-col gap-3">
-      <p className="font-serif text-[72px] md:text-[96px] leading-[0.95] tracking-[-0.035em]">
-        {figure}
+    <div className="flex flex-col gap-5">
+      <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
+        The diagnosis
       </p>
-      <p className="text-[16px] md:text-[18px] leading-[1.4] text-ink max-w-[28ch]">
-        {body}
-      </p>
-      <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65 mt-1">
-        {attr}
+      <p className="font-serif text-[36px] md:text-[44px] leading-[1.05] tracking-[-0.02em] text-ink max-w-[20ch]">
+        Group trips die at{" "}
+        <span className="font-serif italic">&ldquo;who&rsquo;s booking?&rdquo;</span>
       </p>
     </div>
   );

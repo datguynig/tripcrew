@@ -164,7 +164,7 @@ function FeatureCard({
               href={`/apply?intent=plus&seed=${trip.slug}&vibes=${trip.applyVibes}`}
               className="inline-flex items-center justify-center bg-marketing-coral text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[52px] px-6 border-2 border-marketing-coral hover:bg-cream hover:text-ink hover:border-cream transition-colors duration-150 whitespace-nowrap self-start"
             >
-              Plan my {trip.city} trip →
+              Apply for a {trip.city} plan →
             </Link>
             <Link
               href={`/curated/${trip.slug}`}
