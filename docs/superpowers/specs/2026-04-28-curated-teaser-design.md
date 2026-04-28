@@ -394,6 +394,12 @@ A v1 ship is acceptable when:
 - Multi-language support
 - Mobile-specific form layout polish (use the desktop form on mobile in v1, polish in v1.1)
 
+## Implementation guidance
+
+**UI components (all `src/components/marketing/curated/*` and the reshaped `/apply` form) must be built via the `frontend-design` skill.** The aesthetic baseline is the existing editorial-brutalist marketing surfaces (cream / ink / marketing-coral tokens, mono-cap eyebrows, serif display, hard 2px borders, hairline dividers). Match the tone of the existing [Hero](../../src/components/marketing/Hero.tsx), [DepartureBoard](../../src/components/marketing/DepartureBoard.tsx), and [CuratedTripView](../../src/components/marketing/CuratedTripView.tsx). No emojis, no competitor brand names, no purple gradients, no hex (Tailwind tokens only).
+
+Non-UI work (server actions, migrations, AI prompt + schema, cron handlers, webhook updates, type additions) is implemented directly without the frontend-design skill.
+
 ## Files to create/modify
 
 **New files:**
