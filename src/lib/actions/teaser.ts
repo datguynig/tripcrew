@@ -11,12 +11,17 @@ import {
   teaserSubmissionSchema,
 } from "@/lib/validators/teaser";
 import { getCuratedTripBySlug } from "@/lib/marketing/curatedTrips";
-import { sendTeaserConfirmation } from "@/lib/email/teaserEmails";
+import {
+  buildTeaserConfirmationEmail,
+  sendTeaserConfirmation,
+} from "@/lib/email/teaserEmails";
 import { buildCacheKey, hashIp } from "@/lib/teaser/hash";
+import {
+  DRAFT_COOKIE_NAME,
+  draftCookieOptions,
+} from "@/lib/teaser/cookieConfig";
 import type { TeaserInputs, TeaserOutput } from "@/lib/types";
 
-const COOKIE_NAME = "tc_draft_id";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 90;
 const RATE_LIMIT = 2;
 
 export type SubmitTeaserResult =
@@ -149,13 +154,7 @@ export async function submitTeaserForm(
   }
 
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, inserted.id, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: COOKIE_MAX_AGE,
-    path: "/",
-  });
+  cookieStore.set(DRAFT_COOKIE_NAME, inserted.id, draftCookieOptions());
 
   if (usage) {
     await logTeaserAiUsage({
@@ -170,14 +169,16 @@ export async function submitTeaserForm(
     });
   }
 
-  void sendTeaserConfirmation({
-    email,
-    draftId: inserted.id,
-    resumeToken: inserted.resume_token,
-    slug,
-    inputs,
-    teaser,
-  }).catch((err) => {
+  void sendTeaserConfirmation(
+    buildTeaserConfirmationEmail({
+      email,
+      draftId: inserted.id,
+      resumeToken: inserted.resume_token,
+      slug,
+      inputs,
+      teaser,
+    }),
+  ).catch((err) => {
     console.error("submitTeaserForm: confirmation email failed:", err);
   });
 
