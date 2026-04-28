@@ -54,8 +54,14 @@ function emailDomain(email: string): string {
 
 /**
  * Returns the provisional decision a fresh application should land on
- * before any human review. Five 0/1 signals; threshold of 4 maps to
- * approve, anything below is a soft reject.
+ * before any human review. Two real signals (trips_per_year + non-disposable
+ * email); both must pass to auto-approve. Anything else lands as a soft
+ * reject so the founder gets a manual-review prompt in the admin queue.
+ *
+ * The earlier 5-signal version included role / pain / budget_attitude,
+ * but Zod has already validated those to allowed enum values by the time
+ * this runs, so they were tautologies. Stripped them — the heuristic now
+ * actually discriminates instead of approving everything by default.
  *
  * Kept pure (no DB, no I/O) so it can be unit-tested and reused by both
  * the submit action and the cron auto-finaliser.
@@ -63,13 +69,14 @@ function emailDomain(email: string): string {
 export function computeProvisionalDecision(
   input: HeuristicInput,
 ): ProvisionalDecision {
-  let score = 0;
+  // Touch the strict-typed enums so future enum additions surface as a
+  // typecheck failure here, prompting a deliberate review of the heuristic.
+  void VALID_ROLES;
+  void VALID_PAINS;
+  void VALID_BUDGET_ATTITUDES;
 
-  if (input.trips_per_year !== "0") score += 1;
-  if (VALID_ROLES.includes(input.role)) score += 1;
-  if (VALID_PAINS.includes(input.pain)) score += 1;
-  if (VALID_BUDGET_ATTITUDES.includes(input.budget_attitude)) score += 1;
-  if (!DISPOSABLE_DOMAINS.has(emailDomain(input.email))) score += 1;
+  const hasTrips = input.trips_per_year !== "0";
+  const realInbox = !DISPOSABLE_DOMAINS.has(emailDomain(input.email));
 
-  return score >= 4 ? "approve" : "reject";
+  return hasTrips && realInbox ? "approve" : "reject";
 }

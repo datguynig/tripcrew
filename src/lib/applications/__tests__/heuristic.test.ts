@@ -23,20 +23,17 @@ test("computeProvisionalDecision rejects when applicant doesn't travel and uses 
   assert.equal(result, "reject");
 });
 
-test("computeProvisionalDecision still approves on the 4/5 boundary", () => {
-  // Drop only the trips_per_year signal — score = 4/5, should still approve.
+test("computeProvisionalDecision rejects when applicant doesn't travel even with a real inbox", () => {
   const result = computeProvisionalDecision({
     ...BASE,
     trips_per_year: "0",
   });
-  assert.equal(result, "approve");
+  assert.equal(result, "reject");
 });
 
-test("computeProvisionalDecision rejects when below 4 signals", () => {
-  // Drop trips_per_year AND use a disposable inbox — score = 3/5.
+test("computeProvisionalDecision rejects when inbox is disposable even with travel signal", () => {
   const result = computeProvisionalDecision({
     ...BASE,
-    trips_per_year: "0",
     email: "tempo@tempmail.com",
   });
   assert.equal(result, "reject");
@@ -65,6 +62,6 @@ test("computeProvisionalDecision ignores email casing on the domain check", () =
     trips_per_year: "0",
     email: "Burner@MAILINATOR.com",
   });
-  // 4 valid answer signals, but domain still flagged → 3/5 → reject.
+  // Valid answer signals + travels, but inbox is disposable → reject.
   assert.equal(result, "reject");
 });

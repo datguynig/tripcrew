@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!trip) return { title: "Tripcrew — curated trip" };
   return {
     title: `${trip.city} · Tripcrew curated`,
-    description: `${trip.tagline} See your version of ${trip.city} — origin, crew, dates, budget personalised.`,
+    description: `${trip.tagline} See your version of ${trip.city}: origin, crew, dates, budget personalised.`,
   };
 }
 

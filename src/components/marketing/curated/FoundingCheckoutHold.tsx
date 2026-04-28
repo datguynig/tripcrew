@@ -119,7 +119,7 @@ export function FoundingCheckoutHold({
               href={`/curated/${trip.slug}`}
               className="inline-flex items-center justify-center bg-ink text-cream font-mono uppercase tracking-[0.18em] text-[12px] h-[60px] px-9 border-2 border-ink hover:bg-marketing-coral hover:border-marketing-coral hover:text-ink transition-colors duration-150"
             >
-              Reservation expired — start again →
+              Reservation expired. Start again →
             </Link>
           ) : (
             <button

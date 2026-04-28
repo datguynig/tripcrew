@@ -60,20 +60,37 @@ export default async function FoundingCheckoutPage({
     return <CannotFindDraftState slug={slug} city={trip.city} />;
   }
 
-  const claim = await claimFoundingSeat(draft.id);
-  if (!claim.ok) {
-    if (claim.error === "invalid_draft") redirect(`/curated/${slug}`);
-    if (claim.error === "sold_out") return <SoldOutState />;
-    return <InternalErrorState slug={slug} />;
-  }
-
-  const { data: reservation } = await supabase
+  const { data: existingHold } = await supabase
     .from("founding_reservations")
     .select("id, expires_at, consumed")
-    .eq("id", claim.reservationId)
+    .eq("draft_lead_id", draft.id)
+    .eq("consumed", false)
+    .gt("expires_at", new Date().toISOString())
+    .order("expires_at", { ascending: false })
+    .limit(1)
     .maybeSingle<FoundingReservationRow>();
 
-  if (!reservation) return <InternalErrorState slug={slug} />;
+  let reservation: FoundingReservationRow | null = existingHold ?? null;
+
+  if (!reservation) {
+    const claim = await claimFoundingSeat(draft.id);
+    if (!claim.ok) {
+      if (claim.error === "invalid_draft") redirect(`/curated/${slug}`);
+      if (claim.error === "sold_out") return <SoldOutState />;
+      return <InternalErrorState slug={slug} />;
+    }
+
+    const { data: fresh } = await supabase
+      .from("founding_reservations")
+      .select("id, expires_at, consumed")
+      .eq("id", claim.reservationId)
+      .maybeSingle<FoundingReservationRow>();
+    reservation = fresh ?? null;
+  }
+
+  if (!reservation || reservation.consumed) {
+    return <InternalErrorState slug={slug} />;
+  }
 
   return (
     <FoundingCheckoutHold
@@ -99,7 +116,7 @@ function SoldOutState() {
           All 500 founding spots are taken.
         </h1>
         <p className="mt-5 font-serif italic text-[19px] sm:text-[22px] leading-[1.35] text-ink/75 max-w-[44ch]">
-          The Founding Crew is full. Crew Plus opens up shortly after — apply
+          The Founding Crew is full. Crew Plus opens up shortly after. Apply
           to join the next wave at the standard price.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4">
