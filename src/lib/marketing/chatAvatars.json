@@ -1,0 +1,38 @@
+{
+  "NA": {
+    "photoUrl": "https://images.pexels.com/photos/7665704/pexels-photo-7665704.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "Lara Chara",
+    "photographerUrl": "https://www.pexels.com/@lara-chara-24037705",
+    "pexelsUrl": "https://www.pexels.com/photo/woman-with-short-and-curly-hair-smiling-7665704/"
+  },
+  "SM": {
+    "photoUrl": "https://images.pexels.com/photos/6942776/pexels-photo-6942776.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "Nikolai Kyrychenko",
+    "photographerUrl": "https://www.pexels.com/@nikolai-kyrychenko-30668236",
+    "pexelsUrl": "https://www.pexels.com/photo/a-man-in-black-framed-eyeglasses-while-smiling-at-the-camera-6942776/"
+  },
+  "MO": {
+    "photoUrl": "https://images.pexels.com/photos/33203514/pexels-photo-33203514.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "Meli Meraki",
+    "photographerUrl": "https://www.pexels.com/@melimeraki",
+    "pexelsUrl": "https://www.pexels.com/photo/playful-teenager-in-yellow-attire-striking-a-pose-33203514/"
+  },
+  "TM": {
+    "photoUrl": "https://images.pexels.com/photos/7752816/pexels-photo-7752816.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "Apunto Group Agencia de publicidad",
+    "photographerUrl": "https://www.pexels.com/@apunto-group-agencia-de-publicidad-53086916",
+    "pexelsUrl": "https://www.pexels.com/photo/confident-man-sitting-with-crossed-arms-7752816/"
+  },
+  "AS": {
+    "photoUrl": "https://images.pexels.com/photos/31246118/pexels-photo-31246118.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "Walter Alejandro",
+    "photographerUrl": "https://www.pexels.com/@walter-alejandro-228509595",
+    "pexelsUrl": "https://www.pexels.com/photo/portrait-of-woman-with-floral-headpiece-outdoors-31246118/"
+  },
+  "PR": {
+    "photoUrl": "https://images.pexels.com/photos/14664508/pexels-photo-14664508.jpeg?auto=compress&cs=tinysrgb&h=350",
+    "photographer": "David DM",
+    "photographerUrl": "https://www.pexels.com/@dmdavid",
+    "pexelsUrl": "https://www.pexels.com/photo/teenage-girl-smiling-in-close-up-photography-14664508/"
+  }
+}

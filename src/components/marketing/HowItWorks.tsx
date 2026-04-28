@@ -33,7 +33,7 @@ const STEPS: Step[] = [
 export function HowItWorks() {
   return (
     <section id="how-it-works" className="bg-cream text-ink border-y-2 border-ink">
-      <div className="mx-auto w-full max-w-[1200px] px-6 py-16 md:py-20">
+      <div className="mx-auto w-full max-w-[1200px] px-6 py-24 md:py-32">
         <div className="grid grid-cols-1 border-2 border-ink md:grid-cols-3">
           {STEPS.map((step, index) => {
             const isLastColumn = index === STEPS.length - 1;
@@ -49,7 +49,7 @@ export function HowItWorks() {
               >
                 <div
                   className={[
-                    "font-mono uppercase tracking-[0.18em] text-[56px] leading-none",
+                    "font-mono uppercase tracking-[0.18em] text-[40px] sm:text-[56px] leading-none",
                     step.numberClassName,
                   ].join(" ")}
                 >
@@ -72,10 +72,10 @@ export function HowItWorks() {
 
         <div className="mt-12 flex justify-center">
           <a
-            href="#sample-trips"
+            href="#curated-trips"
             className="font-mono uppercase tracking-[0.22em] text-[11px] text-ink/65 transition-opacity duration-150 hover:text-ink/80"
           >
-            ↓ See a sample trip
+            ↓ See a curated trip
           </a>
         </div>
       </div>

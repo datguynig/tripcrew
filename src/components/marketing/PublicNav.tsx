@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
-  { href: "#sample-trips", label: "Sample trips" },
+  { href: "#curated-trips", label: "Curated trips" },
   { href: "#features", label: "Features" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
@@ -37,7 +37,7 @@ export function PublicNav() {
 
   const navClass = scrolled
     ? "bg-cream/95 backdrop-blur-md border-b-2 border-ink"
-    : "bg-transparent border-b-2 border-transparent";
+    : "bg-cream/55 backdrop-blur-sm border-b border-ink/15";
 
   return (
     <>

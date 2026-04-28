@@ -2,7 +2,7 @@ import Link from "next/link";
 
 const PRODUCT_LINKS = [
   { href: "#how-it-works", label: "How it works" },
-  { href: "#sample-trips", label: "Sample trips" },
+  { href: "#curated-trips", label: "Curated trips" },
   { href: "#features", label: "Features" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
@@ -52,7 +52,7 @@ export function Footer() {
           <p className="font-mono uppercase tracking-[0.22em] text-[10px] text-cream/70 flex items-center gap-2">
             <span
               aria-hidden="true"
-              className="w-[6px] h-[6px] rounded-full bg-marketing-coral"
+              className="w-[7px] h-[7px] bg-marketing-coral"
             />
             All systems good
           </p>

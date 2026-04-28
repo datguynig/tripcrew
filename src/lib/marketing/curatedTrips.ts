@@ -1,8 +1,8 @@
 // Five sample trips that anchor the public landing page. Each has a
-// permanent /sample-trip/<slug> URL for sharing — visitors paste the
+// permanent /curated/<slug> URL for sharing — visitors paste the
 // URL into their group chat as part of the acquisition motion.
 //
-// pickFeaturedSampleTrip() picks one based on UTC day-of-year mod 5 so
+// pickFeaturedCuratedTrip() picks one based on UTC day-of-year mod 5 so
 // the page is deterministic per day (cacheable) and rotates through
 // all five over a working week. Returning visitors see fresh content.
 //
@@ -21,7 +21,7 @@ export type SampleScheduleRow = {
   note: string;
 };
 
-export type SampleTrip = {
+export type CuratedTrip = {
   slug: string;
   city: string;
   country: string;
@@ -53,7 +53,7 @@ export type SampleTrip = {
   applyVibes: string;
 };
 
-const TRIPS: readonly SampleTrip[] = [
+const TRIPS: readonly CuratedTrip[] = [
   {
     slug: "mallorca",
     city: "Mallorca",
@@ -316,9 +316,9 @@ const TRIPS: readonly SampleTrip[] = [
   },
 ] as const;
 
-export const SAMPLE_TRIPS = TRIPS;
+export const CURATED_TRIPS = TRIPS;
 
-export function pickFeaturedSampleTrip(now: Date = new Date()): SampleTrip {
+export function pickFeaturedCuratedTrip(now: Date = new Date()): CuratedTrip {
   const utcStart = Date.UTC(now.getUTCFullYear(), 0, 0);
   const utcNow = Date.UTC(
     now.getUTCFullYear(),
@@ -330,6 +330,6 @@ export function pickFeaturedSampleTrip(now: Date = new Date()): SampleTrip {
   return TRIPS[index]!;
 }
 
-export function getSampleTripBySlug(slug: string): SampleTrip | null {
+export function getCuratedTripBySlug(slug: string): CuratedTrip | null {
   return TRIPS.find((t) => t.slug === slug) ?? null;
 }

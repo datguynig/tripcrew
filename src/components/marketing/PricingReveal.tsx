@@ -122,17 +122,17 @@ export function PricingReveal({
   return (
     <section
       id="pricing"
-      className="bg-cream text-ink border-t-2 border-ink"
+      className="bg-ink text-cream border-t-2 border-cream/15"
     >
       <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
-        <div className="font-mono uppercase tracking-[0.18em] text-[12px] mb-8">
+        <p className="font-mono uppercase tracking-[0.18em] text-[12px] text-marketing-coral mb-8">
           Pricing
-        </div>
+        </p>
         <h2 className="font-serif text-[40px] md:text-[52px] leading-[1.05] tracking-tight max-w-[640px] mb-16">
           Three ways in. One invite to claim.
         </h2>
 
-        <div className="border-2 border-ink grid grid-cols-1 md:grid-cols-3 divide-y-2 md:divide-y-0 md:divide-x-2 divide-ink">
+        <div className="border-2 border-cream grid grid-cols-1 md:grid-cols-3 divide-y-2 md:divide-y-0 md:divide-x-2 divide-cream">
           <PricingCard
             tier="free"
             name="Free"

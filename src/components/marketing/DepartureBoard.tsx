@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { SAMPLE_TRIPS, type SampleTrip } from "@/lib/marketing/sampleTrips";
+import { CURATED_TRIPS, type CuratedTrip } from "@/lib/marketing/curatedTrips";
 
 const ROTATE_INTERVAL_MS = 5500;
 
@@ -17,7 +17,7 @@ const FLIP_FIELDS: { key: FlipKey; label: string }[] = [
   { key: "vibesLabel", label: "Vibes" },
 ];
 
-function fieldValue(trip: SampleTrip, key: FlipKey): string {
+function fieldValue(trip: CuratedTrip, key: FlipKey): string {
   if (key === "destination") return `${trip.city}, ${trip.country}`;
   if (key === "datesLabel") return trip.datesLabel;
   if (key === "vibesLabel") return trip.vibesLabel;
@@ -25,7 +25,7 @@ function fieldValue(trip: SampleTrip, key: FlipKey): string {
 }
 
 export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) {
-  const trips = SAMPLE_TRIPS;
+  const trips = CURATED_TRIPS;
   const [index, setIndex] = useState(initialIndex);
   const [paused, setPaused] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -78,7 +78,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
   return (
     <section
       ref={sectionRef}
-      id="sample-trips"
+      id="curated-trips"
       aria-roledescription="carousel"
       aria-label="Five curated starter trips by Tripcrew"
       tabIndex={0}
@@ -89,7 +89,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
       onBlur={() => setPaused(false)}
       className="relative w-full bg-ink text-cream focus:outline-none"
     >
-      <div className="mx-auto max-w-[1400px] px-6 sm:px-10 pt-20 pb-12 md:pt-28 md:pb-16">
+      <div className="mx-auto max-w-[1400px] px-6 sm:px-10 py-24 md:py-32">
         <div className="flex items-end justify-between gap-6 mb-12">
           <div>
             <p className="font-mono uppercase tracking-[0.22em] text-[11px] text-marketing-coral mb-3">
@@ -147,7 +147,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
                   Plan my {trip.city} trip →
                 </Link>
                 <Link
-                  href={`/sample-trip/${trip.slug}`}
+                  href={`/curated/${trip.slug}`}
                   className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 hover:text-cream underline-offset-4 hover:underline"
                 >
                   Or browse the full plan
@@ -173,7 +173,7 @@ function BoardBackground({
   trip,
   reduceMotion,
 }: {
-  trip: SampleTrip;
+  trip: CuratedTrip;
   reduceMotion: boolean;
 }) {
   return (
@@ -220,13 +220,13 @@ function FlipRow({
   trip,
   reduceMotion,
 }: {
-  trip: SampleTrip;
+  trip: CuratedTrip;
   reduceMotion: boolean;
 }) {
   return (
     <dl
       aria-live="polite"
-      className="hidden sm:grid grid-cols-4 gap-2 max-w-[680px] w-full"
+      className="hidden md:grid grid-cols-4 gap-2 max-w-[680px] w-full"
     >
       {FLIP_FIELDS.map((field, i) => (
         <FlipTile
@@ -260,7 +260,7 @@ function FlipTile({
       <dd
         style={{ animationDelay: `${delayMs}ms` }}
         className={
-          "font-serif text-[16px] sm:text-[18px] leading-[1.15] tracking-[-0.005em] text-cream " +
+          "font-serif text-[15px] lg:text-[17px] leading-[1.15] tracking-[-0.005em] text-cream truncate " +
           (reduceMotion ? "" : "motion-safe:animate-tc-flip origin-top")
         }
       >
@@ -270,7 +270,7 @@ function FlipTile({
   );
 }
 
-function PhotoCredit({ trip }: { trip: SampleTrip }) {
+function PhotoCredit({ trip }: { trip: CuratedTrip }) {
   return (
     <p className="mt-4 font-mono uppercase tracking-[0.18em] text-[9px] text-cream/70">
       Photo ·{" "}
@@ -291,7 +291,7 @@ function ThumbStrip({
   activeIndex,
   onSelect,
 }: {
-  trips: readonly SampleTrip[];
+  trips: readonly CuratedTrip[];
   activeIndex: number;
   onSelect: (index: number) => void;
 }) {

@@ -1,36 +1,36 @@
 import Image from "next/image";
 
-import { SAMPLE_TRIPS, type SampleTrip } from "@/lib/marketing/sampleTrips";
+import { CURATED_TRIPS, type CuratedTrip } from "@/lib/marketing/curatedTrips";
 
 type EditorialCollageProps = {
-  trip: SampleTrip;
+  trip: CuratedTrip;
 };
 
 // Three-image editorial grid replacing the old polaroid stack on the hero.
 // Sharp rectangles, no rotation, no white frames, no fake tape — labels read
 // as magazine captions, not keepsake corners.
 export function EditorialCollage({ trip }: EditorialCollageProps) {
-  const others = SAMPLE_TRIPS.filter((t) => t.slug !== trip.slug);
+  const others = CURATED_TRIPS.filter((t) => t.slug !== trip.slug);
   const second = others[0]!;
   const third = others[1]!;
 
   return (
-    <div className="relative w-full max-w-[520px] mx-auto md:ml-auto md:mr-0 grid grid-cols-12 grid-rows-[repeat(8,_minmax(0,_36px))] gap-3">
+    <div className="relative w-full max-w-[520px] mx-auto md:ml-auto md:mr-0 grid grid-cols-12 grid-rows-[repeat(8,_minmax(0,_38px))] gap-2">
       <CollageTile
         trip={trip}
         priority
-        className="col-span-7 row-span-8"
-        sizes="(min-width: 1024px) 320px, (min-width: 640px) 50vw, 60vw"
+        className="col-span-8 row-span-8"
+        sizes="(min-width: 1024px) 340px, (min-width: 640px) 55vw, 65vw"
       />
       <CollageTile
         trip={second}
-        className="col-span-5 row-span-4"
-        sizes="(min-width: 1024px) 220px, (min-width: 640px) 35vw, 40vw"
+        className="col-span-4 row-span-3"
+        sizes="(min-width: 1024px) 170px, (min-width: 640px) 28vw, 32vw"
       />
       <CollageTile
         trip={third}
-        className="col-span-5 row-span-4"
-        sizes="(min-width: 1024px) 220px, (min-width: 640px) 35vw, 40vw"
+        className="col-span-4 row-span-5"
+        sizes="(min-width: 1024px) 170px, (min-width: 640px) 28vw, 32vw"
       />
     </div>
   );
@@ -42,7 +42,7 @@ function CollageTile({
   priority = false,
   sizes,
 }: {
-  trip: SampleTrip;
+  trip: CuratedTrip;
   className: string;
   priority?: boolean;
   sizes: string;

@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { applicationEmailSchema } from "@/lib/validators/application";
-import type { SampleTrip } from "@/lib/marketing/sampleTrips";
+import type { CuratedTrip } from "@/lib/marketing/curatedTrips";
 
 import { EditorialCollage } from "./EditorialCollage";
 
 type HeroProps = {
   applicantCount: number;
-  featuredTrip: SampleTrip;
+  featuredTrip: CuratedTrip;
   foundingRemaining: number;
 };
 
@@ -158,10 +158,10 @@ function CohortBadge({
           {claimed} / 500 claimed
         </p>
       </div>
-      <div className="relative h-[2px] bg-cream/15 overflow-hidden">
+      <div className="relative h-[3px] bg-cream/25 overflow-hidden">
         <div
           className="absolute inset-y-0 left-0 bg-marketing-coral"
-          style={{ width: `${Math.max(progress * 100, 1)}%` }}
+          style={{ width: `${Math.max(progress * 100, 6)}%` }}
         />
       </div>
       {showApplicants ? (

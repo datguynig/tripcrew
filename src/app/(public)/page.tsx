@@ -8,9 +8,9 @@ import { PainResonance } from "@/components/marketing/PainResonance";
 import { PricingReveal } from "@/components/marketing/PricingReveal";
 import { getApplicationCount } from "@/lib/actions/applications";
 import {
-  pickFeaturedSampleTrip,
-  SAMPLE_TRIPS,
-} from "@/lib/marketing/sampleTrips";
+  pickFeaturedCuratedTrip,
+  CURATED_TRIPS,
+} from "@/lib/marketing/curatedTrips";
 import { getFoundingCrewRemaining } from "@/lib/pricing/foundingCount";
 
 export const dynamic = "force-dynamic";
@@ -20,8 +20,8 @@ export default async function LandingPage() {
     getApplicationCount(),
     getFoundingCrewRemaining(),
   ]);
-  const featuredTrip = pickFeaturedSampleTrip();
-  const initialIndex = SAMPLE_TRIPS.findIndex(
+  const featuredTrip = pickFeaturedCuratedTrip();
+  const initialIndex = CURATED_TRIPS.findIndex(
     (trip) => trip.slug === featuredTrip.slug,
   );
 

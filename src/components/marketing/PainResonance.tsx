@@ -1,4 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
+
+import chatAvatarsRaw from "@/lib/marketing/chatAvatars.json";
+
+type ChatAvatar = {
+  photoUrl: string;
+  photographer: string;
+  photographerUrl: string;
+  pexelsUrl: string;
+};
+
+const CHAT_AVATARS = chatAvatarsRaw as Record<string, ChatAvatar | null>;
 
 type ChatMessage = {
   initials: string;
@@ -107,13 +119,7 @@ function ChatHeader() {
       <div className="flex items-center gap-3">
         <div className="flex -space-x-2">
           {["NA", "SM", "TM"].map((initials) => (
-            <span
-              key={initials}
-              aria-hidden="true"
-              className="w-7 h-7 rounded-full bg-ink text-cream border-2 border-cream flex items-center justify-center font-mono uppercase tracking-[0.04em] text-[9px]"
-            >
-              {initials}
-            </span>
+            <HeaderAvatar key={initials} initials={initials} />
           ))}
         </div>
         <div>
@@ -171,24 +177,23 @@ function ChatRow({
 
 function EvidenceRow() {
   return (
-    <div className="mt-12 md:mt-16 grid grid-cols-1 sm:grid-cols-3 border-2 border-ink/15">
-      <Stat
-        figure="1 in 5"
-        body="friend trips ends a friendship over money."
-        attr="Experian, 2024"
-      />
-      <Stat
-        figure="1 in 4"
-        body="crews actually set a budget before the trip."
-        attr="Experian, 2024"
-        bordered
-      />
-      <Stat
-        figure="73%"
-        body="of trip planners list affordability as the top stressor."
-        attr="Family Travel Association, 2025"
-        bordered
-      />
+    <div className="mt-8 md:mt-10">
+      <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-ink/65 mb-5">
+        This isn't just your crew.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 border-2 border-ink/15">
+        <Stat
+          figure="1 in 5"
+          body="friend trips ends a friendship over money."
+          attr="Experian, 2024"
+        />
+        <Stat
+          figure="73%"
+          body="of trip planners list affordability as the top stressor."
+          attr="Family Travel Association, 2025"
+          bordered
+        />
+      </div>
     </div>
   );
 }
@@ -226,11 +231,11 @@ function Stat({
 
 function ReadReceipt() {
   return (
-    <div className="mt-8 flex flex-col items-end gap-1.5">
-      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/70">
+    <div className="mt-6 ml-auto max-w-[300px] flex flex-col items-end gap-2 border-t border-ink/15 pt-4">
+      <p className="font-mono uppercase tracking-[0.18em] text-[9px] text-ink/65">
         Priya · seen Tue 14:42 · never replied
       </p>
-      <p className="font-mono uppercase tracking-[0.22em] text-[9px] text-ink/70">
+      <p className="font-serif italic text-[16px] leading-[1.3] text-ink text-right">
         No new messages for 14 days.
       </p>
     </div>
@@ -238,10 +243,55 @@ function ReadReceipt() {
 }
 
 function Avatar({ initials }: { initials: string }) {
+  const avatar = CHAT_AVATARS[initials];
+  if (avatar) {
+    return (
+      <span
+        aria-hidden="true"
+        className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-ink relative"
+      >
+        <Image
+          src={avatar.photoUrl}
+          alt=""
+          fill
+          sizes="36px"
+          className="object-cover"
+        />
+      </span>
+    );
+  }
   return (
     <span
       aria-hidden="true"
       className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-mono uppercase tracking-[0.04em] text-[10px] bg-ink text-cream"
+    >
+      {initials}
+    </span>
+  );
+}
+
+function HeaderAvatar({ initials }: { initials: string }) {
+  const avatar = CHAT_AVATARS[initials];
+  if (avatar) {
+    return (
+      <span
+        aria-hidden="true"
+        className="w-7 h-7 rounded-full overflow-hidden border-2 border-cream relative"
+      >
+        <Image
+          src={avatar.photoUrl}
+          alt=""
+          fill
+          sizes="28px"
+          className="object-cover"
+        />
+      </span>
+    );
+  }
+  return (
+    <span
+      aria-hidden="true"
+      className="w-7 h-7 rounded-full bg-ink text-cream border-2 border-cream flex items-center justify-center font-mono uppercase tracking-[0.04em] text-[9px]"
     >
       {initials}
     </span>
