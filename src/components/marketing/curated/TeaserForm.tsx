@@ -190,10 +190,10 @@ export function TeaserForm({ trip }: { trip: CuratedTrip }) {
         </div>
       </fieldset>
 
-      {/* When */}
+      {/* How long */}
       <fieldset>
         <legend id={whenLabelId} className={LEGEND_CLASS}>
-          03 / When
+          03 / How long
         </legend>
         <div role="radiogroup" aria-labelledby={whenLabelId} className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {WHEN_OPTIONS.map((opt) => {
@@ -245,6 +245,7 @@ export function TeaserForm({ trip }: { trip: CuratedTrip }) {
         </label>
         <input
           id={emailId}
+          name="email"
           type="email"
           inputMode="email"
           autoComplete="email"
@@ -310,6 +311,7 @@ function PublicAirportTypeahead({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [highlight, setHighlight] = useState(0);
+  const [searchFailed, setSearchFailed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const justPickedRef = useRef<string | null>(selected?.name ?? null);
 
@@ -336,6 +338,7 @@ function PublicAirportTypeahead({
 
     const controller = new AbortController();
     setLoading(true);
+    setSearchFailed(false);
     const t = setTimeout(async () => {
       try {
         const res = await searchPublicAirportsAction({ query: trimmed });
@@ -344,6 +347,11 @@ function PublicAirportTypeahead({
         setResults(hits);
         setOpen(hits.length > 0);
         setHighlight(0);
+      } catch {
+        if (controller.signal.aborted) return;
+        setResults([]);
+        setOpen(false);
+        setSearchFailed(true);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -358,6 +366,25 @@ function PublicAirportTypeahead({
   const handleQueryChange = (v: string) => {
     setQuery(v);
     if (selected && v !== selected.name) onClear();
+  };
+
+  // Manual-IATA fallback. If the typeahead is unreachable (Places call
+  // failed) the user can still progress by typing a 3-letter airport
+  // code; on blur/Enter we synthesise a minimal option so the submit
+  // button enables.
+  const tryAcceptManualIata = () => {
+    if (selected) return;
+    if (!searchFailed) return;
+    const code = query.trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(code)) return;
+    const synthetic: AirportOption = {
+      id: `iata:${code}`,
+      name: code,
+      address: code,
+      latitude: null,
+      longitude: null,
+    };
+    onSelect(synthetic);
   };
 
   const handleSelect = (a: AirportOption) => {
@@ -382,7 +409,11 @@ function PublicAirportTypeahead({
     } else if (e.key === "Enter") {
       e.preventDefault();
       const pick = results[highlight];
-      if (pick) handleSelect(pick);
+      if (pick) {
+        handleSelect(pick);
+      } else {
+        tryAcceptManualIata();
+      }
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -392,6 +423,8 @@ function PublicAirportTypeahead({
     <div ref={containerRef} className="relative">
       <input
         type="text"
+        name="origin"
+        autoComplete="off"
         role="combobox"
         aria-labelledby={ariaLabelledBy}
         aria-autocomplete="list"
@@ -400,6 +433,7 @@ function PublicAirportTypeahead({
         value={query}
         onChange={(e) => handleQueryChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onBlur={tryAcceptManualIata}
         onFocus={() => {
           if (results.length > 0) setOpen(true);
         }}
@@ -413,6 +447,15 @@ function PublicAirportTypeahead({
           aria-label="Searching"
           className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 w-[8px] h-[8px] bg-marketing-coral-deep brand-dot"
         />
+      )}
+
+      {searchFailed && !loading && (
+        <p
+          role="status"
+          className="mt-2 font-mono uppercase tracking-[0.18em] text-[10px] text-ink/70"
+        >
+          Search unavailable. Type your 3-letter airport code (e.g. LHR).
+        </p>
       )}
 
       {open && results.length > 0 && (
