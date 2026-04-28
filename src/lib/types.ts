@@ -468,3 +468,39 @@ export type Application = {
   utm_campaign: string | null;
   referrer: string | null;
 };
+
+export type TeaserInputs = {
+  origin: string;
+  crew: "2" | "3-4" | "5-6" | "7+";
+  when: "weekend" | "week" | "two-weeks" | "flexible";
+  budget: "500" | "1000" | "1500" | "2000+";
+};
+
+export type TeaserOutput = {
+  spec: {
+    perHead: string;
+    crew: string;
+    origin: string;
+    vibes: string;
+  };
+  hero_paragraph: string;
+  days: Array<{ day: string; place: string; note: string }>;
+  stay: { neighbourhood: string; priceBand: string };
+  flights: { priceBand: string };
+  bookings_count: number;
+  weather: string;
+};
+
+export type DraftLead = {
+  id: string;
+  email: string;
+  ip_hash: string;
+  slug: string;
+  inputs: TeaserInputs;
+  teaser: TeaserOutput | null;
+  cache_key: string;
+  resume_token: string;
+  nudge_sent_at: string | null;
+  unsubscribed_at: string | null;
+  created_at: string;
+};
