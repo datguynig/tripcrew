@@ -120,7 +120,7 @@ export function buildDay7NudgeEmail({
     text: [
       `Quick heads-up: ${foundingRemaining} of 500 founding spots remain.`,
       ``,
-      `Founding spots are price-locked at £179/year for life — once they're gone, that price disappears.`,
+      `Founding spots are price-locked at £179/year for life. Once they're gone, that price disappears.`,
       ``,
       `Your ${city} draft is still saved. Pick it back up:`,
       resume,
