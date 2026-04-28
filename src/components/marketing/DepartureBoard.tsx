@@ -332,6 +332,7 @@ function PeekCard({
           fill
           sizes="(min-width: 1024px) 480px, (min-width: 768px) 320px, 100vw"
           className="object-cover"
+          loading="eager"
         />
       </m.div>
       <div className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-ink via-ink/55 to-transparent" />
