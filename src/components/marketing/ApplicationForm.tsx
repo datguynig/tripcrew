@@ -31,8 +31,21 @@ function classes(...parts: (string | false | undefined)[]) {
   return parts.filter(Boolean).join(" ");
 }
 
-export function ApplicationForm({ email: initialEmail }: { email: string | null }) {
+type Props = {
+  email: string | null;
+  draftLeadId?: string | null;
+  prefilledEmail?: string | null;
+  draftSlug?: string | null;
+};
+
+export function ApplicationForm({
+  email: initialEmail,
+  draftLeadId = null,
+  prefilledEmail = null,
+  draftSlug = null,
+}: Props) {
   const router = useRouter();
+  const hasPrefilledEmail = prefilledEmail !== null;
   const [email, setEmail] = useState(initialEmail ?? "");
   const [tripsPerYear, setTripsPerYear] =
     useState<ApplicationTripsPerYear | null>(null);
@@ -59,7 +72,8 @@ export function ApplicationForm({ email: initialEmail }: { email: string | null 
     ) {
       return;
     }
-    const parsedEmail = applicationEmailSchema.safeParse(email);
+    const submittedEmail = hasPrefilledEmail ? prefilledEmail : email;
+    const parsedEmail = applicationEmailSchema.safeParse(submittedEmail);
     if (!parsedEmail.success) {
       setError(parsedEmail.error.issues[0]?.message ?? "Enter a valid email.");
       return;
@@ -71,36 +85,60 @@ export function ApplicationForm({ email: initialEmail }: { email: string | null 
       role,
       pain,
       budget_attitude: budgetAttitude,
+      draft_lead_id: draftLeadId ?? null,
     };
     startTransition(async () => {
       const result = await submitApplication(payload);
       if (result.ok) {
-        router.push(`/apply/confirmation?p=${result.pain}`);
+        if (draftLeadId && draftSlug && result.applicationId) {
+          router.push(
+            `/curated/${draftSlug}/applied?application=${result.applicationId}`,
+          );
+        } else {
+          router.push(`/apply/confirmation?p=${result.pain}`);
+        }
       } else {
         setError(result.error);
       }
     });
   }
 
+  // When numbering questions, an attached draft removes the email step
+  // entirely so the remaining four questions become 01–04.
+  const stepOffset = hasPrefilledEmail ? 0 : 1;
+  const stepLabel = (n: number) =>
+    String(n + stepOffset).padStart(2, "0");
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-12">
-      <fieldset>
-        <legend className={LEGEND_CLASS}>01 / Your email</legend>
-        <input
-          id="application-email"
-          type="email"
-          inputMode="email"
-          autoComplete="email"
-          required
-          placeholder="your@email.com"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="w-full bg-transparent border-2 border-ink px-5 py-4 text-[16px] text-ink placeholder:text-ink/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
-        />
-      </fieldset>
+      {hasPrefilledEmail ? (
+        <div className="flex flex-col gap-3 border-l-2 border-marketing-coral-deep pl-5">
+          <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
+            Email confirmed from your draft
+          </p>
+          <p className="font-serif text-[18px] leading-snug text-ink">
+            {prefilledEmail}
+          </p>
+        </div>
+      ) : (
+        <fieldset>
+          <legend className={LEGEND_CLASS}>01 / Your email</legend>
+          <input
+            id="application-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            placeholder="your@email.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full bg-transparent border-2 border-ink px-5 py-4 text-[16px] text-ink placeholder:text-ink/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-cream"
+          />
+        </fieldset>
+      )}
 
       <fieldset>
-        <legend className={LEGEND_CLASS}>02 / Trips per year</legend>
+        <legend className={LEGEND_CLASS}>{stepLabel(1)} / Trips per year</legend>
         <div className="grid grid-cols-4 gap-3">
           {TRIPS_PER_YEAR_OPTIONS.map((value) => {
             const selected = tripsPerYear === value;
@@ -127,7 +165,7 @@ export function ApplicationForm({ email: initialEmail }: { email: string | null 
 
       <fieldset>
         <legend className={LEGEND_CLASS}>
-          03 / When your crew talks about a trip, you&apos;re...
+          {stepLabel(2)} / When your crew talks about a trip, you&apos;re...
         </legend>
         <div className="flex flex-col gap-3">
           {ROLE_OPTIONS.map((value) => {
@@ -155,7 +193,7 @@ export function ApplicationForm({ email: initialEmail }: { email: string | null 
 
       <fieldset>
         <legend className={LEGEND_CLASS}>
-          04 / What kills most of your trips?
+          {stepLabel(3)} / What kills most of your trips?
         </legend>
         <div className="flex flex-col gap-3">
           {PAIN_OPTIONS.map((value) => {
@@ -183,7 +221,7 @@ export function ApplicationForm({ email: initialEmail }: { email: string | null 
 
       <fieldset>
         <legend className={LEGEND_CLASS}>
-          05 / When it comes to trip budgets, you...
+          {stepLabel(4)} / When it comes to trip budgets, you...
         </legend>
         <div className="flex flex-col gap-3">
           {BUDGET_ATTITUDE_OPTIONS.map((value) => {

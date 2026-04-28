@@ -30,7 +30,7 @@ type SubmitApplicationInput = {
 };
 
 type SubmitResult =
-  | { ok: true; pain: ApplicationPain }
+  | { ok: true; pain: ApplicationPain; applicationId: string | null }
   | { ok?: false; error: string };
 
 export async function submitApplication(
@@ -67,23 +67,38 @@ export async function submitApplication(
     draftSlug = draft?.slug ?? null;
   }
 
-  const { error } = await supabase.from("applications").insert({
-    email: parsed.data.email,
-    trips_per_year: parsed.data.trips_per_year,
-    role: parsed.data.role,
-    pain: parsed.data.pain,
-    budget_attitude: parsed.data.budget_attitude,
-    utm_source: parsed.data.utm_source ?? null,
-    utm_campaign: parsed.data.utm_campaign ?? null,
-    referrer: parsed.data.referrer ?? null,
-    draft_lead_id: parsed.data.draft_lead_id ?? null,
-    provisional_decision: provisional,
-    auto_decision_at: autoDecisionAt,
-  });
+  const { data: inserted, error } = await supabase
+    .from("applications")
+    .insert({
+      email: parsed.data.email,
+      trips_per_year: parsed.data.trips_per_year,
+      role: parsed.data.role,
+      pain: parsed.data.pain,
+      budget_attitude: parsed.data.budget_attitude,
+      utm_source: parsed.data.utm_source ?? null,
+      utm_campaign: parsed.data.utm_campaign ?? null,
+      referrer: parsed.data.referrer ?? null,
+      draft_lead_id: parsed.data.draft_lead_id ?? null,
+      provisional_decision: provisional,
+      auto_decision_at: autoDecisionAt,
+    })
+    .select("id")
+    .maybeSingle<{ id: string }>();
 
   if (error) {
     if (error.code === "23505") {
-      return { ok: true, pain: parsed.data.pain };
+      // Re-submission of the same email — pull the existing row's id so
+      // the confirmation page still has something to render.
+      const { data: existing } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("email", parsed.data.email)
+        .maybeSingle<{ id: string }>();
+      return {
+        ok: true,
+        pain: parsed.data.pain,
+        applicationId: existing?.id ?? null,
+      };
     }
     console.error("submitApplication insert failed", error);
     return { error: "Something went wrong. Try again in a moment." };
@@ -106,7 +121,11 @@ export async function submitApplication(
     }
   });
 
-  return { ok: true, pain: parsed.data.pain };
+  return {
+    ok: true,
+    pain: parsed.data.pain,
+    applicationId: inserted?.id ?? null,
+  };
 }
 
 export async function getApplicationCount(): Promise<number> {
