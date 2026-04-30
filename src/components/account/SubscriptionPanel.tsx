@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { FounderBadge } from "@/components/ui/FounderBadge";
 import type { Profile } from "@/lib/types";
 import { UpgradeButton } from "./UpgradeButton";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
@@ -20,10 +22,35 @@ function formatDate(iso: string | null): string {
 export function SubscriptionPanel({ profile }: Props) {
   const status = profile.stripe_subscription_status;
   const periodEnd = profile.current_period_end;
+  const founderStatus = profile.founding_crew_at ? (
+    <div className="mb-6 flex items-center gap-3 border border-line bg-bg-2 px-5 py-4">
+      <FounderBadge size="lg" />
+      <div className="flex flex-col">
+        <span className="text-[14px] text-fg leading-[1.3]">
+          You are a Founding Crew member.
+        </span>
+        <span className="text-[12px] text-fg-3 leading-[1.3]">
+          Price-locked at £179/yr for life. Joined{" "}
+          {new Date(profile.founding_crew_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+          .
+        </span>
+      </div>
+    </div>
+  ) : null;
+  const withFounderStatus = (content: ReactNode) => (
+    <>
+      {founderStatus}
+      {content}
+    </>
+  );
 
   // Free state — no subscription on file.
   if (!status) {
-    return (
+    return withFounderStatus(
       <article className="border border-accent/40 bg-accent/[0.04] px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-5">
         <div className="flex items-center gap-2">
           <span
@@ -57,14 +84,14 @@ export function SubscriptionPanel({ profile }: Props) {
           </Link>
           <span className="label-xs text-fg-3">14-day refund on first-time subscriptions</span>
         </div>
-      </article>
+      </article>,
     );
   }
 
   // Legacy trialing rows are still treated as paid access, but new
   // Cohort 01 checkout no longer creates trial subscriptions.
   if (status === "trialing") {
-    return (
+    return withFounderStatus(
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
@@ -80,12 +107,12 @@ export function SubscriptionPanel({ profile }: Props) {
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />
         </div>
-      </article>
+      </article>,
     );
   }
 
   if (status === "active") {
-    return (
+    return withFounderStatus(
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
@@ -101,12 +128,12 @@ export function SubscriptionPanel({ profile }: Props) {
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />
         </div>
-      </article>
+      </article>,
     );
   }
 
   if (status === "past_due") {
-    return (
+    return withFounderStatus(
       <article className="border border-err/40 bg-err/[0.06] px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-err" aria-hidden />
@@ -122,12 +149,12 @@ export function SubscriptionPanel({ profile }: Props) {
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton label="Update billing" variant="primary" />
         </div>
-      </article>
+      </article>,
     );
   }
 
   if (status === "incomplete") {
-    return (
+    return withFounderStatus(
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-warn" aria-hidden />
@@ -143,12 +170,12 @@ export function SubscriptionPanel({ profile }: Props) {
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />
         </div>
-      </article>
+      </article>,
     );
   }
 
   // canceled
-  return (
+  return withFounderStatus(
     <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
       <div className="flex items-center gap-2">
         <span className="w-[6px] h-[6px] rounded-full bg-fg-3" aria-hidden />
@@ -165,6 +192,6 @@ export function SubscriptionPanel({ profile }: Props) {
         <UpgradeButton label="Resubscribe" />
         <ManageSubscriptionButton label="Manage" variant="secondary" />
       </div>
-    </article>
+    </article>,
   );
 }
