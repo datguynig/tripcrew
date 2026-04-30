@@ -512,6 +512,9 @@ export function Feed({
             authorName: parent
               ? resolveAuthor(authorsById, parent.author_id).name
               : UNKNOWN_AUTHOR.name,
+            authorIsFounder: parent
+              ? resolveAuthor(authorsById, parent.author_id).isFounder
+              : UNKNOWN_AUTHOR.isFounder,
             excerpt: parent ? excerptFromPost(parent) : "…",
           }
         : null;
@@ -522,6 +525,7 @@ export function Feed({
           key={p.id}
           post={p}
           authorName={author.name}
+          authorIsFounder={author.isFounder}
           isOwn={isOwn}
           grouped={isGrouped(p, prev)}
           likeCount={likeCountFor(p.id)}

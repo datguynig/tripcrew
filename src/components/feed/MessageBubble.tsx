@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { FounderBadge } from "@/components/ui/FounderBadge";
 import type { Post } from "@/lib/types";
 import { initials, timeLabel } from "./feedUtils";
 import { HeartIcon } from "./LikeToggle";
@@ -8,12 +9,17 @@ import { HeartIcon } from "./LikeToggle";
 type Props = {
   post: Post;
   authorName: string;
+  authorIsFounder?: boolean;
   isOwn: boolean;
   grouped: boolean;
   likeCount: number;
   liked: boolean;
   canEdit: boolean;
-  replyPreview: { authorName: string; excerpt: string } | null;
+  replyPreview: {
+    authorName: string;
+    authorIsFounder: boolean;
+    excerpt: string;
+  } | null;
   onDelete?: () => void;
   onToggleLike: () => void;
   onReply: () => void;
@@ -78,10 +84,12 @@ function Footer({
 
 function ReplyQuote({
   authorName,
+  authorIsFounder,
   excerpt,
   onScroll,
 }: {
   authorName: string;
+  authorIsFounder: boolean;
   excerpt: string;
   onScroll: () => void;
 }) {
@@ -91,7 +99,10 @@ function ReplyQuote({
       onClick={onScroll}
       className="flex flex-col items-start gap-[2px] border-l-2 border-accent pl-3 py-[2px] mb-[6px] text-left hover:bg-bg-2/60 transition-colors cursor-pointer w-full max-w-[480px]"
     >
-      <span className="label-xs text-fg-3">Replying to {authorName}</span>
+      <span className="label-xs text-fg-3 inline-flex items-center gap-1.5">
+        Replying to {authorName}
+        {authorIsFounder ? <FounderBadge size="sm" /> : null}
+      </span>
       <span className="text-[13px] text-fg-2 truncate max-w-full">
         {excerpt}
       </span>
@@ -102,6 +113,7 @@ function ReplyQuote({
 export function MessageBubble({
   post,
   authorName,
+  authorIsFounder = false,
   isOwn,
   grouped,
   likeCount,
@@ -191,6 +203,7 @@ export function MessageBubble({
       {replyPreview && (
         <ReplyQuote
           authorName={replyPreview.authorName}
+          authorIsFounder={replyPreview.authorIsFounder}
           excerpt={replyPreview.excerpt}
           onScroll={() => {
             if (post.reply_to_post_id) onScrollToPost(post.reply_to_post_id);
@@ -289,7 +302,10 @@ export function MessageBubble({
       <div className="min-w-0">
         {!grouped && (
           <div className="flex items-baseline gap-2 mb-[6px]">
-            <span className="subheading text-fg">{authorName}</span>
+            <span className="subheading text-fg inline-flex items-center gap-2">
+              {authorName}
+              {authorIsFounder ? <FounderBadge size="sm" /> : null}
+            </span>
             <span className="label-xs text-fg-3 tabular" suppressHydrationWarning>
               {timeLabel(post.created_at)}
             </span>

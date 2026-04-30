@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { FounderBadge } from "@/components/ui/FounderBadge";
 import type { Post } from "@/lib/types";
 import { LikeToggle } from "./LikeToggle";
 import { dayLabel, initials, timeLabel } from "./feedUtils";
@@ -83,6 +84,7 @@ export function Gallery({
           <FilterPill
             key={a.id}
             label={a.name.toUpperCase()}
+            isFounder={a.isFounder}
             active={authorFilter === a.id}
             onClick={() =>
               onChangeFilter(authorFilter === a.id ? "all" : a.id)
@@ -117,8 +119,9 @@ export function Gallery({
                   <Thumb
                     key={p.id}
                     post={p}
-                    authorName={
-                      authorsById[p.author_id]?.name ?? "Unknown"
+                    authorName={authorsById[p.author_id]?.name ?? "Unknown"}
+                    authorIsFounder={
+                      authorsById[p.author_id]?.isFounder ?? false
                     }
                     likeCount={likeCountFor(p.id)}
                     liked={likedByMe(p.id)}
@@ -139,10 +142,12 @@ export function Gallery({
 
 function FilterPill({
   label,
+  isFounder = false,
   active,
   onClick,
 }: {
   label: string;
+  isFounder?: boolean;
   active: boolean;
   onClick: () => void;
 }) {
@@ -151,13 +156,14 @@ function FilterPill({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`shrink-0 label-xs py-[6px] px-[12px] border transition-colors cursor-pointer ${
+      className={`shrink-0 inline-flex items-center gap-2 label-xs py-[6px] px-[12px] border transition-colors cursor-pointer ${
         active
           ? "bg-accent text-bg border-accent"
           : "bg-bg-2 text-fg-3 border-line hover:border-line-2 hover:text-fg"
       }`}
     >
-      {label}
+      <span>{label}</span>
+      {isFounder ? <FounderBadge size="sm" /> : null}
     </button>
   );
 }
@@ -165,6 +171,7 @@ function FilterPill({
 type ThumbProps = {
   post: Post;
   authorName: string;
+  authorIsFounder: boolean;
   likeCount: number;
   liked: boolean;
   replyCount: number;
@@ -176,6 +183,7 @@ type ThumbProps = {
 function Thumb({
   post,
   authorName,
+  authorIsFounder,
   likeCount,
   liked,
   replyCount,
@@ -235,11 +243,17 @@ function Thumb({
           >
             {initials(authorName)}
           </span>
-          <span
-            className="label-xs text-fg-2 tabular whitespace-nowrap"
-            suppressHydrationWarning
-          >
-            {timeLabel(post.created_at)}
+          <span className="min-w-0 flex flex-col gap-0.5">
+            <span className="label-xs text-fg-2 inline-flex items-center gap-1.5 min-w-0">
+              <span className="truncate">{authorName}</span>
+              {authorIsFounder ? <FounderBadge size="sm" /> : null}
+            </span>
+            <span
+              className="label-xs text-fg-3 tabular whitespace-nowrap"
+              suppressHydrationWarning
+            >
+              {timeLabel(post.created_at)}
+            </span>
           </span>
           <LikeToggle
             liked={liked}
