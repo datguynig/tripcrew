@@ -16,6 +16,7 @@ export type Profile = {
   current_period_end: string | null;
   is_founder: boolean;
   founding_crew_at: string | null;
+  pricing_grandfathered_at: string | null;
 };
 
 export type TripStatus = "planning" | "locked";
