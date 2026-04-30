@@ -5,14 +5,14 @@ import type { Post } from "@/lib/types";
 import { LikeToggle } from "./LikeToggle";
 import { dayLabel, initials, timeLabel } from "./feedUtils";
 
-type AuthorsMap = Record<string, string>;
+type AuthorsMap = Record<string, { name: string; isFounder: boolean }>;
 
 type Props = {
   /** Already filtered by image + author, newest first. */
   mediaPosts: Post[];
   /** Total media count before author filter — used for empty-state copy. */
   unfilteredCount: number;
-  authors: Array<{ id: string; name: string }>;
+  authors: Array<{ id: string; name: string; isFounder: boolean }>;
   authorFilter: string;
   onChangeFilter: (filter: string) => void;
   authorsById: AuthorsMap;
@@ -117,7 +117,9 @@ export function Gallery({
                   <Thumb
                     key={p.id}
                     post={p}
-                    authorName={authorsById[p.author_id] ?? "Unknown"}
+                    authorName={
+                      authorsById[p.author_id]?.name ?? "Unknown"
+                    }
                     likeCount={likeCountFor(p.id)}
                     liked={likedByMe(p.id)}
                     replyCount={replyCountFor(p.id)}

@@ -31,7 +31,9 @@ export default async function FeedPage({
       .returns<Post[]>(),
     supabase
       .from("trip_members")
-      .select("user_id, profiles!trip_members_user_id_fkey(name)")
+      .select(
+        "user_id, profiles!trip_members_user_id_fkey(name, founding_crew_at)",
+      )
       .eq("trip_id", trip.id),
   ]);
 
@@ -44,12 +46,20 @@ export default async function FeedPage({
         .returns<PostLike[]>()
     : { data: [] as PostLike[] };
 
-  const authorsById: Record<string, string> = {};
+  const authorsById: Record<string, { name: string; isFounder: boolean }> = {};
   for (const row of members ?? []) {
     const profile = Array.isArray(row.profiles)
       ? row.profiles[0]
-      : (row.profiles as { name?: string } | null);
-    if (profile?.name) authorsById[row.user_id] = profile.name;
+      : (row.profiles as {
+          name?: string;
+          founding_crew_at?: string | null;
+        } | null);
+    if (profile?.name) {
+      authorsById[row.user_id] = {
+        name: profile.name,
+        isFounder: !!profile.founding_crew_at,
+      };
+    }
   }
 
   const count = posts?.length ?? 0;

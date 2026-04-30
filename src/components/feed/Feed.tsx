@@ -21,7 +21,8 @@ import { dayLabel, isGrouped, needsDaySeparator } from "./feedUtils";
 
 type ViewMode = "timeline" | "gallery";
 
-type CrewMap = Record<string, string>;
+type CrewAuthor = { name: string; isFounder: boolean };
+type CrewMap = Record<string, CrewAuthor>;
 
 type Props = {
   initial: Post[];
@@ -45,6 +46,12 @@ function excerptFromPost(p: Post): string {
   return clean.length > EXCERPT_MAX
     ? `${clean.slice(0, EXCERPT_MAX - 1).trimEnd()}…`
     : clean;
+}
+
+const UNKNOWN_AUTHOR: CrewAuthor = { name: "Unknown", isFounder: false };
+
+function resolveAuthor(authorsById: CrewMap, id: string): CrewAuthor {
+  return authorsById[id] ?? UNKNOWN_AUTHOR;
 }
 
 export function Feed({
@@ -354,9 +361,10 @@ export function Feed({
   };
 
   const handleReply = (post: Post) => {
+    const author = resolveAuthor(authorsById, post.author_id);
     setReplyTarget({
       postId: post.id,
-      authorName: authorsById[post.author_id] ?? "Unknown",
+      authorName: author.name,
       excerpt: excerptFromPost(post),
     });
   };
@@ -459,13 +467,17 @@ export function Feed({
   );
 
   const galleryAuthors = useMemo(() => {
-    const seen = new Map<string, string>();
+    const seen = new Map<string, CrewAuthor>();
     for (const p of mediaPosts) {
       if (!seen.has(p.author_id)) {
-        seen.set(p.author_id, authorsById[p.author_id] ?? "Unknown");
+        seen.set(p.author_id, resolveAuthor(authorsById, p.author_id));
       }
     }
-    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+    return Array.from(seen.entries()).map(([id, author]) => ({
+      id,
+      name: author.name,
+      isFounder: author.isFounder,
+    }));
   }, [mediaPosts, authorsById]);
 
   const filteredMedia = useMemo(
@@ -498,17 +510,18 @@ export function Feed({
       const replyPreview = p.reply_to_post_id
         ? {
             authorName: parent
-              ? authorsById[parent.author_id] ?? "Unknown"
-              : "Unknown",
+              ? resolveAuthor(authorsById, parent.author_id).name
+              : UNKNOWN_AUTHOR.name,
             excerpt: parent ? excerptFromPost(parent) : "…",
           }
         : null;
+      const author = resolveAuthor(authorsById, p.author_id);
 
       rendered.push(
         <MessageBubble
           key={p.id}
           post={p}
-          authorName={authorsById[p.author_id] ?? "Unknown"}
+          authorName={author.name}
           isOwn={isOwn}
           grouped={isGrouped(p, prev)}
           likeCount={likeCountFor(p.id)}

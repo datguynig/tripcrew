@@ -10,7 +10,7 @@ import { dayLabel, initials, timeLabel } from "./feedUtils";
 type Props = {
   posts: Post[];
   currentPostId: string;
-  authorsById: Record<string, string>;
+  authorsById: Record<string, { name: string; isFounder: boolean }>;
   likeCountFor: (postId: string) => number;
   likedByMe: (postId: string) => boolean;
   replyCountFor: (postId: string) => number;
@@ -165,7 +165,7 @@ export function Lightbox({
     readSwipe(panelTouchStart, e, true);
   };
 
-  const authorName = authorsById[post.author_id] ?? "Unknown";
+  const authorName = authorsById[post.author_id]?.name ?? "Unknown";
   const likeCount = likeCountFor(post.id);
   const liked = likedByMe(post.id);
   const replyCount = replyCountFor(post.id);
