@@ -73,7 +73,9 @@ export async function provisionProfileForCheckout(params: {
       stripe_subscription_status: "active",
     };
     if (params.isFoundingMember && !existingProfile.founding_crew_at) {
-      updatePayload.founding_crew_at = new Date().toISOString();
+      const stampedAt = new Date().toISOString();
+      updatePayload.founding_crew_at = stampedAt;
+      updatePayload.pricing_grandfathered_at = stampedAt;
     }
     const { error: updateErr } = await supabase
       .from("profiles")
@@ -91,7 +93,9 @@ export async function provisionProfileForCheckout(params: {
       stripe_subscription_status: "active",
     };
     if (params.isFoundingMember) {
-      insertPayload.founding_crew_at = new Date().toISOString();
+      const stampedAt = new Date().toISOString();
+      insertPayload.founding_crew_at = stampedAt;
+      insertPayload.pricing_grandfathered_at = stampedAt;
     }
     const { error: insertErr } = await supabase
       .from("profiles")
