@@ -10,6 +10,7 @@ const PRODUCT_LINKS = [
 
 const COMPANY_LINKS = [
   { href: "/apply", label: "Apply" },
+  { href: "/founders", label: "Founders" },
   { href: "/sign-in", label: "Sign in" },
   { href: "mailto:hello@tripcrew.app", label: "Contact" },
 ];
