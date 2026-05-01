@@ -21,7 +21,14 @@ export function QueueRealtime({ children }: { children: React.ReactNode }) {
           window.setTimeout(() => setPulse(false), 1200);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Catch-up refresh on subscribe success — applications inserted
+        // between SSR and SUBSCRIBED would otherwise be invisible until
+        // the next event lands or the founder navigates away. Cheap call,
+        // already wraps the queue render.
+        if (status !== "SUBSCRIBED") return;
+        router.refresh();
+      });
     return () => {
       void supabase.removeChannel(channel);
     };
