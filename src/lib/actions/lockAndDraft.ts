@@ -221,9 +221,10 @@ export async function generateLockAndDraft(
         weather,
         flightSearchUrl,
       );
-      const result = await generateJson(prompt, (raw) =>
-        EnrichedDraftSchema.parse(raw),
-      );
+      // Gemini occasionally undershoots schema floors (e.g. <6 activities,
+      // <3 bookings). Retry once silently before surfacing the error to
+      // the user — Pioneers paid for this to work, not for them to retry.
+      const result = await callWithRetryOnSchemaError(prompt, EnrichedDraftSchema);
 
       draft = result.data;
       inputTokens = result.inputTokens;
@@ -232,9 +233,7 @@ export async function generateLockAndDraft(
       model = result.model;
     } else {
       const prompt = buildBasicDraftPrompt(ctx);
-      const result = await generateJson(prompt, (raw) =>
-        BasicDraftSchema.parse(raw),
-      );
+      const result = await callWithRetryOnSchemaError(prompt, BasicDraftSchema);
 
       draft = result.data;
       inputTokens = result.inputTokens;
@@ -396,6 +395,42 @@ export async function generateLockAndDraft(
       upgradeCta: false,
     };
   }
+}
+
+async function callWithRetryOnSchemaError<T extends z.ZodTypeAny>(
+  prompt: string,
+  schema: T,
+): Promise<{
+  data: z.infer<T>;
+  inputTokens: number;
+  outputTokens: number;
+  durationMs: number;
+  model: string;
+}> {
+  let lastErr: unknown;
+  let totalInput = 0;
+  let totalOutput = 0;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await generateJson(prompt, (raw) => schema.parse(raw));
+      return {
+        data: result.data,
+        inputTokens: totalInput + result.inputTokens,
+        outputTokens: totalOutput + result.outputTokens,
+        durationMs: result.durationMs,
+        model: result.model,
+      };
+    } catch (err) {
+      lastErr = err;
+      const isZod = err instanceof Error && err.name === "ZodError";
+      if (!isZod) throw err;
+      // Tally even failed-validation cost so the telemetry isn't lying.
+      console.warn(
+        `[lockAndDraft] schema validation failed on attempt ${attempt + 1}, retrying`,
+      );
+    }
+  }
+  throw lastErr;
 }
 
 function classifyDraftError(err: unknown): string {
