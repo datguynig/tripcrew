@@ -9,7 +9,8 @@ type Props = {
   profile: Profile;
 };
 
-const PRICE_LABEL = "£9/mo";
+const MEMBER_PRICE = "£9/mo";
+const PIONEER_PRICE = "£179/yr";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
@@ -22,6 +23,9 @@ function formatDate(iso: string | null): string {
 export function SubscriptionPanel({ profile }: Props) {
   const status = profile.stripe_subscription_status;
   const periodEnd = profile.current_period_end;
+  const isPioneer = !!profile.founding_crew_at;
+  const tierLabel = isPioneer ? "PIONEER" : "MEMBER";
+  const priceLabel = isPioneer ? PIONEER_PRICE : MEMBER_PRICE;
   const founderStatus = profile.founding_crew_at ? (
     <div className="mb-6 flex items-center gap-3 border border-line bg-bg-2 px-5 py-4">
       <PioneerBadge size="lg" />
@@ -57,7 +61,7 @@ export function SubscriptionPanel({ profile }: Props) {
             className="w-[6px] h-[6px] rounded-full bg-accent brand-dot"
             aria-hidden="true"
           />
-          <span className="label-sm text-accent">MEMBER</span>
+          <span className="label-sm text-accent">{tierLabel}</span>
         </div>
         <div className="grid gap-3 max-w-[520px]">
           <h3 className="text-[26px] max-[640px]:text-[22px] font-medium tracking-[-0.025em] leading-[1.15]">
@@ -65,7 +69,7 @@ export function SubscriptionPanel({ profile }: Props) {
             <span className="text-accent">.</span>
           </h3>
           <p className="text-[14px] text-fg-2 leading-[1.55]">
-            {PRICE_LABEL}, or £79/year. Apply once for Cohort 01. One admin
+            {MEMBER_PRICE}, or £79/year. Apply once for Cohort 01. One admin
             pays; every trip you organise unlocks Member access for everyone on it.
           </p>
         </div>
@@ -95,7 +99,7 @@ export function SubscriptionPanel({ profile }: Props) {
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">MEMBER</span>
+          <span className="label-sm text-fg-3">{tierLabel}</span>
         </div>
         <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
           Active.
@@ -116,13 +120,13 @@ export function SubscriptionPanel({ profile }: Props) {
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">MEMBER</span>
+          <span className="label-sm text-fg-3">{tierLabel}</span>
         </div>
         <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
           Active.
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-          Renews {formatDate(periodEnd)} at {PRICE_LABEL}. Manage payment
+          Renews {formatDate(periodEnd)} at {priceLabel}. Manage payment
           method, pause, or cancel any time.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
@@ -179,7 +183,7 @@ export function SubscriptionPanel({ profile }: Props) {
     <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
       <div className="flex items-center gap-2">
         <span className="w-[6px] h-[6px] rounded-full bg-fg-3" aria-hidden />
-        <span className="label-sm text-fg-3">MEMBER · ENDING</span>
+        <span className="label-sm text-fg-3">{tierLabel} · ENDING</span>
       </div>
       <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
         Subscription ending {formatDate(periodEnd)}.

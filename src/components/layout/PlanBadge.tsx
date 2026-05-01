@@ -17,11 +17,14 @@ export function PlanBadge({ profile }: Props) {
 
   // past_due gets the warn variant — it's paid access for now but needs attention.
   const isPastDue = status === "past_due";
+  const isPioneer = !!profile.founding_crew_at;
 
-  const label = isPastDue ? "PAST DUE" : "MEMBER";
+  const label = isPastDue ? "PAST DUE" : isPioneer ? "PIONEER" : "MEMBER";
   const aria = isPastDue
-    ? "Member payment past due · update billing"
-    : "Member active · manage subscription";
+    ? "Pioneer/Member payment past due. Update billing."
+    : isPioneer
+      ? "Pioneer active. Manage subscription."
+      : "Member active. Manage subscription.";
 
   const className = isPastDue
     ? "bg-err/15 text-err border border-err/40"
