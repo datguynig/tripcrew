@@ -23,7 +23,7 @@ export default async function AccountPage({
       <SectionHeader
         code="§ ¤"
         title="Account."
-        lead="Crew Plus subscription and password."
+        lead="Membership and password."
       />
 
       {canceled && (

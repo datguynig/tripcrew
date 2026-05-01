@@ -34,7 +34,7 @@ export async function createCheckoutSession(): Promise<CheckoutResult> {
   const priceId = resolvePriceId();
   if (!priceId) {
     console.error("[subscription] STRIPE_PRICE_ID is unset.");
-    return { success: false, error: "Crew Plus checkout is not configured." };
+    return { success: false, error: "Member checkout is not configured." };
   }
   const origin = await siteOrigin();
 

@@ -547,13 +547,13 @@ export function Destinations({
                 aria-hidden="true"
               />
               <span className="label-sm-wide text-accent">
-                {hasPro ? "AI · Plan every candidate" : "Crew Plus · Plan every candidate"}
+                {hasPro ? "AI · Plan every candidate" : "Member · Plan every candidate"}
               </span>
             </div>
             <p className="text-[14px] text-fg-2 max-w-[560px]">
               {hasPro
                 ? "Draft a basic plan for every shortlisted destination so the crew can vote on plans, not just place names. The winner upgrades to a full enriched plan once you lock it."
-                : "Draft a basic plan for every shortlisted destination so the crew can vote on plans, not just place names. Crew Plus unlocks this. The winner becomes a full enriched plan on lock."}
+                : "Draft a basic plan for every shortlisted destination so the crew can vote on plans, not just place names. Member unlocks this. The winner becomes a full enriched plan on lock."}
             </p>
           </div>
           {hasPro ? (

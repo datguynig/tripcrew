@@ -41,7 +41,7 @@ export function SkipTheQueueUpsell({ slug, draftId }: Props) {
             Don&rsquo;t want to wait?
           </h2>
           <p className="text-[16px] md:text-[17px] leading-[1.55] text-ink/80">
-            Skip the queue with a founding spot. The same Crew Plus access,
+            Skip the queue with a founding spot. The same Member access,
             unlocked the moment you check out.
           </p>
         </div>

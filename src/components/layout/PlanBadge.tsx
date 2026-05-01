@@ -2,10 +2,9 @@ import Link from "next/link";
 import type { Profile } from "@/lib/types";
 
 /**
- * Persistent Crew Plus chip in the topbar so paying users can
- * always see at a glance which tier they're on. Clicks through to
- * /account where they manage the subscription. Renders nothing for
- * free users.
+ * Persistent Member chip in the topbar so paying users can always
+ * see at a glance which tier they're on. Clicks through to /account
+ * where they manage the subscription. Renders nothing for free users.
  */
 
 type Props = {
@@ -19,10 +18,10 @@ export function PlanBadge({ profile }: Props) {
   // past_due gets the warn variant — it's paid access for now but needs attention.
   const isPastDue = status === "past_due";
 
-  const label = isPastDue ? "PAST DUE" : "CREW PLUS";
+  const label = isPastDue ? "PAST DUE" : "MEMBER";
   const aria = isPastDue
-    ? "Crew Plus payment past due · update billing"
-    : "Crew Plus active · manage subscription";
+    ? "Member payment past due · update billing"
+    : "Member active · manage subscription";
 
   const className = isPastDue
     ? "bg-err/15 text-err border border-err/40"

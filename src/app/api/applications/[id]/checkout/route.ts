@@ -73,7 +73,7 @@ export async function GET(
       interval === "annual" ? "STRIPE_PRICE_ID_ANNUAL" : "STRIPE_PRICE_ID";
     console.error(`crew-plus checkout: ${envVar} is unset`);
     return NextResponse.json(
-      { error: "Crew Plus checkout is not configured." },
+      { error: "Member checkout is not configured." },
       { status: 500 },
     );
   }

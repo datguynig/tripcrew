@@ -81,7 +81,7 @@ export function LockAndDraftCTA({
       <p className="text-fg-2 text-[15px] leading-[1.55] max-w-[600px] mb-8">
         Where to stay, day-by-day itinerary, what to book ahead, and a budget
         range. Grounded in live Google Places data and the weather forecast
-        for your dates. Free plans get a summary; Crew Plus unlocks the full
+        for your dates. Free plans get a summary; Membership unlocks the full
         plan. Separate from the §01 brief setup above.
       </p>
 

@@ -19,7 +19,7 @@ const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Who pays. My crew or me?",
     answer:
-      "One admin pays Crew Plus or Founding Crew. Everyone else gets the full trip free. The ledger inside the trip handles the actual money side, including auto-splits and per-person balances.",
+      "One admin pays for Member or Pioneer access. Everyone else gets the full trip free. The ledger inside the trip handles the actual money side, including auto-splits and per-person balances.",
   },
   {
     question: "Can I get my money back?",
@@ -27,9 +27,9 @@ const FAQ_ITEMS: FaqItem[] = [
       "14-day refund, no questions, on first-time subscriptions. Founding spots are non-refundable after the founding cohort closes, since they're price-locked for life.",
   },
   {
-    question: "Why Founding Crew over Crew Plus?",
+    question: "Why Pioneer over Member?",
     answer:
-      "Founding members get conversational AI, the during-trip assistant, the auto-built memory book, and a vote on what ships next. Crew Plus is the working tool. Founding Crew is the concierge plus a seat at the table.",
+      "Pioneers get conversational AI, the during-trip assistant, the auto-built memory book, and a vote on what ships next. Member is the working tool. Pioneer is the concierge plus a seat at the table.",
   },
 ];
 

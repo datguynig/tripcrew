@@ -35,7 +35,7 @@ export default async function CheckoutSuccessPage() {
         title="You're in."
         lead={
           isActive
-            ? `Crew Plus is active. Next charge ${formatDate(periodEnd)}.`
+            ? `Membership is active. Next charge ${formatDate(periodEnd)}.`
             : "Stripe is finalising your subscription. Refresh in a few seconds."
         }
       />
@@ -43,12 +43,12 @@ export default async function CheckoutSuccessPage() {
       <div className="border border-line bg-bg-2 px-7 py-8 max-w-[560px] grid gap-5">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">CREW PLUS</span>
+          <span className="label-sm text-fg-3">MEMBER</span>
         </div>
         <p className="text-[15px] text-fg leading-[1.55]">
-          Every trip you organise from now on unlocks Crew Plus for everyone
-          on the crew. Plan every shortlisted destination, regenerate
-          enriched plans, refresh price checks.
+          Every trip you organise from now on unlocks Member access for
+          everyone on the crew. Plan every shortlisted destination,
+          regenerate enriched plans, refresh price checks.
         </p>
         <div className="flex items-center gap-3 flex-wrap">
           <Link

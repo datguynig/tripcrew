@@ -58,7 +58,7 @@ export async function canGenerateDraft(
     if ((profile?.trial_generations_used ?? 0) >= TRIAL_GENERATION_CAP) {
       return {
         allowed: false,
-        reason: `Your current access includes ${TRIAL_GENERATION_CAP} AI drafts. Upgrade to Crew Plus for more.`,
+        reason: `Your current access includes ${TRIAL_GENERATION_CAP} AI drafts. Upgrade to Member for more.`,
         upgrade_cta: true,
       };
     }
@@ -84,7 +84,7 @@ export async function canDraftCandidates(
     return {
       allowed: false,
       reason:
-        "Drafting plans for every candidate is a Crew Plus feature.",
+        "Drafting plans for every candidate is a Member feature.",
       upgrade_cta: true,
     };
   }
@@ -100,7 +100,7 @@ export async function canRefreshPrices(
   if (!(await hasProAccessForTrip(userId, tripId))) {
     return {
       allowed: false,
-      reason: "Price refresh requires Crew Plus.",
+      reason: "Price refresh requires Member access.",
       upgrade_cta: true,
     };
   }

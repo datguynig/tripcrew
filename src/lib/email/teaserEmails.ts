@@ -200,7 +200,7 @@ export function buildApplicationReceivedEmail({
   draft,
 }: BuildApplicationReceivedInput): TeaserEmail {
   const lines: string[] = [
-    `We got your Crew Plus application for Cohort 01.`,
+    `We got your Yenkoh application for Cohort 01.`,
     ``,
     `We're reviewing in weekly batches. Expect a decision in your inbox within seven days.`,
   ];
@@ -217,7 +217,7 @@ export function buildApplicationReceivedEmail({
 
   return {
     to: email,
-    subject: `We got your Crew Plus application for Cohort 01.`,
+    subject: `We got your Yenkoh application for Cohort 01.`,
     text: lines.join("\n"),
   };
 }
@@ -248,7 +248,7 @@ export function buildApplicationApprovedEmail({
   const annualUrl = `${baseUrl}?interval=annual`;
 
   const lines: string[] = [
-    `You're in. Welcome to Crew Plus, Cohort 01.`,
+    `You're in. Welcome to Yenkoh, Cohort 01.`,
     ``,
     `Tap to set up billing and get started:`,
   ];
@@ -275,7 +275,7 @@ export function buildApplicationApprovedEmail({
 
   return {
     to: email,
-    subject: `You're in. Crew Plus, Cohort 01.`,
+    subject: `You're in. Welcome to Yenkoh, Cohort 01.`,
     text: lines.join("\n"),
   };
 }
@@ -295,9 +295,9 @@ export function buildApplicationSoftRejectedEmail({
 }: BuildApplicationSoftRejectedInput): TeaserEmail {
   return {
     to: email,
-    subject: `An update on your Crew Plus application.`,
+    subject: `An update on your Yenkoh application.`,
     text: [
-      `Thanks for applying to Tripcrew.`,
+      `Thanks for applying to Yenkoh.`,
       ``,
       `We're matching applicants in waves. You're queued for the next one. We'll be in touch when there's space.`,
       ``,

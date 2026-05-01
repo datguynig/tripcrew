@@ -13,7 +13,7 @@ type Props = {
 };
 
 export function UpgradeButton({
-  label = "Open Crew Plus checkout →",
+  label = "Open Member checkout →",
   tone = "accent",
   size = "lg",
   variant = "primary",

@@ -57,7 +57,7 @@ export function SubscriptionPanel({ profile }: Props) {
             className="w-[6px] h-[6px] rounded-full bg-accent brand-dot"
             aria-hidden="true"
           />
-          <span className="label-sm text-accent">CREW PLUS</span>
+          <span className="label-sm text-accent">MEMBER</span>
         </div>
         <div className="grid gap-3 max-w-[520px]">
           <h3 className="text-[26px] max-[640px]:text-[22px] font-medium tracking-[-0.025em] leading-[1.15]">
@@ -66,7 +66,7 @@ export function SubscriptionPanel({ profile }: Props) {
           </h3>
           <p className="text-[14px] text-fg-2 leading-[1.55]">
             {PRICE_LABEL}, or £79/year. Apply once for Cohort 01. One admin
-            pays; every trip you organise unlocks Crew Plus for everyone on it.
+            pays; every trip you organise unlocks Member access for everyone on it.
           </p>
         </div>
         <ul className="grid gap-1.5 text-[13px] text-fg-2 leading-[1.5]">
@@ -79,7 +79,7 @@ export function SubscriptionPanel({ profile }: Props) {
             href="/apply?intent=plus"
             className="inline-flex items-center gap-2 rounded-[3px] bg-accent px-5 h-11 text-[13px] font-semibold text-[#140400] transition-opacity hover:opacity-90 active:opacity-80"
           >
-            Apply for Crew Plus
+            Apply to Yenkoh
             <span aria-hidden="true">→</span>
           </Link>
           <span className="label-xs text-fg-3">14-day refund on first-time subscriptions</span>
@@ -95,13 +95,13 @@ export function SubscriptionPanel({ profile }: Props) {
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">CREW PLUS</span>
+          <span className="label-sm text-fg-3">MEMBER</span>
         </div>
         <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
           Active.
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-          Crew Plus is active. Your current period ends {formatDate(periodEnd)}.
+          Membership is active. Your current period ends {formatDate(periodEnd)}.
           Manage billing in Stripe.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
@@ -116,7 +116,7 @@ export function SubscriptionPanel({ profile }: Props) {
       <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
         <div className="flex items-center gap-2">
           <span className="w-[6px] h-[6px] rounded-full bg-ok" aria-hidden />
-          <span className="label-sm text-fg-3">CREW PLUS</span>
+          <span className="label-sm text-fg-3">MEMBER</span>
         </div>
         <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
           Active.
@@ -143,7 +143,7 @@ export function SubscriptionPanel({ profile }: Props) {
           Last payment failed.
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-          Update your card to keep Crew Plus active. We'll retry the
+          Update your card to keep Membership active. We'll retry the
           subscription as soon as the card is fixed.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
@@ -165,7 +165,7 @@ export function SubscriptionPanel({ profile }: Props) {
         </h3>
         <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
           We didn't receive payment confirmation. Finish setup to activate
-          Crew Plus, or contact support if this looks wrong.
+          Membership, or contact support if this looks wrong.
         </p>
         <div className="flex items-center gap-3 flex-wrap mt-1">
           <ManageSubscriptionButton />
@@ -179,13 +179,13 @@ export function SubscriptionPanel({ profile }: Props) {
     <article className="border border-line bg-bg-2 px-7 py-8 max-[640px]:px-5 max-[640px]:py-7 grid gap-4">
       <div className="flex items-center gap-2">
         <span className="w-[6px] h-[6px] rounded-full bg-fg-3" aria-hidden />
-        <span className="label-sm text-fg-3">CREW PLUS · ENDING</span>
+        <span className="label-sm text-fg-3">MEMBER · ENDING</span>
       </div>
       <h3 className="text-[24px] font-medium tracking-[-0.02em] leading-[1.15]">
         Subscription ending {formatDate(periodEnd)}.
       </h3>
       <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[520px]">
-        You'll keep Crew Plus until then. Reactivate any time to keep the
+        You'll keep Membership until then. Reactivate any time to keep the
         crew on the paid tier.
       </p>
       <div className="flex items-center gap-3 flex-wrap mt-1">

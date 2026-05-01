@@ -32,7 +32,7 @@ function getTiers(foundingRemaining: number): Tier[] {
       cta: { label: "Apply for an invite →", href: "/apply" },
     },
     {
-      name: "Crew Plus",
+      name: "Member",
       price: "£9",
       priceSuffix: "/mo",
       billing: "£79 / year · save 27%",
@@ -47,7 +47,7 @@ function getTiers(foundingRemaining: number): Tier[] {
         "A chat just for this trip. Not another group to mute.",
         "Real flight prices, refreshed on demand.",
       ],
-      cta: { label: "Apply for Crew Plus →", href: "/apply?intent=plus" },
+      cta: { label: "Apply to Yenkoh →", href: "/apply?intent=plus" },
     },
     {
       name: "Founding Crew",
@@ -61,7 +61,7 @@ function getTiers(foundingRemaining: number): Tier[] {
           ? "Founding cohort · 500 seats"
           : `${foundingRemaining} of 500 seats remain`,
       bullets: [
-        "Everything in Crew Plus",
+        "Everything in Member",
         "Plan by talking. Conversational AI, no more forms.",
         "Each new trip starts smarter. AI learns your crew.",
         "Watching for you: flights, events, opportunities.",

@@ -43,7 +43,7 @@ export function ConversionCTAs({ draftId, slug }: ConversionCTAsProps) {
           </div>
 
           <p className="mt-4 font-mono uppercase tracking-[0.18em] text-[10px] text-cream/60 max-w-[52ch]">
-            Crew Plus · £9 / mo · one admin pays, the whole crew gets in.
+            Member · £9 / mo · one admin pays, the whole crew gets in.
           </p>
         </div>
       </div>

@@ -116,7 +116,7 @@ function SoldOutState() {
           All 500 founding spots are taken.
         </h1>
         <p className="mt-5 font-serif italic text-[19px] sm:text-[22px] leading-[1.35] text-ink/75 max-w-[44ch]">
-          The Founding Crew is full. Crew Plus opens up shortly after. Apply
+          Pioneer spots are filled. Member opens up shortly after. Apply
           to join the next wave at the standard price.
         </p>
         <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -130,7 +130,7 @@ function SoldOutState() {
             href="/apply"
             className="inline-flex items-center justify-center bg-transparent text-ink font-mono uppercase tracking-[0.18em] text-[12px] h-[56px] px-8 border-2 border-ink hover:bg-ink hover:text-cream transition-colors duration-150"
           >
-            Apply to Crew Plus →
+            Apply to Yenkoh →
           </Link>
         </div>
       </div>
