@@ -109,6 +109,7 @@ export async function GET(request: Request): Promise<Response> {
             buildApplicationApprovedEmail({
               email: recipient,
               applicationId,
+              annualEnabled: !!process.env.STRIPE_PRICE_ID_ANNUAL,
             }),
           );
         } catch (err) {
