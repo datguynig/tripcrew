@@ -6,6 +6,7 @@ import {
 } from "@/lib/ai/schema";
 import type { LivePricing } from "@/lib/types";
 import { BasicDraftView } from "./BasicDraftView";
+import { DraftingFlow } from "./DraftingFlow";
 import { EnrichedDraftView } from "./EnrichedDraftView";
 import { LockAndDraftCTA } from "./LockAndDraftCTA";
 import { RefreshPricesButton } from "./RefreshPricesButton";
@@ -85,10 +86,11 @@ export function LockAndDraftSection({
       )}
 
       {!hasDraft && isAdmin && userId && destination && (
-        <LockAndDraftCTA
+        <DraftingFlow
           tripId={tripId}
           userId={userId}
           destination={destination}
+          initialDraftedAt={enrichedDraftGeneratedAt}
         />
       )}
 

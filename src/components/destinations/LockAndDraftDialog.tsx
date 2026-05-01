@@ -97,12 +97,15 @@ export function LockAndDraftDialog({
       }
       onOpenChange(false);
       if (autoDraft) {
-        toast.success("Drafting your trip. Should land in ~15 seconds.");
+        toast.success("Drafting your trip. The page updates as it lands.");
       } else {
         toast.success("Locked. You can draft any time from the trip page.");
       }
       if (result.slug) {
-        router.push(`/trips/${result.slug}`);
+        const target = autoDraft
+          ? `/trips/${result.slug}?drafting=1`
+          : `/trips/${result.slug}`;
+        router.push(target);
       } else {
         router.refresh();
       }
