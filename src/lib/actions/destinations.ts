@@ -461,6 +461,9 @@ export async function lockAndStartDraft(input: {
     hero_image_attribution: heroAttribution,
     hero_tint: heroTint,
     meta: mergedMeta,
+    // Overwrites any prior target_crew_size — safe because the dialog
+    // pre-fills its crew chip from the existing prefs, so re-locking
+    // without touching the chip submits the same value back.
     target_crew_size: preferences.crew_size,
   };
 
