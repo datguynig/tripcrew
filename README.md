@@ -1,6 +1,6 @@
-# TripCrew
+# Yenkoh
 
-TripCrew is a Next.js + Supabase app for planning group trips with a shared crew. It covers destination voting, bookings, crew management, pooled expenses, trip updates, and invite-based membership.
+Yenkoh (Twi for "let's go") is a Next.js + Supabase app for planning group trips with a shared crew. It covers destination voting, bookings, crew management, pooled expenses, trip updates, and invite-based membership.
 
 ## What the app does
 
@@ -30,7 +30,7 @@ TripCrew is a Next.js + Supabase app for planning group trips with a shared crew
 - `/sign-in`: sign in, sign up, or request a magic link
 - `/`: public invite-only landing page
 - `/dashboard`: trip dashboard
-- `/apply`: Crew Plus application
+- `/apply`: Yenkoh application
 - `/curated/[slug]`: curated trip teaser flow
 - `/trips/new`: create a trip
 - `/trips/[slug]/destinations`: destination proposal and voting

@@ -9,7 +9,7 @@ If you ever want to revert: this is the source of truth. Copy strings back into 
 ## Browser tab title (`src/app/(public)/layout.tsx`)
 
 ```
-Tripcrew. Trips that make it out of the group chat.
+Yenkoh. Trips that make it out of the group chat.
 ```
 
 Description: `Invite-only group trip planner. Pick a city. Pull your crew. Make memories, not just wishes.`
@@ -18,7 +18,7 @@ Description: `Invite-only group trip planner. Pick a city. Pull your crew. Make 
 
 ## Public Nav (`src/components/marketing/PublicNav.tsx`)
 
-- Wordmark: `Tripcrew`
+- Wordmark: `Yenkoh`
 - Nav links: `How it works · Sample trips · Features · Pricing · FAQ`
 - Right side: `Sign in` / `Apply for invite`
 - Mobile menu CTAs: `Apply for invite` / `Already have an invite? Sign in`
@@ -66,7 +66,7 @@ Description: `Invite-only group trip planner. Pick a city. Pull your crew. Make 
 6. Priya · Two weeks later — `…` (muted)
 
 **Closer:** `Three months later, no one went.`
-**Transition:** `Tripcrew turns the chat into a trip.`
+**Transition:** `Yenkoh turns the chat into a trip.`
 **CTA:** `Apply for an invite →`
 
 ---
@@ -135,13 +135,13 @@ Description: `Invite-only group trip planner. Pick a city. Pull your crew. Make 
 - Description: `See your invited trips. Get the AI summary draft.`
 - CTA: `Apply for invite →` / `no card required`
 
-**Crew Plus (£9 / month, £79 / yr · save 27%):**
+**Member (£9 / month, £79 / yr · save 27%):**
 - Ribbon: `← Most crews pick`
 - Tagline: `AI plans your trip.`
 - Description: `One admin pays. The whole crew gets in.`
-- CTA: `Apply for Crew Plus →` / `approved in batches, weekly`
+- CTA: `Apply for Member →` / `approved in batches, weekly`
 
-**Founding Crew (£179 / year, price locked for life):**
+**Pioneer (£179 / year, price locked for life):**
 - Counter: `{X} / 500 left`
 - Tagline: `Your AI travel concierge.`
 - Description: `Dream trips, zero effort. Founding members shape the product.`
@@ -156,23 +156,23 @@ Description: `Invite-only group trip planner. Pick a city. Pull your crew. Make 
 
 1. **Why invite-only?** We shape the product around the first 500 crews. Less noise, more useful product, faster shipping. We approve in weekly batches, usually within seven days.
 2. **What does "AI plans the trip" actually mean?** Tell us where you're flying from, who's coming, and what kind of trip you want. The AI drafts a city, dates, per-head budget, day-by-day schedule, and a bookings checklist grounded in live places data and the weather forecast for your dates. Your crew votes on what stays.
-3. **Who pays. My crew or me?** One admin pays Crew Plus or Founding Crew. Everyone else gets the full trip free. The ledger inside the trip handles the actual money side, including auto-splits and per-person balances.
+3. **Who pays. My crew or me?** One admin pays Member or Pioneer. Everyone else gets the full trip free. The ledger inside the trip handles the actual money side, including auto-splits and per-person balances.
 4. **Can I get my money back?** 14-day refund, no questions, on first-time subscriptions. Founding spots are non-refundable after the founding cohort closes, since they're price-locked for life.
-5. **Why Founding Crew over Crew Plus?** Founding members get conversational AI, the during-trip assistant, the auto-built memory book, and a vote on what ships next. Crew Plus is the working tool. Founding Crew is the concierge plus a seat at the table.
+5. **Why Pioneer over Member?** Founding members get conversational AI, the during-trip assistant, the auto-built memory book, and a vote on what ships next. Member is the working tool. Pioneer is the concierge plus a seat at the table.
 
-Email: `Still have questions? hello@tripcrew.app`
+Email: `Still have questions? hello@yenkoh.com`
 
 ---
 
 ## Footer (`src/components/marketing/Footer.tsx`)
 
 **Brand col:**
-- `Tripcrew`
+- `Yenkoh`
 - `Trips that make it out of the group chat.`
 - `Built in London.`
 
 **Product col:** How it works, Sample trips, Features, Pricing, FAQ
-**Company col:** Apply for invite, Sign in, Contact (mailto:hello@tripcrew.app)
+**Company col:** Apply for invite, Sign in, Contact (mailto:hello@yenkoh.com)
 **Legal col:** Privacy, Terms, Cookies
 
-**Bottom bar:** `© {year} Tripcrew. Invite only.` / `· All systems good`
+**Bottom bar:** `© {year} Yenkoh. Invite only.` / `· All systems good`

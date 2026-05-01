@@ -1,8 +1,10 @@
-# Tripcrew — Project Memory
+# Yenkoh — Project Memory
 
 ## What this is
 
-Tripcrew is a Next.js + Supabase app for planning group trips with a shared crew. Multi-trip, role-based (`admin` / `member`), realtime-collaborative. Each trip moves through a `planning` → `locked` lifecycle: members propose and vote on destinations, an admin locks the winner, then the trip surfaces an overview with spec grid, schedule, crew, bookings, ledger, feed.
+Yenkoh (Twi for "let's go") is a Next.js + Supabase app for planning group trips with a shared crew. Multi-trip, role-based (`admin` / `member`), realtime-collaborative. Each trip moves through a `planning` → `locked` lifecycle: members propose and vote on destinations, an admin locks the winner, then the trip surfaces an overview with spec grid, schedule, crew, bookings, ledger, feed.
+
+DB identifiers (`crew_plus` enum value, `founding_crew_at` column, `STRIPE_FOUNDING_PRICE_ID` env var) date from the original Tripcrew project name; left in place to avoid migration churn. User-facing copy uses Yenkoh + Member + Pioneer instead.
 
 ## Companion docs
 

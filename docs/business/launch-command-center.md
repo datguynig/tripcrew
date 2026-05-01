@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-28
 
-This is the operational checklist for taking Tripcrew from private build to invite-only launch. It focuses on promises, revenue, onboarding, and support readiness.
+This is the operational checklist for taking Yenkoh from private build to invite-only launch. It focuses on promises, revenue, onboarding, and support readiness.
 
 ## Launch Definition
 
@@ -17,11 +17,11 @@ Launch means a cold visitor can:
 
 ## Blockers Before Charging
 
-- Pricing cutover complete: Crew Plus and Founding Crew production price IDs are configured, and no legacy GBP 4.99 or trial fallback is live.
+- Pricing cutover complete: Member and Pioneer production price IDs are configured, and no legacy GBP 4.99 or trial fallback is live.
 - Stripe webhook verified in production for subscription created, updated, and deleted events.
 - Application approval flow produces a usable invite or checkout path.
-- Founding Crew count is truthful and backed by `profiles.founding_crew_at`.
-- Founding Crew launch promises are either shipped or explicitly labelled as scheduled roadmap benefits.
+- Pioneer count is truthful and backed by `profiles.founding_crew_at`.
+- Pioneer launch promises are either shipped or explicitly labelled as scheduled roadmap benefits.
 - Account subscription panel matches public pricing copy.
 - Crew chat security copy does not imply E2E encryption.
 - AI usage telemetry is visible to the founder/owner route.
@@ -40,13 +40,13 @@ Launch means a cold visitor can:
 
 ### Pricing And Billing
 
-- [ ] `STRIPE_PRICE_ID` points to the new Crew Plus monthly price.
-- [ ] Annual Crew Plus copy is not shown as purchasable unless a checkout path exists.
-- [ ] `STRIPE_FOUNDING_PRICE_ID` points to the Founding Crew yearly price.
+- [ ] `STRIPE_PRICE_ID` points to the new Member monthly price.
+- [ ] Annual Member copy is not shown as purchasable unless a checkout path exists.
+- [ ] `STRIPE_FOUNDING_PRICE_ID` points to the Pioneer yearly price.
 - [ ] Stripe Customer Portal is configured for cancel/update payment method flows.
 - [ ] Webhook secret is configured in production.
-- [ ] Test-mode purchase has been completed locally for Crew Plus.
-- [ ] Test-mode purchase has been completed locally for Founding Crew.
+- [ ] Test-mode purchase has been completed locally for Member.
+- [ ] Test-mode purchase has been completed locally for Pioneer.
 
 ### Data And Admin
 

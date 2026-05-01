@@ -1,4 +1,4 @@
-# TripCrew — Design System
+# Yenkoh — Design System
 
 **One source of truth** for every visual and interaction choice in the app. If something on screen doesn't match this doc, the doc is probably right; fix the screen.
 

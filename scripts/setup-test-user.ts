@@ -3,7 +3,7 @@
  * makes sure they're a member of the primary test trip.
  *
  * Credentials come from env:
- *   TEST_USER_EMAIL       e.g. playwright@tripcrew.dev
+ *   TEST_USER_EMAIL       e.g. playwright@yenkoh.dev
  *   TEST_USER_PASSWORD    strong random; persisted in .env.local
  *   TEST_TRIP_SLUG        the trip this user should be a member of
  *

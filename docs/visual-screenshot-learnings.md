@@ -57,7 +57,7 @@ Playwright MCP captures:
 - Footer and FAQ captures show the bottom of the page is carrying a lot of trust weight. Do not treat the footer as boilerplate; it is where legal links, contact, and final brand tone all become visible.
 - The intermediate hero captures are useful because they show that underline/italic experiments can quickly distract from the core promise. Keep the hero sentence typographically restrained and let motion or the curated-plan preview provide the extra emphasis.
 - Pricing iteration captures proved that amount and billing cadence must be reviewed together. A wrong founding cadence (`£15/mo`) looked visually plausible, which means screenshot review must be paired with pricing-doc checks.
-- The small lower-left local widget appears in captures and should be ignored for product layout decisions unless it overlaps core UI. It is not part of Tripcrew's public surface.
+- The small lower-left local widget appears in captures and should be ignored for product layout decisions unless it overlaps core UI. It is not part of Yenkoh's public surface.
 
 ## Future Screenshot Checklist
 

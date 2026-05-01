@@ -13,7 +13,7 @@ test.describe("dashboard", () => {
 
   test("trip switcher opens and shows current trip", async ({ page }) => {
     await page.goto(`/trips/${TRIP_SLUG}`);
-    const trigger = page.getByRole("button", { name: /sweden|tripcrew/i }).first();
+    const trigger = page.getByRole("button", { name: /sweden|yenkoh/i }).first();
     await trigger.click();
     await expect(page.getByRole("menu")).toBeVisible();
     // Close on Escape

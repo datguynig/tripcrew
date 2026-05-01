@@ -1,6 +1,6 @@
-# Tripcrew Business Docs
+# Yenkoh Business Docs
 
-This folder is the repo-side index for Tripcrew's business operating knowledge. It should stay close to the code when a business promise depends on implementation, schema, environment variables, or operational procedure.
+This folder is the repo-side index for Yenkoh's business operating knowledge. It should stay close to the code when a business promise depends on implementation, schema, environment variables, or operational procedure.
 
 Use Notion for founder-facing planning and day-to-day review. Use this folder for code-coupled facts that should move in the same PR as product or pricing changes.
 
@@ -28,6 +28,6 @@ Update these docs in the same change when you:
 
 ## Known Drift To Resolve Before Public Launch
 
-- Annual Crew Plus is advertised as GBP 79/year, but the annual checkout path is not wired yet. Do not add an annual purchase CTA until it is.
+- Annual Member is advertised as GBP 79/year, but the annual checkout path is not wired yet. Do not add an annual purchase CTA until it is.
 - `roadmap.md` is intentionally stricter than shipped code: it tracks promises that may not be implemented yet. Treat it as the accountability ledger, not the current feature list.
-- The Founding Crew public promise includes multiple launch and month-1 features that must be reconciled before charging the tier.
+- The Pioneer public promise includes multiple launch and month-1 features that must be reconciled before charging the tier.

@@ -58,7 +58,7 @@ export default defineConfig({
   webServer: shouldStartWebServer
     ? {
         command: `pnpm exec next dev -p ${devServerPort}`,
-        // This endpoint only exists in Tripcrew. It prevents Playwright from
+        // This endpoint only exists in Yenkoh. It prevents Playwright from
         // silently reusing another Next.js app that happens to own port 3000.
         url: `${BASE_URL}/api/public-airports?q=manchester`,
         reuseExistingServer: !process.env.CI,

@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-28
 
-This doc tracks what Tripcrew says publicly, where it is implemented, and what must be kept honest before launch. It complements `roadmap.md`, which remains the stricter working accountability document.
+This doc tracks what Yenkoh says publicly, where it is implemented, and what must be kept honest before launch. It complements `roadmap.md`, which remains the stricter working accountability document.
 
 ## Status Key
 
@@ -30,13 +30,13 @@ This doc tracks what Tripcrew says publicly, where it is implemented, and what m
 | Promise | Status | Evidence | Notes |
 | --- | --- | --- | --- |
 | Free tier supports core group planning | Shipped | Free surfaces are not paywalled | Do not imply AI depth is free. |
-| Crew Plus is GBP 9/mo or GBP 79/yr | Partial | `docs/pricing.md`, landing pricing block | Monthly checkout exists behind approval. Annual checkout path still needs implementation before an annual CTA. |
+| Member is GBP 9/mo or GBP 79/yr | Partial | `docs/pricing.md`, landing pricing block | Monthly checkout exists behind approval. Annual checkout path still needs implementation before an annual CTA. |
 | One paying admin covers the crew | Shipped | `hasProAccessForTrip` | This is the strongest pricing promise. |
-| Crew Plus gets full Lock & Draft | Shipped | `canGenerateDraft`, `lockAndDraft` | Verify generation caps before broad launch. |
-| Founding Crew is GBP 179/yr capped at 500 | Partial | `profiles.founding_crew_at`, founding count helper | Stripe price ID and live counter behaviour must be verified. |
-| Founding Crew price-lock for life | Promised | `docs/pricing.md`, `roadmap.md` | Implementation needs a durable price-lock/grandfathering story beyond copy. |
+| Member gets full Lock & Draft | Shipped | `canGenerateDraft`, `lockAndDraft` | Verify generation caps before broad launch. |
+| Pioneer is GBP 179/yr capped at 500 | Partial | `profiles.founding_crew_at`, founding count helper | Stripe price ID and live counter behaviour must be verified. |
+| Pioneer price-lock for life | Promised | `docs/pricing.md`, `roadmap.md` | Implementation needs a durable price-lock/grandfathering story beyond copy. |
 
-## Founding Crew Promise Ladder
+## Pioneer Promise Ladder
 
 | Promise | Target | Status | Notes |
 | --- | --- | --- | --- |
@@ -62,7 +62,7 @@ Use:
 
 Avoid until shipped:
 
-- "Tripcrew books everything for you."
+- "Yenkoh books everything for you."
 - "End-to-end encrypted crew chat."
 - "7-day free trial."
 - "Live alerts" unless monitoring is active.

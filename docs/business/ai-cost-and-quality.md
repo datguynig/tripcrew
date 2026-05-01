@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-28
 
-Tripcrew's paid value depends on AI output feeling specific, grounded, and useful enough that the organiser trusts the plan. This doc defines the cost controls and quality checks around that promise.
+Yenkoh's paid value depends on AI output feeling specific, grounded, and useful enough that the organiser trusts the plan. This doc defines the cost controls and quality checks around that promise.
 
 ## AI Surfaces
 
@@ -82,7 +82,7 @@ Weekly during launch:
 
 ## Roadmap Implications
 
-Future Founding Crew AI promises increase both cost and trust obligations:
+Future Pioneer AI promises increase both cost and trust obligations:
 
 - Conversational AI adds repeated model calls and memory management.
 - Cross-trip memory requires careful data boundaries and user expectations.

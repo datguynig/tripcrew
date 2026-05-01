@@ -2,11 +2,11 @@
 
 Last updated: 2026-04-28
 
-This doc is the business-facing trust posture for Tripcrew. It is not a full security audit; it is the language and operational model founders should use when explaining what the app does and does not guarantee.
+This doc is the business-facing trust posture for Yenkoh. It is not a full security audit; it is the language and operational model founders should use when explaining what the app does and does not guarantee.
 
 ## Trust Boundary
 
-Tripcrew is a shared planning workspace for a trip crew. The right comparison is a shared Google Doc plus planning tools, not an end-to-end encrypted messenger or a banking app.
+Yenkoh is a shared planning workspace for a trip crew. The right comparison is a shared Google Doc plus planning tools, not an end-to-end encrypted messenger or a banking app.
 
 Core protections:
 
@@ -32,7 +32,7 @@ Use:
 - "Private to your trip crew."
 - "Protected by account access and trip membership."
 - "Shared workspace for your crew's plans, costs, bookings, and updates."
-- "Crew chat is stored in Tripcrew so the plan stays with the trip."
+- "Crew chat is stored in Yenkoh so the plan stays with the trip."
 
 Avoid:
 
@@ -40,7 +40,7 @@ Avoid:
 - "Bank-grade expense settlement."
 - "We book everything for you."
 - "Guaranteed live alerts."
-- "Private from Tripcrew."
+- "Private from Yenkoh."
 
 ## Notification Model
 

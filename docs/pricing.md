@@ -1,26 +1,26 @@
-# Tripcrew pricing & business model
+# Yenkoh pricing & business model
 
 This is the canonical repo-side source for paid tiers, who pays, and the subscription lifecycle. Public landing-page copy, account UI, Stripe checkout code, and business docs must stay aligned with this file.
 
 ## Current Model
 
-Tripcrew is invite-only for Cohort 01. Visitors either apply for Crew Plus or claim a Founding Crew spot from a curated teaser. There is no public self-serve free-trial offer.
+Yenkoh is invite-only for Cohort 01. Visitors either apply for Member or claim a Pioneer spot from a curated teaser. There is no public self-serve free-trial offer.
 
 | Plan | Price | Entry path |
 |---|---:|---|
 | Free | £0 | No card. Invited users can evaluate core planning surfaces. |
-| Crew Plus | £9 / month or £79 / year | Application/review, then Stripe Checkout. |
-| Founding Crew | £179 / year | Founding fast lane from curated teaser, capped at 500 seats. |
+| Member | £9 / month or £79 / year | Application/review, then Stripe Checkout. |
+| Pioneer | £179 / year | Founding fast lane from curated teaser, capped at 500 seats. |
 
-Refund posture: first-time subscriptions are eligible for a 14-day refund. Do not describe Crew Plus as a 7-day free trial.
+Refund posture: first-time subscriptions are eligible for a 14-day refund. Do not describe Member as a 7-day free trial.
 
 ## Stripe Price IDs
 
 | Tier | Env var | Notes |
 |---|---|---|
-| Crew Plus monthly | `STRIPE_PRICE_ID` | Required for Crew Plus checkout. No legacy fallback should be used in production. |
-| Crew Plus annual | `STRIPE_PRICE_ID_ANNUAL` | Optional. When set, the post-approval email surfaces both annual and monthly CTAs and `/api/applications/[id]/checkout?interval=annual` resolves this price. When unset, the email gracefully degrades to monthly-only. |
-| Founding Crew yearly | `STRIPE_FOUNDING_PRICE_ID` | Required for Founding checkout. |
+| Member monthly | `STRIPE_PRICE_ID` | Required for Member checkout. No legacy fallback should be used in production. |
+| Member annual | `STRIPE_PRICE_ID_ANNUAL` | Optional. When set, the post-approval email surfaces both annual and monthly CTAs and `/api/applications/[id]/checkout?interval=annual` resolves this price. When unset, the email gracefully degrades to monthly-only. |
+| Pioneer yearly | `STRIPE_FOUNDING_PRICE_ID` | Required for Founding checkout. |
 
 ## Who Pays: Team-Share Access
 
@@ -35,7 +35,7 @@ The implementation lives in [src/lib/plan.ts](../src/lib/plan.ts). Any switch to
 
 ## Tier Gates
 
-| Surface | Free | Crew Plus | Founding Crew |
+| Surface | Free | Member | Pioneer |
 |---|---|---|---|
 | Trip creation, invites, role management | Yes | Yes | Yes |
 | Destination proposals, voting, locking | Yes | Yes | Yes |
@@ -55,19 +55,19 @@ The implementation lives in [src/lib/plan.ts](../src/lib/plan.ts). Any switch to
 
 Source of truth for gates is [src/lib/gates.ts](../src/lib/gates.ts) and [src/lib/plan.ts](../src/lib/plan.ts).
 
-## Crew Plus Lifecycle
+## Member Lifecycle
 
 1. Visitor applies through `/apply` or from a curated teaser.
 2. The app creates an `applications` row with provisional decision metadata.
 3. Founder/admin review or cron finalisation approves or rejects the application.
-4. Approved applicant receives a Crew Plus checkout link.
+4. Approved applicant receives a Member checkout link.
 5. Stripe Checkout creates a subscription using `STRIPE_PRICE_ID`.
 6. The Stripe webhook writes subscription fields to `profiles` and stamps `applications.first_paid_at`.
 7. If the application came from a curated draft, the webhook provisions the first trip from that draft.
 
-Crew Plus checkout should charge directly. Do not add `trial_period_days` unless the public model changes again.
+Member checkout should charge directly. Do not add `trial_period_days` unless the public model changes again.
 
-## Founding Crew Lifecycle
+## Pioneer Lifecycle
 
 1. Visitor submits a curated teaser.
 2. Visitor clicks the founding fast-lane CTA.
@@ -87,6 +87,6 @@ Founding seats are capped at 500. The public counter should be based on consumed
 
 ## Open Debt
 
-- Durable Founding Crew price-lock mechanics after cancellation/resubscribe.
+- Durable Pioneer price-lock mechanics after cancellation/resubscribe.
 - Roadmap voting surface (founders wall and founder badge shipped 2026-04-30).
 - Cleanup of legacy local-trial columns and gate branches once no rows depend on them.

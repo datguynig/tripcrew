@@ -2,7 +2,7 @@
 
 Last updated: 2026-04-28
 
-This doc defines the business metrics Tripcrew should review during invite-only launch. Prefer SQL-backed definitions from Supabase until volume justifies a dedicated analytics tool.
+This doc defines the business metrics Yenkoh should review during invite-only launch. Prefer SQL-backed definitions from Supabase until volume justifies a dedicated analytics tool.
 
 ## North Star
 
@@ -56,7 +56,7 @@ Useful cohort slices:
 - Pain: dates, booking inertia, money awkwardness, plan never made, chaos.
 - Budget attitude: splurge, careful, monopoly money, depends.
 - Entry path: landing, invite, curated trip.
-- Plan: Free, Crew Plus, Founding Crew.
+- Plan: Free, Member, Pioneer.
 
 ## Suggested SQL Checks
 

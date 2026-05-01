@@ -1,10 +1,10 @@
-# Tripcrew Business Operating Manual
+# Yenkoh Business Operating Manual
 
 Last updated: 2026-04-28
 
 ## Business Frame
 
-Tripcrew helps groups move from "we should go somewhere" to a locked, shared trip plan. The app combines group decision-making, shared trip operations, and AI planning. The core buyer is the organiser who carries the invisible labour of dates, budgets, bookings, itinerary shape, and group follow-through.
+Yenkoh helps groups move from "we should go somewhere" to a locked, shared trip plan. The app combines group decision-making, shared trip operations, and AI planning. The core buyer is the organiser who carries the invisible labour of dates, budgets, bookings, itinerary shape, and group follow-through.
 
 The product promise is not "AI writes an itinerary." The stronger promise is: trips make it out of the group chat, the crew has one shared source of truth, and the admin does not have to become a part-time travel agent.
 
@@ -48,8 +48,8 @@ The canonical pricing source is [docs/pricing.md](../pricing.md).
 Current tiers:
 
 - Free: trip creation, invites, voting, chat, bookings, ledger, notifications, and basic evaluation.
-- Crew Plus: full AI planning surfaces, paid gating for planning depth, and team-share access.
-- Founding Crew: annual founder tier with lifetime price-lock and a six-month concierge feature ladder.
+- Member: full AI planning surfaces, paid gating for planning depth, and team-share access.
+- Pioneer: annual founder tier with lifetime price-lock and a six-month concierge feature ladder.
 
 The load-bearing mechanic is team-share access. `hasProAccessForTrip` gives paid access when the user is paid or any trip admin is paid. This is the strongest organiser pitch and should remain visible in pricing copy.
 
@@ -69,7 +69,7 @@ Curated teaser funnel:
 1. Visitor lands on `/curated/[slug]`.
 2. Full plan detail is gated behind a lightweight personalized teaser form.
 3. The app stores a draft lead and renders calibrated proof without giving away all operational specifics.
-4. Visitor chooses either Founding fast lane or Crew Plus review.
+4. Visitor chooses either Founding fast lane or Member review.
 5. Paid success should eventually create the first trip from captured draft data.
 
 ## Operating Cadence
@@ -90,13 +90,13 @@ Weekly:
 Before any launch milestone:
 
 - Re-run the checklist in [launch-command-center.md](./launch-command-center.md).
-- Confirm pricing, Stripe price IDs, and Founding Crew count behaviour.
+- Confirm pricing, Stripe price IDs, and Pioneer count behaviour.
 - Confirm trust-sensitive copy matches the app's actual security posture.
 
 ## Non-Negotiables
 
 - Do not advertise end-to-end encrypted chat. Crew chat is RLS-protected app data, not an E2E messenger.
-- Do not charge Founding Crew unless launch promises are either shipped or clearly framed as timed roadmap benefits.
+- Do not charge Pioneer unless launch promises are either shipped or clearly framed as timed roadmap benefits.
 - Do not change pricing copy without checking Stripe env vars, account UI, landing pricing UI, and [docs/pricing.md](../pricing.md).
 - Do not treat AI cost as free. Gemini and Google Places usage must remain visible through `ai_usage`.
 - Do not let Notion become the only source of truth for promises that code must enforce.
