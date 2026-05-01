@@ -185,7 +185,7 @@ export function ShortlistBoard({
             className={`py-[7px] px-[14px] text-xs font-medium rounded-full border cursor-pointer transition-colors ${
               filter === k
                 ? "bg-fg text-bg border-fg"
-                : "bg-bg-2 text-fg-2 border-line hover:border-line-2 hover:text-fg"
+                : "bg-bg-2 text-fg border-line hover:border-line-2"
             }`}
           >
             {label} {n}
@@ -217,7 +217,7 @@ export function ShortlistBoard({
                   </div>
                 </div>
                 {a.meta && (
-                  <div className="text-xs text-fg-3 font-mono tracking-[0.02em]">
+                  <div className="text-xs text-fg-2 font-mono tracking-[0.02em]">
                     {a.meta}
                   </div>
                 )}
@@ -242,7 +242,7 @@ export function ShortlistBoard({
                     </>
                   )}
                 </div>
-                <div className="flex gap-3 mt-2 font-mono text-[10px] tracking-[0.08em] text-fg-3">
+                <div className="flex gap-3 mt-2 font-mono text-[10px] tracking-[0.08em] text-fg-2">
                   <span>
                     <b className="text-fg font-medium mr-1">{c.yes}</b>YES
                   </span>
@@ -310,7 +310,7 @@ function VoteBtn({
       className={`w-12 h-10 text-xs font-semibold tracking-[0.02em] rounded-md border transition-colors cursor-pointer ${
         active
           ? activeClass
-          : "bg-bg-2 border-line text-fg-2 hover:border-line-2 hover:text-fg"
+          : "bg-bg-2 border-line text-fg hover:border-line-2"
       }`}
     >
       {children}

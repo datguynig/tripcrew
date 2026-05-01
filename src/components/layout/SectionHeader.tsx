@@ -14,10 +14,10 @@ export function SectionHeader({
           {title}
         </h2>
         {lead && (
-          <p className="max-w-[600px] text-fg-2 text-[15px] mt-2">{lead}</p>
+          <p className="max-w-[600px] text-fg text-[15px] mt-2">{lead}</p>
         )}
       </div>
-      <div className="label text-fg-3 pb-1 max-[400px]:order-first max-[400px]:pb-0">{code}</div>
+      <div className="label text-fg-2 pb-1 max-[400px]:order-first max-[400px]:pb-0">{code}</div>
     </div>
   );
 }
