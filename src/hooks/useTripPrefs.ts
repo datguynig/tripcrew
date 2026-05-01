@@ -33,25 +33,26 @@ export function useTripPrefs() {
     };
   }, []);
 
-  const instanceIdRef = useRef<string>("");
-  if (instanceIdRef.current === "") {
-    instanceIdRef.current =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2);
-  }
-
   useEffect(() => {
     const supabase = createClient();
+    // Channel ID is regenerated per-effect-run so StrictMode's
+    // mount/unmount/mount cycle never collides on Supabase's client-side
+    // channel cache. Reusing a channel after `subscribe()` throws
+    // "cannot add callbacks after subscribe". Mirrors useNotifications.
+    const channelId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
     void (async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || cancelled) return;
 
       channel = supabase
-        .channel(`rt:trip_prefs:${user.id}:${instanceIdRef.current}`)
+        .channel(`rt:trip_prefs:${user.id}:${channelId}`)
         .on(
           "postgres_changes",
           {
@@ -93,6 +94,7 @@ export function useTripPrefs() {
         });
     })();
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
   }, []);
