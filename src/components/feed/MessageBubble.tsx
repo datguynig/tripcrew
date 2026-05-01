@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FounderBadge } from "@/components/ui/FounderBadge";
+import { PioneerBadge } from "@/components/ui/PioneerBadge";
 import type { Post } from "@/lib/types";
 import { initials, timeLabel } from "./feedUtils";
 import { HeartIcon } from "./LikeToggle";
@@ -101,7 +101,7 @@ function ReplyQuote({
     >
       <span className="label-xs text-fg-3 inline-flex items-center gap-1.5">
         Replying to {authorName}
-        {authorIsFounder ? <FounderBadge size="sm" /> : null}
+        {authorIsFounder ? <PioneerBadge size="sm" /> : null}
       </span>
       <span className="text-[13px] text-fg-2 truncate max-w-full">
         {excerpt}
@@ -304,7 +304,7 @@ export function MessageBubble({
           <div className="flex items-baseline gap-2 mb-[6px]">
             <span className="subheading text-fg inline-flex items-center gap-2">
               {authorName}
-              {authorIsFounder ? <FounderBadge size="sm" /> : null}
+              {authorIsFounder ? <PioneerBadge size="sm" /> : null}
             </span>
             <span className="label-xs text-fg-3 tabular" suppressHydrationWarning>
               {timeLabel(post.created_at)}

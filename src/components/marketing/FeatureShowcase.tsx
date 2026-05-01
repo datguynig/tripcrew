@@ -50,7 +50,7 @@ const FEATURES: FeatureTile[] = [
     label: "The memory book",
     title: "A keepsake, the morning after.",
     body: "Photos, schedule, highlights, stitched into something you'll still open in five years.",
-    proof: "Founding Crew · ships in M3",
+    proof: "Pioneer · ships in M3",
     badge: "founding",
   },
 ];

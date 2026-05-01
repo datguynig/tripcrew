@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { RevealOnView } from "@/components/motion";
-import { FounderBadge } from "@/components/ui/FounderBadge";
+import { PioneerBadge } from "@/components/ui/PioneerBadge";
 
 type Founder = {
   number: number;
@@ -24,10 +24,10 @@ export function FoundersWall({
       <div className="mx-auto max-w-[1080px] px-6 sm:px-10 py-24 md:py-32">
         <RevealOnView className="flex flex-col gap-6 mb-20">
           <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-marketing-coral-deep">
-            The Founding Crew
+            The Pioneers
           </p>
           <div className="flex items-center gap-3 flex-wrap">
-            <FounderBadge size="lg" />
+            <PioneerBadge size="lg" />
             <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65">
               Price-locked for life
             </p>
@@ -49,7 +49,7 @@ export function FoundersWall({
 
         {claimed === 0 ? (
           <p className="font-serif text-[24px] italic text-ink/60">
-            The first founder hasn&apos;t joined yet. Be №001.
+            The first Pioneer hasn&apos;t joined yet. Be №001.
           </p>
         ) : (
           <ol className="border-t-2 border-ink">
@@ -62,7 +62,7 @@ export function FoundersWall({
                   №{String(founder.number).padStart(3, "0")}
                 </span>
                 <span className="font-serif text-[22px] md:text-[28px] leading-[1.2]">
-                  {founder.name ?? "Anonymous founder"}
+                  {founder.name ?? "Anonymous Pioneer"}
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink/55 max-[640px]:col-start-2">
                   {new Date(founder.joinedAt).toLocaleDateString("en-GB", {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { FounderBadge } from "@/components/ui/FounderBadge";
+import { PioneerBadge } from "@/components/ui/PioneerBadge";
 import type { Post } from "@/lib/types";
 import { LikeToggle } from "./LikeToggle";
 import { dayLabel, initials, timeLabel } from "./feedUtils";
@@ -163,7 +163,7 @@ function FilterPill({
       }`}
     >
       <span>{label}</span>
-      {isFounder ? <FounderBadge size="sm" /> : null}
+      {isFounder ? <PioneerBadge size="sm" /> : null}
     </button>
   );
 }
@@ -246,7 +246,7 @@ function Thumb({
           <span className="min-w-0 flex flex-col gap-0.5">
             <span className="label-xs text-fg-2 inline-flex items-center gap-1.5 min-w-0">
               <span className="truncate">{authorName}</span>
-              {authorIsFounder ? <FounderBadge size="sm" /> : null}
+              {authorIsFounder ? <PioneerBadge size="sm" /> : null}
             </span>
             <span
               className="label-xs text-fg-3 tabular whitespace-nowrap"

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { FounderBadge } from "@/components/ui/FounderBadge";
+import { PioneerBadge } from "@/components/ui/PioneerBadge";
 import type { Profile } from "@/lib/types";
 import { UpgradeButton } from "./UpgradeButton";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
@@ -24,10 +24,10 @@ export function SubscriptionPanel({ profile }: Props) {
   const periodEnd = profile.current_period_end;
   const founderStatus = profile.founding_crew_at ? (
     <div className="mb-6 flex items-center gap-3 border border-line bg-bg-2 px-5 py-4">
-      <FounderBadge size="lg" />
+      <PioneerBadge size="lg" />
       <div className="flex flex-col">
         <span className="text-[14px] text-fg leading-[1.3]">
-          You are a Founding Crew member.
+          You are a Pioneer.
         </span>
         <span className="text-[12px] text-fg-3 leading-[1.3]">
           Price-locked at £179/yr for life. Joined{" "}

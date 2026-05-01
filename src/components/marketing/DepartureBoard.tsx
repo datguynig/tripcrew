@@ -110,7 +110,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
             </p>
             <h2 className="font-serif text-[44px] md:text-[64px] lg:text-[72px] leading-[0.98] tracking-[-0.025em] max-w-[18ch]">
               Starter trips for the{" "}
-              <span className="font-serif italic">founding crews.</span>
+              <span className="font-serif italic">first crews.</span>
             </h2>
             <p className="mt-6 text-[16px] md:text-[18px] leading-[1.5] text-cream/75 max-w-[58ch]">
               Apply once and the AI plans any of them, scaled to your crew, your

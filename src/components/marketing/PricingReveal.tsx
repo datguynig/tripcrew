@@ -50,7 +50,7 @@ function getTiers(foundingRemaining: number): Tier[] {
       cta: { label: "Apply to Yenkoh →", href: "/apply?intent=plus" },
     },
     {
-      name: "Founding Crew",
+      name: "Pioneer",
       price: "£179",
       priceSuffix: "/year",
       billing: "Price-locked for life · founding-only",

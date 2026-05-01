@@ -6,7 +6,7 @@ const SIZE_CLASSES: Record<Size, string> = {
   lg: "h-[28px] px-2.5 text-[11px]",
 };
 
-export function FounderBadge({
+export function PioneerBadge({
   size = "sm",
   className = "",
 }: {
@@ -15,8 +15,8 @@ export function FounderBadge({
 }) {
   return (
     <span
-      aria-label="Founding Crew member"
-      title="Founding Crew member"
+      aria-label="Pioneer"
+      title="Pioneer"
       className={[
         "inline-flex items-center gap-1 font-mono uppercase tracking-[0.18em] whitespace-nowrap",
         "bg-marketing-coral text-ink",
@@ -25,7 +25,7 @@ export function FounderBadge({
       ].join(" ")}
     >
       <span aria-hidden="true">★</span>
-      <span>Founder</span>
+      <span>Pioneer</span>
     </span>
   );
 }
