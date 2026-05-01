@@ -10,6 +10,7 @@ import {
 } from "@/lib/notifications";
 import { enrichPlace } from "@/lib/placeEnrichment";
 import { generateLockAndDraft } from "@/lib/actions/lockAndDraft";
+import { seedSpecGridFromPrefs } from "@/lib/actions/seedSpecGrid";
 import { preferencesSchema } from "@/lib/validators/aiPreferences";
 import type { AiPreferences, TripMeta } from "@/lib/types";
 
@@ -431,13 +432,18 @@ export async function lockAndStartDraft(input: {
     heroTint = result.tint;
   }
 
-  // Read existing meta so we preserve any non-AI fields when we merge
-  // ai_preferences in.
+  // Read existing meta + the columns we need to seed the spec grid so
+  // the brief renders something useful immediately after lock instead
+  // of sitting empty until the AI draft completes.
   const { data: existing } = await service
     .from("trips")
-    .select("meta")
+    .select("meta, dates_label, currency")
     .eq("id", tripId)
-    .maybeSingle<{ meta: TripMeta | null }>();
+    .maybeSingle<{
+      meta: TripMeta | null;
+      dates_label: string | null;
+      currency: string | null;
+    }>();
 
   const mergedMeta: TripMeta = {
     ...(existing?.meta ?? {}),
@@ -470,6 +476,20 @@ export async function lockAndStartDraft(input: {
       : TIER_DEFAULTS[preferences.budget_tier] ?? null;
   if (budgetPp !== null) {
     tripUpdates.target_budget_pp = budgetPp;
+  }
+
+  // Seed the spec grid from the dialog answers so §01 shows something
+  // useful immediately. AI draft can refine; admin can inline-edit.
+  // Don't overwrite if the user already manually populated cells.
+  if (!mergedMeta.spec_grid || mergedMeta.spec_grid.length === 0) {
+    mergedMeta.spec_grid = seedSpecGridFromPrefs({
+      prefs: preferences,
+      destination: winner.title,
+      datesLabel: existing?.dates_label ?? null,
+      budgetPp,
+      currency: existing?.currency ?? null,
+    });
+    tripUpdates.meta = mergedMeta;
   }
 
   const { data: trip, error: updErr } = await service
