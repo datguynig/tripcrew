@@ -408,11 +408,21 @@ async function callWithRetryOnSchemaError<T extends z.ZodTypeAny>(
   model: string;
 }> {
   let lastErr: unknown;
+  let lastErrMessage = "";
   let totalInput = 0;
   let totalOutput = 0;
   for (let attempt = 0; attempt < 2; attempt++) {
+    // On retry, append the validation error to the prompt so Gemini knows
+    // exactly which fields to fix. Empirically this is much more effective
+    // than just running the same prompt again.
+    const effectivePrompt =
+      attempt === 0
+        ? prompt
+        : `${prompt}\n\nIMPORTANT: A previous attempt failed schema validation with these errors. Fix them. Pay particular attention to required field names — every object listed below must have BOTH a 'name' (string) AND a 'description' (string) field, never 'title' or other variants.\n\n${lastErrMessage.slice(0, 2000)}`;
     try {
-      const result = await generateJson(prompt, (raw) => schema.parse(raw));
+      const result = await generateJson(effectivePrompt, (raw) =>
+        schema.parse(raw),
+      );
       return {
         data: result.data,
         inputTokens: totalInput + result.inputTokens,
@@ -424,9 +434,9 @@ async function callWithRetryOnSchemaError<T extends z.ZodTypeAny>(
       lastErr = err;
       const isZod = err instanceof Error && err.name === "ZodError";
       if (!isZod) throw err;
-      // Tally even failed-validation cost so the telemetry isn't lying.
+      lastErrMessage = err.message;
       console.warn(
-        `[lockAndDraft] schema validation failed on attempt ${attempt + 1}, retrying`,
+        `[lockAndDraft] schema validation failed on attempt ${attempt + 1}, retrying with error feedback`,
       );
     }
   }

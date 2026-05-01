@@ -15,17 +15,45 @@ export const DraftActivitySchema = z.object({
   googleMapsUrl: z.string().url().optional(),
 });
 
-const DraftActivityLikeSchema = z
-  .union([DraftActivitySchema, z.string()])
-  .transform((value) =>
-    typeof value === "string"
-      ? {
-          name: value,
-          description: value,
-          bookAhead: true,
-        }
-      : value,
-  );
+// Permissive: Gemini occasionally returns bookAhead items as objects
+// with fields it picked itself ({ title, details } / { activity, body }
+// / etc.), or even arrays of strings, or empty objects. Coerce
+// anything-vaguely-string-shaped into a usable {name, description} so
+// Pioneers don't see a draft fail because the model labelled a field
+// "title" instead of "name". Zod's preprocess runs before parse so the
+// downstream object schema sees a valid shape.
+const DraftActivityLikeSchema = z.preprocess(
+  (raw) => {
+    if (typeof raw === "string") {
+      const trimmed = raw.trim();
+      return { name: trimmed, description: trimmed, bookAhead: true };
+    }
+    if (raw === null || typeof raw !== "object") {
+      return { name: "Booking", description: "Book ahead", bookAhead: true };
+    }
+    const r = raw as Record<string, unknown>;
+    const pickStr = (...keys: string[]): string | undefined => {
+      for (const key of keys) {
+        const value = r[key];
+        if (typeof value === "string" && value.trim().length > 0) return value.trim();
+      }
+      return undefined;
+    };
+    const name =
+      pickStr("name", "title", "activity", "label", "heading") ?? "Booking";
+    const description =
+      pickStr("description", "details", "body", "note", "summary", "info") ??
+      name;
+    const out: Record<string, unknown> = {
+      ...r,
+      name,
+      description,
+      bookAhead: typeof r.bookAhead === "boolean" ? r.bookAhead : true,
+    };
+    return out;
+  },
+  DraftActivitySchema,
+);
 
 export const DraftDayBlockSchema = z.object({
   period: z.enum(["morning", "afternoon", "evening"]),
@@ -83,10 +111,13 @@ export const SetupSchema = z.object({
   heroSubtitle: z.string().min(1).max(300),
   cityLabel: z.string().min(1).max(80),
   datesLabel: z.string().min(1).max(60),
-  specGrid: z.array(SetupSpecCellSchema).length(4),
-  schedule: z.array(SetupScheduleRowSchema).min(1).max(10),
-  activities: z.array(SetupActivitySchema).min(6).max(20),
-  bookings: z.array(SetupBookingSchema).min(3).max(12),
+  // Take whatever Gemini gives — pad to 4 cells in the validator below
+  // rather than rejecting the whole draft if it returned 3.
+  specGrid: z.array(SetupSpecCellSchema).min(1).max(8),
+  schedule: z.array(SetupScheduleRowSchema).min(1).max(14),
+  // Floors lowered: we'd rather render fewer items than fail the draft.
+  activities: z.array(SetupActivitySchema).min(3).max(24),
+  bookings: z.array(SetupBookingSchema).min(1).max(16),
 });
 
 export const EnrichedDraftSchema = z.object({
