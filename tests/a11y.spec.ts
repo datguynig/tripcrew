@@ -13,6 +13,11 @@ const TRIP_SLUG = process.env.TEST_TRIP_SLUG ?? "sweden-summer-2026-9ycp";
  */
 
 async function audit(page: Page, label: string) {
+  // App routes use a short entry fade. Axe samples computed colours
+  // during animation, so wait until opacity has settled before checking
+  // contrast.
+  await page.waitForTimeout(300);
+
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     // `aria-hidden` content is not exposed to assistive tech — contrast
@@ -46,8 +51,8 @@ test.describe("a11y", () => {
   });
 
   test("dashboard", async ({ page }) => {
-    await page.goto("/");
-    await audit(page, "/");
+    await page.goto("/dashboard");
+    await audit(page, "/dashboard");
   });
 
   test("new trip form", async ({ page }) => {

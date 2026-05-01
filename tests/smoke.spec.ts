@@ -4,7 +4,7 @@ const TRIP_SLUG = process.env.TEST_TRIP_SLUG ?? "sweden-summer-2026-9ycp";
 
 test.describe("dashboard", () => {
   test("lists the user's trips", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/dashboard");
     await expect(
       page.getByRole("heading", { name: /your trips/i }),
     ).toBeVisible();

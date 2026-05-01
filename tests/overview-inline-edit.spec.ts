@@ -33,6 +33,12 @@ async function createLockedTrip(
   await expect(page.getByText(candidate).first()).toBeVisible();
 
   await page.getByRole("button", { name: /^lock destination$/i }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await dialog
+    .getByRole("button", { name: /^lock without drafting$/i })
+    .click();
+  await page.waitForURL(/\/trips\/[^/]+$/, { timeout: 10_000 });
   await expect(
     page.getByRole("heading", { name: /the brief/i }),
   ).toBeVisible({ timeout: 15_000 });
