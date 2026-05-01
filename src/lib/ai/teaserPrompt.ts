@@ -23,7 +23,7 @@ const BUDGET_HINT: Record<TeaserInputs["budget"], string> = {
 };
 
 export function buildTeaserPrompt(trip: CuratedTrip, inputs: TeaserInputs): string {
-  return `You are drafting a personalised teaser of the ${trip.city} curated trip for a Tripcrew applicant.
+  return `You are drafting a personalised teaser of the ${trip.city} curated trip for a Yenkoh applicant.
 
 THEIR INPUTS:
 - Origin airport: ${inputs.origin}

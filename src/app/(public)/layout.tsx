@@ -5,7 +5,7 @@ import { ScrollProgress } from "@/components/motion";
 import { MotionRoot } from "@/lib/motion";
 
 export const metadata: Metadata = {
-  title: "Tripcrew. Trips that make it out of the group chat.",
+  title: "Yenkoh. Trips that make it out of the group chat.",
   description:
     "Invite-only group trip planner. Pick a city. Pull your crew. Make memories, not just wishes.",
 };

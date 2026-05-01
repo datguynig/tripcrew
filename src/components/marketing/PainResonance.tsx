@@ -30,7 +30,7 @@ const MESSAGES: ChatMessage[] = [
 export function PainResonance() {
   return (
     <section
-      id="why-tripcrew"
+      id="why-yenkoh"
       className="bg-cream text-ink border-y-2 border-ink"
     >
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 py-24 md:py-32">
@@ -78,7 +78,7 @@ export function PainResonance() {
               delay={0.28}
             >
               <p className="font-mono uppercase tracking-[0.18em] text-[11px] text-ink">
-                Tripcrew turns the chat into a trip.
+                Yenkoh turns the chat into a trip.
               </p>
               <Link
                 href="/apply"

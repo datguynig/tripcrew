@@ -96,7 +96,7 @@ export function buildTeaserConfirmationEmail({
       ``,
       `When you're ready, apply to unlock the full plan and book it with your crew.`,
       ``,
-      `— Tripcrew`,
+      `— Yenkoh`,
       ``,
       `Don't want these? Unsubscribe: ${unsubscribe}`,
     ].join("\n"),
@@ -133,7 +133,7 @@ export function buildDay7NudgeEmail({
       `Your ${city} draft is still saved. Pick it back up:`,
       resume,
       ``,
-      `— Tripcrew`,
+      `— Yenkoh`,
       ``,
       `Don't want these? Unsubscribe: ${unsubscribe}`,
     ].join("\n"),
@@ -213,7 +213,7 @@ export function buildApplicationReceivedEmail({
     );
   }
 
-  lines.push(``, `— Tripcrew`);
+  lines.push(``, `— Yenkoh`);
 
   return {
     to: email,
@@ -270,7 +270,7 @@ export function buildApplicationApprovedEmail({
     ``,
     `Once payment lands, you'll get a sign-in link by email and we'll seed your first trip from the draft you saved.`,
     ``,
-    `— Tripcrew`,
+    `— Yenkoh`,
   );
 
   return {
@@ -304,7 +304,7 @@ export function buildApplicationSoftRejectedEmail({
       `In the meantime, a founding spot still skips the queue:`,
       `${siteUrl()}/#pricing`,
       ``,
-      `— Tripcrew`,
+      `— Yenkoh`,
     ].join("\n"),
   };
 }

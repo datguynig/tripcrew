@@ -13,7 +13,7 @@ import type { DraftLead } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Founding spot · Tripcrew",
+  title: "Founding spot · Yenkoh",
   description: "Your founding spot is on hold. Pay £179 / year, price-locked for life.",
 };
 

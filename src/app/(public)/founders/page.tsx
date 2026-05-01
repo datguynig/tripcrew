@@ -6,9 +6,9 @@ import { createServiceClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "The Pioneers · Tripcrew",
+  title: "The Pioneers · Yenkoh",
   description:
-    "The 500 Pioneers shaping Tripcrew. Price-locked for life.",
+    "The 500 Pioneers shaping Yenkoh. Price-locked for life.",
 };
 
 type FounderRow = {

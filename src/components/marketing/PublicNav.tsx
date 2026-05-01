@@ -51,9 +51,9 @@ export function PublicNav() {
           <Link
             href="/"
             className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral-deep"
-            aria-label="Tripcrew home"
+            aria-label="Yenkoh home"
           >
-            Tripcrew
+            Yenkoh
           </Link>
 
           <nav className="hidden md:flex items-center gap-8" aria-label="Primary">
@@ -110,7 +110,7 @@ export function PublicNav() {
           >
             <div className="flex items-center justify-between h-[64px] px-6 sm:px-10 border-b-2 border-cream/20">
               <span className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral">
-                Tripcrew
+                Yenkoh
               </span>
               <button
                 type="button"

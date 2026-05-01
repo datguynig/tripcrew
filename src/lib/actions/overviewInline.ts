@@ -125,7 +125,7 @@ export async function setPolaroidSlot(input: {
       parsed.data.override!.imageUrl.startsWith(p),
     );
     if (!inAllowed) {
-      return { error: "Image must live in a TripCrew storage bucket." };
+      return { error: "Image must live in a Yenkoh storage bucket." };
     }
   }
 

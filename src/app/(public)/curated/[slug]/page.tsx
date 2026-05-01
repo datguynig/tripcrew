@@ -18,9 +18,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const trip = getCuratedTripBySlug(slug);
-  if (!trip) return { title: "Tripcrew — curated trip" };
+  if (!trip) return { title: "Yenkoh — curated trip" };
   return {
-    title: `${trip.city} · Tripcrew curated`,
+    title: `${trip.city} · Yenkoh curated`,
     description: `${trip.tagline} See your version of ${trip.city}: origin, crew, dates, budget personalised.`,
   };
 }

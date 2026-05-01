@@ -19,8 +19,8 @@ export async function generateMetadata({
   const trip = getCuratedTripBySlug(slug);
   return {
     title: trip
-      ? `Application received · ${trip.city} · Tripcrew`
-      : "Application received · Tripcrew",
+      ? `Application received · ${trip.city} · Yenkoh`
+      : "Application received · Yenkoh",
   };
 }
 

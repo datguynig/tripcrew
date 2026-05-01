@@ -16,7 +16,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TripCrew",
+  title: "Yenkoh",
   description: "Plan trips with your crew. Dates, votes, bookings, money, photos.",
 };
 

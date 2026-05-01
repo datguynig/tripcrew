@@ -52,7 +52,7 @@ export default async function ApplicationConfirmationPage({
 
         <p className="font-sans text-[15px] sm:text-[16px] leading-[1.6] max-w-[480px] opacity-75 text-pretty">
           We approve in batches. Expect an invite within 14 days. Members can
-          also fast-track you &mdash; if a friend&rsquo;s already on Tripcrew,
+          also fast-track you &mdash; if a friend&rsquo;s already on Yenkoh,
           ask them to send you one of their slots.
         </p>
 

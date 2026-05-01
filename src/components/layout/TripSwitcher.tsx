@@ -74,7 +74,7 @@ export function TripSwitcher({ trips }: Props) {
     };
   }, [open]);
 
-  const label = current?.name ?? "TripCrew";
+  const label = current?.name ?? "Yenkoh";
 
   return (
     <div ref={containerRef} className="relative">

@@ -108,7 +108,7 @@ function FeaturedTripPlan({ trip }: { trip: CuratedTrip }) {
             className="w-[8px] h-[8px] bg-marketing-coral animate-pulse"
           />
           <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream">
-            Tripcrew plan · curated
+            Yenkoh plan · curated
           </p>
         </div>
 

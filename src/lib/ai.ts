@@ -156,7 +156,7 @@ const MAX_TOOL_ITERATIONS = 12;
 const MAX_PLACES_REQUESTS = 20;
 
 const SYSTEM_PROMPT = [
-  "You are the trip-planning assistant for Tripcrew, a collaborative",
+  "You are the trip-planning assistant for Yenkoh, a collaborative",
   "group-trip app. A crew just locked a destination. Draft the trip so",
   "it feels alive in one click. Hero copy, logistics, a day-by-day",
   "schedule, activity shortlist, and bookings the crew should make.",
@@ -380,7 +380,7 @@ export async function draftReplacement(
     .join("\n");
 
   const systemInstruction = [
-    "You are the trip-planning assistant for Tripcrew. One item in the",
+    "You are the trip-planning assistant for Yenkoh. One item in the",
     "trip plan needs a replacement. Draft exactly one new item that is",
     "different from the one being replaced AND different from the other",
     "items already in the plan. Ground specific venues via searchPlaces.",
@@ -563,7 +563,7 @@ async function runGeminiLoop<T>({
 
 function buildSurfaceSystemPrompt(surface: DraftSurface): string {
   const shared = [
-    "You are the trip-planning assistant for Tripcrew, a collaborative",
+    "You are the trip-planning assistant for Yenkoh, a collaborative",
     "group-trip app. The crew has already drafted this trip once. You",
     "are re-drafting a single section. Stay consistent with the other",
     "sections already in place. Use the searchPlaces tool for any",

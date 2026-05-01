@@ -97,7 +97,7 @@ export function DepartureBoard({ initialIndex = 0 }: { initialIndex?: number }) 
     <section
       id="curated-trips"
       aria-roledescription="carousel"
-      aria-label="Five curated starter trips by Tripcrew"
+      aria-label="Five curated starter trips by Yenkoh"
       tabIndex={0}
       onKeyDown={onKeyDown}
       className="relative w-full bg-ink text-cream focus:outline-none"

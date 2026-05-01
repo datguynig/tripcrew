@@ -37,7 +37,7 @@ function SignInInner() {
       <div className="w-full max-w-[460px]">
         <div className="flex items-center gap-[10px] mb-5 font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
           <span className="w-5 h-px bg-accent" />
-          TripCrew
+          Yenkoh
         </div>
 
         <h1 className="text-[56px] font-semibold leading-[0.95] tracking-[-0.04em] mb-[18px]">

@@ -38,7 +38,7 @@ export function buildWelcomeEmail({
       ``,
       `One link, one tap. We'll keep your slot warm for 7 days.`,
       ``,
-      `Tripcrew`,
+      `Yenkoh`,
     ].join("\n"),
   };
 }

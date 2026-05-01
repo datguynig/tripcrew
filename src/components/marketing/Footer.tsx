@@ -31,7 +31,7 @@ export function Footer() {
               href="/"
               className="font-mono uppercase tracking-[0.18em] text-[13px] text-marketing-coral self-start"
             >
-              Tripcrew
+              Yenkoh
             </Link>
             <p className="font-serif italic text-[20px] md:text-[22px] leading-[1.25] text-cream max-w-[18ch]">
               Trips that leave the chat.
@@ -45,7 +45,7 @@ export function Footer() {
 
         <div className="mt-20 pt-6 border-t border-cream/15 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
           <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65">
-            © {new Date().getFullYear()} Tripcrew. Invite only.
+            © {new Date().getFullYear()} Yenkoh. Invite only.
           </p>
           <p className="font-mono uppercase tracking-[0.18em] text-[10px] text-cream/65 flex items-center gap-3">
             <Link

@@ -59,7 +59,7 @@ async function sendCostAlert(
     `Likely culprits: a viral burst, a stuck loop, or a leaked endpoint.`,
     `Consider rotating GEMINI_API_KEY or pausing the public teaser flow.`,
     ``,
-    `Tripcrew cron`,
+    `Yenkoh cron`,
   ].join("\n");
 
   const response = await fetch("https://api.resend.com/emails", {
