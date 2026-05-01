@@ -194,7 +194,7 @@ export async function createFirstTripFromDraft(
  */
 export async function sendMagicLink(email: string): Promise<void> {
   const supabase = createServiceClient();
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tripcrew.app";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yenkoh.com";
 
   const { error } = await supabase.auth.signInWithOtp({
     email,

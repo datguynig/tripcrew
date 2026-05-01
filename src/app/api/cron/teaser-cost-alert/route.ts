@@ -36,7 +36,7 @@ async function sendCostAlert(
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from =
-    process.env.TEASER_EMAIL_FROM ?? "Tripcrew <hello@tripcrew.app>";
+    process.env.TEASER_EMAIL_FROM ?? "Yenkoh <hello@yenkoh.com>";
 
   if (!apiKey) {
     console.warn(
@@ -46,7 +46,7 @@ async function sendCostAlert(
     return;
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://tripcrew.app";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://yenkoh.com";
   const subject = `[ALERT] Curated teaser cost over £${limit} in 24h`;
   const text = [
     `Curated teaser AI spend has crossed the daily ceiling.`,

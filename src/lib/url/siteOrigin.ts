@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 
-const PRODUCTION_FALLBACK_ORIGIN = "https://tripcrew.app";
+const PRODUCTION_FALLBACK_ORIGIN = "https://yenkoh.com";
 
 function normalizeOrigin(value: string | undefined | null): string | null {
   if (!value) return null;

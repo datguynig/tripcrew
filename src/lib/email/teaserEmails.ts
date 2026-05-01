@@ -7,7 +7,7 @@ export type TeaserEmail = {
 };
 
 function siteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://tripcrew.app";
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://yenkoh.com";
 }
 
 function titleCaseSlug(slug: string): string {
@@ -143,7 +143,7 @@ export function buildDay7NudgeEmail({
 async function sendViaResend(input: TeaserEmail, label: string): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   const from =
-    process.env.TEASER_EMAIL_FROM ?? "Tripcrew <hello@tripcrew.app>";
+    process.env.TEASER_EMAIL_FROM ?? "Yenkoh <hello@yenkoh.com>";
 
   if (!apiKey) {
     console.warn(`[${label}] RESEND_API_KEY missing — skipping send`, {

@@ -4,12 +4,12 @@ import { siteOriginFromRequestUrl } from "@/lib/url/siteOrigin";
 
 test("siteOriginFromRequestUrl prefers configured public origin", () => {
   const previous = process.env.NEXT_PUBLIC_SITE_URL;
-  process.env.NEXT_PUBLIC_SITE_URL = "https://example.tripcrew.app/path";
+  process.env.NEXT_PUBLIC_SITE_URL = "https://example.yenkoh.com/path";
 
   try {
     assert.equal(
       siteOriginFromRequestUrl("https://attacker.example/api/applications/a/checkout"),
-      "https://example.tripcrew.app",
+      "https://example.yenkoh.com",
     );
   } finally {
     if (previous === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
@@ -27,7 +27,7 @@ test("siteOriginFromRequestUrl does not trust request host outside development",
   try {
     assert.equal(
       siteOriginFromRequestUrl("https://attacker.example/api/applications/a/checkout"),
-      "https://tripcrew.app",
+      "https://yenkoh.com",
     );
   } finally {
     if (previousOrigin === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;

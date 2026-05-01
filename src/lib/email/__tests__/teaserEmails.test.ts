@@ -170,7 +170,7 @@ test("buildApplicationReceivedEmail includes a usable founding-checkout link for
 
   assert.match(
     email.text,
-    /https:\/\/tripcrew\.app\/curated\/bali\/founding-checkout\?draft=draft-123&token=tok-abc/,
+    /https:\/\/yenkoh\.com\/curated\/bali\/founding-checkout\?draft=draft-123&token=tok-abc/,
   );
 });
 
@@ -191,7 +191,7 @@ test("buildApplicationApprovedEmail points to checkout and not legacy invite sig
 
   assert.match(
     email.text,
-    /https:\/\/tripcrew\.app\/api\/applications\/app-123\/checkout/,
+    /https:\/\/yenkoh\.com\/api\/applications\/app-123\/checkout/,
   );
   assert.doesNotMatch(email.text, /\/sign-in\?invite=/);
 });
@@ -205,7 +205,7 @@ test("buildApplicationApprovedEmail surfaces both annual and monthly CTAs when a
 
   assert.match(
     email.text,
-    /https:\/\/tripcrew\.app\/api\/applications\/app-123\/checkout\?interval=annual/,
+    /https:\/\/yenkoh\.com\/api\/applications\/app-123\/checkout\?interval=annual/,
   );
   assert.match(email.text, /£79\/year/);
   assert.match(email.text, /£9\/month/);

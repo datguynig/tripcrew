@@ -48,10 +48,10 @@ export function FAQ() {
             <p className="mt-10 font-mono uppercase tracking-[0.18em] text-[11px] text-ink/65 max-w-[28ch]">
               More to ask.{" "}
               <a
-                href="mailto:hello@tripcrew.app"
+                href="mailto:hello@yenkoh.com"
                 className="text-marketing-coral-deep underline underline-offset-4 hover:no-underline"
               >
-                → hello@tripcrew.app
+                → hello@yenkoh.com
               </a>
             </p>
           </RevealOnView>

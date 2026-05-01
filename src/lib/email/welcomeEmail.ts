@@ -45,7 +45,7 @@ export function buildWelcomeEmail({
 
 export async function sendWelcomeEmail(input: WelcomeEmail): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.WELCOME_EMAIL_FROM ?? "Tripcrew <hello@tripcrew.app>";
+  const from = process.env.WELCOME_EMAIL_FROM ?? "Yenkoh <hello@yenkoh.com>";
 
   if (!apiKey) {
     console.warn("[welcomeEmail] RESEND_API_KEY missing — skipping send", {

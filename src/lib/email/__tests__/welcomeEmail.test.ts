@@ -5,12 +5,12 @@ import { buildWelcomeEmail } from "@/lib/email/welcomeEmail";
 test("buildWelcomeEmail mirrors the pain in the opening line", () => {
   const email = buildWelcomeEmail({
     to: "sarah@example.com",
-    magicLinkUrl: "https://tripcrew.app/auth/magic?token=x",
+    magicLinkUrl: "https://yenkoh.com/auth/magic?token=x",
     pain: "dates",
   });
   assert.match(email.subject, /in/i);
   assert.match(email.text, /dates never align/);
-  assert.match(email.text, /https:\/\/tripcrew\.app\/auth\/magic\?token=x/);
+  assert.match(email.text, /https:\/\/yenkoh\.com\/auth\/magic\?token=x/);
 });
 
 test("buildWelcomeEmail derives a first name from the email local part", () => {
