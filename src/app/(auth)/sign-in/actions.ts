@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { siteOriginFromHeaders } from "@/lib/url/siteOrigin";
 
 const magicSchema = z.object({
   email: z.string().email().min(5).max(200),
@@ -15,15 +15,6 @@ const passwordSchema = z.object({
 });
 
 export type SignInState = { ok?: true; error?: string } | undefined;
-
-async function getRedirectOrigin() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host");
-  const proto =
-    h.get("x-forwarded-proto") ??
-    (process.env.NODE_ENV === "development" ? "http" : "https");
-  return `${proto}://${host}`;
-}
 
 function safeNext(value: FormDataEntryValue | null): string | null {
   if (typeof value !== "string") return null;
@@ -40,7 +31,7 @@ export async function sendMagicLink(
 
   const next = safeNext(formData.get("next"));
   const supabase = await createClient();
-  const origin = await getRedirectOrigin();
+  const origin = await siteOriginFromHeaders();
   const redirectTo = next
     ? `${origin}/callback?next=${encodeURIComponent(next)}`
     : `${origin}/callback`;

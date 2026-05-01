@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe/server";
+import { siteOriginFromRequestUrl } from "@/lib/url/siteOrigin";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -10,8 +11,7 @@ function resolvePriceId(): string | null {
 }
 
 function siteOrigin(request: Request): string {
-  const url = new URL(request.url);
-  return process.env.NEXT_PUBLIC_SITE_URL ?? url.origin;
+  return siteOriginFromRequestUrl(request.url);
 }
 
 type ApplicationRow = {
