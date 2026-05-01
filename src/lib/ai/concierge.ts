@@ -44,7 +44,7 @@ export interface ConciergeAgentResult {
   durationMs: number;
 }
 
-const MAX_TOOL_TURNS = 5;
+const MAX_TOOL_TURNS = 8;
 
 const SYSTEM_PROMPT = `You are the Yenkoh concierge — a thoughtful, opinionated travel-planning assistant for the Pioneer tier. You help refine an existing trip plan through natural conversation.
 
@@ -350,10 +350,47 @@ export async function runConciergeAgent({
     contents.push({ role: "user", parts: toolResponses });
   }
 
+  // If the model never emitted a final text response (e.g. hit
+  // MAX_TOOL_TURNS or kept asking for tools), do one last call without
+  // tools to force a plain summary. Without this, the user sees a
+  // canned fallback string and the proposals look orphaned.
+  if (!finalText) {
+    try {
+      const summary = await client.models.generateContent({
+        model,
+        contents: [
+          ...contents,
+          {
+            role: "user",
+            parts: [
+              {
+                text: "Now respond to the original message in plain text. Don't call any more tools. Summarise what you found and what you've proposed.",
+              },
+            ],
+          },
+        ],
+        config: {
+          systemInstruction,
+          temperature: 0.7,
+        },
+      });
+      const summaryUsage = summary.usageMetadata;
+      inputTokens += summaryUsage?.promptTokenCount ?? 0;
+      outputTokens += summaryUsage?.candidatesTokenCount ?? 0;
+      finalText = (summary.candidates?.[0]?.content?.parts ?? [])
+        .map((p) => p.text ?? "")
+        .filter(Boolean)
+        .join("\n")
+        .trim();
+    } catch (err) {
+      console.error("concierge summary fallback failed", err);
+    }
+  }
+
   if (!finalText) {
     finalText =
       proposals.length > 0
-        ? "Here's what I'd suggest. Tap Apply on the card if you want me to make the change."
+        ? "Here are some options. Tap Apply on a card to make a change."
         : "I'm not sure how to refine that. Could you tell me more about what you're after?";
   }
 
