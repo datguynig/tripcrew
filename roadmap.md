@@ -2,7 +2,7 @@
 
 Working document. Gitignored. Tracks what's shipped vs. what we've promised — especially the Founding Crew tier commitments. Update as features land.
 
-**Last updated:** 2026-04-30
+**Last updated:** 2026-05-01
 
 ---
 
@@ -46,7 +46,7 @@ Source: [PricingReveal.tsx](src/components/marketing/PricingReveal.tsx) Founding
 | Where | What it says | What's true | Fix |
 |---|---|---|---|
 | ~~[HowItWorks.tsx:23](src/components/marketing/HowItWorks.tsx) step 03~~ | ~~"Photos in the memory book."~~ Reworded to "Photos saved with the trip." on 2026-04-30. | ✅ Fixed | — |
-| [PricingReveal.tsx:38](src/components/marketing/PricingReveal.tsx) Crew Plus billing | "£79 / year · save 27%" implies annual is purchasable. | Annual checkout path is not wired (per [docs/pricing.md](docs/pricing.md) Open Debt). | Either wire the annual `STRIPE_PRICE_ID` and add the toggle, or soften copy to "monthly today, annual coming soon". |
+| ~~[PricingReveal.tsx:38](src/components/marketing/PricingReveal.tsx) Crew Plus billing~~ | ~~"£79 / year · save 27%" implies annual is purchasable.~~ Annual wired into the post-approval checkout email on 2026-05-01. Set `STRIPE_PRICE_ID_ANNUAL` in env to enable. | ✅ Fixed | — |
 
 Neither item misleads at the gate boundary — both are landing-page copy issues. Treat them as P1 before the next public traffic push.
 
@@ -133,7 +133,7 @@ The whole reason for this roadmap.
 | Stripe webhook → application linkage | 📋 | Sets `applications.first_paid_at` on subscription create |
 | Welcome email + magic link template | 📋 | Mirrors Q3 pain in opening line |
 | HowItWorks step 03 memory-book copy fix | ✅ | Reworded to "Photos saved with the trip." on 2026-04-30. |
-| Crew Plus annual £79/yr — wire it or soften copy | 📋 | PricingReveal advertises annual savings but checkout only sells monthly. See Honesty audit. |
+| Crew Plus annual £79/yr — wire it or soften copy | ✅ | Wired 2026-05-01. Post-approval email now includes both annual and monthly CTAs when `STRIPE_PRICE_ID_ANNUAL` is set; route resolves the right price by `?interval=annual`. |
 
 ---
 

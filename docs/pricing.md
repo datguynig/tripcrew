@@ -19,9 +19,8 @@ Refund posture: first-time subscriptions are eligible for a 14-day refund. Do no
 | Tier | Env var | Notes |
 |---|---|---|
 | Crew Plus monthly | `STRIPE_PRICE_ID` | Required for Crew Plus checkout. No legacy fallback should be used in production. |
+| Crew Plus annual | `STRIPE_PRICE_ID_ANNUAL` | Optional. When set, the post-approval email surfaces both annual and monthly CTAs and `/api/applications/[id]/checkout?interval=annual` resolves this price. When unset, the email gracefully degrades to monthly-only. |
 | Founding Crew yearly | `STRIPE_FOUNDING_PRICE_ID` | Required for Founding checkout. |
-
-Annual Crew Plus (`£79/year`) is public pricing copy, but the annual checkout path is not wired in the account UI yet. Do not add an annual purchase CTA until a separate Stripe price/env path exists.
 
 ## Who Pays: Team-Share Access
 
@@ -88,7 +87,6 @@ Founding seats are capped at 500. The public counter should be based on consumed
 
 ## Open Debt
 
-- Annual Crew Plus checkout path for `£79/year`.
 - Durable Founding Crew price-lock mechanics after cancellation/resubscribe.
-- Founders wall, founder badge, and roadmap voting surfaces.
+- Roadmap voting surface (founders wall and founder badge shipped 2026-04-30).
 - Cleanup of legacy local-trial columns and gate branches once no rows depend on them.
