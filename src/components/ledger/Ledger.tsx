@@ -17,6 +17,11 @@ type Props = {
   tripId: string;
   currentUserId: string;
   currency: string | null;
+  // Admin's stated crew size from Lock & Draft. Drives even-split
+  // math so the per-head figure matches the brief's PER HEAD cell
+  // even when not everyone has joined yet. Falls back to the joined
+  // count if null.
+  targetCrewSize: number | null;
 };
 
 function formatDate(iso: string) {
@@ -32,7 +37,10 @@ export function Ledger({
   tripId,
   currentUserId,
   currency,
+  targetCrewSize,
 }: Props) {
+  const splitCount =
+    targetCrewSize && targetCrewSize > 0 ? targetCrewSize : crew.length;
   const symbol = currencySymbol(currency);
   const [expenses, setExpenses] = useState<Expense[]>(initial);
   const [desc, setDesc] = useState("");
@@ -103,7 +111,7 @@ export function Ledger({
     () => expenses.reduce((s, e) => s + Number(e.amount), 0),
     [expenses],
   );
-  const perPerson = crew.length > 0 ? total / crew.length : 0;
+  const perPerson = splitCount > 0 ? total / splitCount : 0;
   const myTotal = useMemo(
     () =>
       expenses
@@ -118,13 +126,13 @@ export function Ledger({
     for (const e of expenses) {
       paid.set(e.paid_by, (paid.get(e.paid_by) ?? 0) + Number(e.amount));
     }
-    const share = crew.length > 0 ? total / crew.length : 0;
+    const share = splitCount > 0 ? total / splitCount : 0;
     return crew.map((c) => ({
       id: c.id,
       name: c.name,
       net: (paid.get(c.id) ?? 0) - share,
     }));
-  }, [expenses, crew, total]);
+  }, [expenses, crew, total, splitCount]);
 
   const handleAdd = () => {
     const description = desc.trim();

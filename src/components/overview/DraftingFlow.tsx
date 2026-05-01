@@ -80,8 +80,37 @@ export function DraftingFlow({
         },
       )
       .subscribe((status) => {
+        // Catch up on the SSR-to-SUBSCRIBED gap: any progress UPDATE
+        // that landed before this client subscribed is lost by Supabase
+        // Realtime. Re-fetch the trip's progress + drafted-at directly
+        // (cheap, single row) and reconcile, rather than just calling
+        // router.refresh() — refresh would re-render with stale
+        // initialProgress whenever the cache hadn't been invalidated.
         if (status !== "SUBSCRIBED") return;
-        router.refresh();
+        void supabase
+          .from("trips")
+          .select("meta, enriched_draft_generated_at")
+          .eq("id", tripId)
+          .maybeSingle<{
+            meta: TripMeta | null;
+            enriched_draft_generated_at: string | null;
+          }>()
+          .then(({ data }) => {
+            if (!data) return;
+            setProgress(data.meta?.draft_progress ?? null);
+            if (
+              data.enriched_draft_generated_at &&
+              data.enriched_draft_generated_at !== initialDraftedAt
+            ) {
+              if (searchParams.get("drafting")) {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("drafting");
+                window.history.replaceState({}, "", url.toString());
+              }
+              setDraftingFromUrl(false);
+              router.refresh();
+            }
+          });
       });
 
     return () => {

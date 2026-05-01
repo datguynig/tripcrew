@@ -199,7 +199,12 @@ export async function draftAllCandidates(
     tripId: trip.id,
     startDate: trip.start_date,
     endDate: trip.end_date,
-    crewSize: crewCount ?? trip.target_crew_size ?? 1,
+    // Mirrors generateLockAndDraft: prefer the admin's stated intent
+    // (target_crew_size) over the live trip_members count, so per-
+    // candidate basic drafts plan for the group size the admin
+    // specified in the dialog rather than the people who've joined so
+    // far (typically just the admin).
+    crewSize: trip.target_crew_size ?? crewCount ?? 1,
     origin: prefs?.origin?.name ?? undefined,
     notes: prefs?.notes,
     vibes: prefs?.vibes as AiVibeTag[] | undefined,

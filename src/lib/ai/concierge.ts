@@ -26,7 +26,7 @@ export interface ConciergeTripState {
   };
   schedule: { day: number; slots: { time: string; title: string; note?: string }[] }[];
   activities: { id: string; title: string; description: string | null }[];
-  ledgerSummary: { totalSpent: number; perPerson: number };
+  ledgerSummary: { totalSpent: number; perPlannedPerson: number };
 }
 
 export interface ConciergeTurn {
@@ -100,7 +100,7 @@ function buildTripStateBlock(state: ConciergeTripState): string {
   lines.push("");
   lines.push("LEDGER");
   lines.push(
-    `- Spent so far: ${state.currency}${state.ledgerSummary.totalSpent.toFixed(0)} total · ${state.currency}${state.ledgerSummary.perPerson.toFixed(0)} pp`,
+    `- Spent so far: ${state.currency}${state.ledgerSummary.totalSpent.toFixed(0)} total · ${state.currency}${state.ledgerSummary.perPlannedPerson.toFixed(0)} pp vs planned crew of ${state.crewSize}`,
   );
 
   return lines.join("\n");

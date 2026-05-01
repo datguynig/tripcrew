@@ -55,6 +55,7 @@ export default async function LedgerPage({
         tripId={trip.id}
         currentUserId={user.id}
         currency={trip.currency}
+        targetCrewSize={trip.target_crew_size}
       />
     </section>
   );

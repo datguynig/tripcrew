@@ -113,7 +113,7 @@ export default async function JoinPage({
         dates_label: trip.dates_label,
         target_budget_pp: trip.target_budget_pp,
         currency: trip.currency,
-        crew_size: trip.target_crew_size ?? crewMembers.length + 1,
+        crew_size: trip.target_crew_size ?? Math.max(crewMembers.length, 1),
         origin: meta.origin ?? "LHR",
         vibes: meta.vibes ?? "Crew trip",
       }}

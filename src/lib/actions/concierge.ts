@@ -193,7 +193,11 @@ async function loadTripState(
     0,
   );
   const crewSize = trip.target_crew_size ?? 1;
-  const perPerson = crewSize > 0 ? totalSpent / crewSize : totalSpent;
+  // Divide by the planned crew (intent), so the agent reasons against
+  // the planned per-head budget. Labelled "vs planned crew of N" in
+  // the system prompt so the model doesn't conflate it with what
+  // currently-joined members have actually spent.
+  const perPlannedPerson = crewSize > 0 ? totalSpent / crewSize : totalSpent;
 
   return {
     destination: trip.city_label ?? trip.hero_title ?? "your destination",
@@ -210,7 +214,7 @@ async function loadTripState(
     },
     schedule: parseSchedule(trip.meta?.schedule),
     activities: activities ?? [],
-    ledgerSummary: { totalSpent, perPerson },
+    ledgerSummary: { totalSpent, perPlannedPerson },
   };
 }
 
