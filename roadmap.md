@@ -45,7 +45,7 @@ Source: [PricingReveal.tsx](src/components/marketing/PricingReveal.tsx) Founding
 
 | Where | What it says | What's true | Fix |
 |---|---|---|---|
-| [HowItWorks.tsx:23](src/components/marketing/HowItWorks.tsx) step 03 | "Photos in the memory book." Shown to every visitor. | Memory book is Founding-only and not built. | Reword to something tier-neutral like "Photos saved with the trip" — or move the memory-book mention into the Founding-Crew-specific blocks only. |
+| ~~[HowItWorks.tsx:23](src/components/marketing/HowItWorks.tsx) step 03~~ | ~~"Photos in the memory book."~~ Reworded to "Photos saved with the trip." on 2026-04-30. | ✅ Fixed | — |
 | [PricingReveal.tsx:38](src/components/marketing/PricingReveal.tsx) Crew Plus billing | "£79 / year · save 27%" implies annual is purchasable. | Annual checkout path is not wired (per [docs/pricing.md](docs/pricing.md) Open Debt). | Either wire the annual `STRIPE_PRICE_ID` and add the toggle, or soften copy to "monthly today, annual coming soon". |
 
 Neither item misleads at the gate boundary — both are landing-page copy issues. Treat them as P1 before the next public traffic push.
@@ -132,7 +132,7 @@ The whole reason for this roadmap.
 | `is_founder` flag on profiles | 📋 | Gates all `/admin/applications/*` routes |
 | Stripe webhook → application linkage | 📋 | Sets `applications.first_paid_at` on subscription create |
 | Welcome email + magic link template | 📋 | Mirrors Q3 pain in opening line |
-| HowItWorks step 03 memory-book copy fix | 📋 | "Photos in the memory book" shown to all visitors implies every tier gets one — feature is Founding-only. See Honesty audit. |
+| HowItWorks step 03 memory-book copy fix | ✅ | Reworded to "Photos saved with the trip." on 2026-04-30. |
 | Crew Plus annual £79/yr — wire it or soften copy | 📋 | PricingReveal advertises annual savings but checkout only sells monthly. See Honesty audit. |
 
 ---

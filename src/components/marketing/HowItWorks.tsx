@@ -20,7 +20,7 @@ const STEPS: Step[] = [
   {
     number: "03.0",
     title: "Land. Eat. Repeat.",
-    body: "Bookings handled. Ledger settled. Crew chat archived. Photos in the memory book.",
+    body: "Bookings handled. Ledger settled. Crew chat archived. Photos saved with the trip.",
   },
 ];
 
