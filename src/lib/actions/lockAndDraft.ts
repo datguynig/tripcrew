@@ -153,7 +153,11 @@ export async function generateLockAndDraft(
     destination: trip.destination,
     startDate: trip.start_date,
     endDate: trip.end_date,
-    crewSize: crewCount ?? trip.target_crew_size ?? 1,
+    // Prefer the admin's stated intent (target_crew_size from the
+    // Lock & Draft dialog) over the actual trip_members row count.
+    // The user picks "10+" expecting a 10-person plan; the count is 1
+    // because no one's joined yet — that shouldn't shrink the draft.
+    crewSize: trip.target_crew_size ?? crewCount ?? 1,
     currency: trip.currency ?? undefined,
     budgetPerPersonGBP:
       trip.target_budget_pp !== null ? Number(trip.target_budget_pp) : undefined,
