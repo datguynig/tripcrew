@@ -498,3 +498,44 @@ export type DraftLead = {
   unsubscribed_at: string | null;
   created_at: string;
 };
+
+export type ConciergeProposal =
+  | {
+      kind: "activity_add";
+      payload: {
+        name: string;
+        description: string;
+        location?: string;
+        day?: number;
+      };
+      applied_at?: string;
+    }
+  | {
+      kind: "schedule_revise";
+      payload: {
+        day: number;
+        slots: { time: string; title: string; note?: string }[];
+      };
+      applied_at?: string;
+    }
+  | {
+      kind: "budget_change";
+      payload: {
+        new_target_pp: number;
+        currency: string;
+        reason: string;
+      };
+      applied_at?: string;
+    };
+
+export type ConciergeMessage = {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: "user" | "assistant";
+  content: string;
+  proposals: ConciergeProposal[] | null;
+  token_in: number | null;
+  token_out: number | null;
+  created_at: string;
+};

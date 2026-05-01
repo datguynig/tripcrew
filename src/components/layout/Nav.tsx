@@ -12,6 +12,7 @@ const TABS = [
   { code: "04", label: "Bookings", path: "/bookings" },
   { code: "05", label: "Ledger", path: "/ledger" },
   { code: "06", label: "Feed", path: "/feed" },
+  { code: "07", label: "Concierge", path: "/concierge" },
 ] as const;
 
 type Tab = {
@@ -34,7 +35,7 @@ export function Nav({
   const feedUnread = feedUnreadByTrip[tripId] ?? 0;
   const base = `/trips/${slug}`;
   const tabs: Tab[] = isAdmin
-    ? [...TABS, { code: "07", label: "Admin", path: "/admin" }]
+    ? [...TABS, { code: "08", label: "Admin", path: "/admin" }]
     : [...TABS];
 
   return (
