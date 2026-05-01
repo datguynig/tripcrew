@@ -329,14 +329,10 @@ export async function runConciergeAgent({
       break;
     }
 
-    contents.push({
-      role: "model",
-      parts: parts.map((p) => {
-        if (p.functionCall) return { functionCall: p.functionCall };
-        if (p.text) return { text: p.text };
-        return { text: "" };
-      }),
-    });
+    // Pass the model's parts back verbatim — Gemini 3 includes a
+    // thoughtSignature on functionCall parts that must round-trip
+    // unchanged on the next turn or the API rejects with 400.
+    contents.push({ role: "model", parts });
 
     const toolResponses = await Promise.all(
       functionCalls.map(async (call) => {
