@@ -145,6 +145,16 @@ async function sendViaResend(input: TeaserEmail, label: string): Promise<void> {
   const from =
     process.env.TEASER_EMAIL_FROM ?? "Yenkoh <hello@yenkoh.com>";
 
+  // Playwright e2e tests submit applications using @test.local addresses
+  // (a reserved TLD that doesn't route). Skip the Resend call so the test
+  // rows don't trigger "approved but email failed" in the founder queue.
+  if (/@(test\.local|example\.com|example\.test)$/i.test(input.to)) {
+    console.info(`[${label}] non-routable test address — skipping send`, {
+      to: input.to,
+    });
+    return;
+  }
+
   if (!apiKey) {
     console.warn(`[${label}] RESEND_API_KEY missing — skipping send`, {
       to: input.to,
