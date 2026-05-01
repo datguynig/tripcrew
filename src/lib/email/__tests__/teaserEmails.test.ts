@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  buildApplicationApprovedEmail,
+  buildApplicationReceivedEmail,
   buildDay7NudgeEmail,
   buildTeaserConfirmationEmail,
 } from "@/lib/email/teaserEmails";
@@ -154,4 +156,42 @@ test("buildTeaserConfirmationEmail title-cases multi-word slugs", () => {
     teaser: FIXTURE_TEASER,
   });
   assert.equal(email.subject, "Your Costa Rica draft is saved.");
+});
+
+test("buildApplicationReceivedEmail includes a usable founding-checkout link for linked drafts", () => {
+  const email = buildApplicationReceivedEmail({
+    email: "alex@example.com",
+    draft: {
+      id: "draft-123",
+      slug: "bali",
+      resumeToken: "tok-abc",
+    },
+  });
+
+  assert.match(
+    email.text,
+    /https:\/\/tripcrew\.app\/curated\/bali\/founding-checkout\?draft=draft-123&token=tok-abc/,
+  );
+});
+
+test("buildApplicationReceivedEmail omits founding-checkout when no draft is linked", () => {
+  const email = buildApplicationReceivedEmail({
+    email: "alex@example.com",
+    draft: null,
+  });
+
+  assert.doesNotMatch(email.text, /founding-checkout/);
+});
+
+test("buildApplicationApprovedEmail points to checkout and not legacy invite sign-in", () => {
+  const email = buildApplicationApprovedEmail({
+    email: "alex@example.com",
+    applicationId: "app-123",
+  });
+
+  assert.match(
+    email.text,
+    /https:\/\/tripcrew\.app\/api\/applications\/app-123\/checkout/,
+  );
+  assert.doesNotMatch(email.text, /\/sign-in\?invite=/);
 });

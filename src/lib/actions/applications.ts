@@ -53,18 +53,18 @@ export async function submitApplication(
 
   const autoDecisionAt = new Date(Date.now() + REVIEW_WINDOW_MS).toISOString();
 
-  // Resolve the originating draft's slug so the application-received email
-  // can deep-link to that trip's founding-checkout. If the application
-  // came in cold (no draft), draftSlug stays null and the email omits the
-  // skip-the-queue link.
-  let draftSlug: string | null = null;
+  // Resolve the originating draft so the application-received email can
+  // deep-link to the founding-checkout with the proof that page requires.
+  let emailDraft: { id: string; slug: string; resumeToken: string } | null = null;
   if (parsed.data.draft_lead_id) {
     const { data: draft } = await supabase
       .from("draft_leads")
-      .select("slug")
+      .select("id, slug, resume_token")
       .eq("id", parsed.data.draft_lead_id)
-      .maybeSingle<{ slug: string }>();
-    draftSlug = draft?.slug ?? null;
+      .maybeSingle<{ id: string; slug: string; resume_token: string }>();
+    emailDraft = draft
+      ? { id: draft.id, slug: draft.slug, resumeToken: draft.resume_token }
+      : null;
   }
 
   const { data: inserted, error } = await supabase
@@ -113,7 +113,7 @@ export async function submitApplication(
       await sendApplicationReceived(
         buildApplicationReceivedEmail({
           email: recipientEmail,
-          slug: draftSlug,
+          draft: emailDraft,
         }),
       );
     } catch (err) {

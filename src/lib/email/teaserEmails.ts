@@ -50,6 +50,14 @@ function resumeUrl(slug: string, draftId: string, resumeToken: string): string {
   return `${siteUrl()}/api/teaser/resume?id=${draftId}&token=${resumeToken}&slug=${slug}`;
 }
 
+function foundingCheckoutUrl(
+  slug: string,
+  draftId: string,
+  resumeToken: string,
+): string {
+  return `${siteUrl()}/curated/${slug}/founding-checkout?draft=${draftId}&token=${resumeToken}`;
+}
+
 function unsubscribeUrl(draftId: string, resumeToken: string): string {
   return `${siteUrl()}/api/teaser/unsubscribe?id=${draftId}&token=${resumeToken}`;
 }
@@ -181,15 +189,15 @@ export async function sendDay7Nudge(input: TeaserEmail): Promise<void> {
 
 export type BuildApplicationReceivedInput = {
   email: string;
-  // The originating draft's slug, used to deep-link the skip-the-queue
-  // founding-checkout. When null (cold apply with no draft), the email
-  // omits the founding-spot upsell rather than guessing a slug.
-  slug: string | null;
+  // The originating draft unlocks a direct founding-checkout link. When null
+  // (cold apply with no draft), the email omits the upsell rather than
+  // linking to a hold page that cannot prove draft ownership.
+  draft: { id: string; slug: string; resumeToken: string } | null;
 };
 
 export function buildApplicationReceivedEmail({
   email,
-  slug,
+  draft,
 }: BuildApplicationReceivedInput): TeaserEmail {
   const lines: string[] = [
     `We got your Crew Plus application for Cohort 01.`,
@@ -197,11 +205,11 @@ export function buildApplicationReceivedEmail({
     `We're reviewing in weekly batches. Expect a decision in your inbox within seven days.`,
   ];
 
-  if (slug) {
+  if (draft) {
     lines.push(
       ``,
       `Don't want to wait? Skip the queue with a founding spot. £179/year, price-locked for life, 500 limited:`,
-      `${siteUrl()}/curated/${slug}/founding-checkout`,
+      foundingCheckoutUrl(draft.slug, draft.id, draft.resumeToken),
     );
   }
 
