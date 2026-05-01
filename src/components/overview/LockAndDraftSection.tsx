@@ -4,7 +4,7 @@ import {
   EnrichedDraftSchema,
   type Draft,
 } from "@/lib/ai/schema";
-import type { LivePricing } from "@/lib/types";
+import type { DraftProgress, LivePricing } from "@/lib/types";
 import { BasicDraftView } from "./BasicDraftView";
 import { DraftingFlow } from "./DraftingFlow";
 import { EnrichedDraftView } from "./EnrichedDraftView";
@@ -23,6 +23,7 @@ type Props = {
   lastPriceRefreshAt: string | null;
   livePricing?: LivePricing | null;
   briefStale?: boolean;
+  draftProgress?: DraftProgress | null;
 };
 
 function parseDraft(
@@ -51,6 +52,7 @@ export function LockAndDraftSection({
   lastPriceRefreshAt,
   livePricing,
   briefStale = false,
+  draftProgress = null,
 }: Props) {
   const draft = parseDraft(enrichedDraft, enrichedDraftTier);
   const hasDraft = draft !== null;
@@ -91,6 +93,7 @@ export function LockAndDraftSection({
           userId={userId}
           destination={destination}
           initialDraftedAt={enrichedDraftGeneratedAt}
+          initialProgress={draftProgress}
         />
       )}
 

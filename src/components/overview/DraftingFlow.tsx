@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { generateLockAndDraft } from "@/lib/actions/lockAndDraft";
 import { createClient } from "@/lib/supabase/client";
+import type { DraftProgress, TripMeta } from "@/lib/types";
 import { DraftingProgress } from "./DraftingProgress";
 
 type Props = {
@@ -14,9 +15,10 @@ type Props = {
   userId: string;
   destination: string;
   // The server's view of enriched_draft_generated_at at render time.
-  // When realtime delivers an UPDATE with a different (newer) value, we
-  // know drafting completed and refresh the route.
   initialDraftedAt: string | null;
+  // Server-rendered draft_progress so we don't flash an empty state
+  // before realtime kicks in.
+  initialProgress: DraftProgress | null;
 };
 
 export function DraftingFlow({
@@ -24,23 +26,22 @@ export function DraftingFlow({
   userId,
   destination,
   initialDraftedAt,
+  initialProgress,
 }: Props) {
   const router = useRouter();
   const toast = useToast();
   const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [upgradeError, setUpgradeError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<DraftProgress | null>(initialProgress);
 
-  // Drafting state is true when:
-  //   - The user just clicked the CTA (local pending), OR
-  //   - The lock dialog redirected here with ?drafting=1, OR
-  //   - We're awaiting an in-flight after() draft (signaled by URL param)
   const justLocked = searchParams.get("drafting") === "1";
   const [draftingFromUrl, setDraftingFromUrl] = useState(justLocked);
-  const isDrafting = pending || draftingFromUrl;
+  // We're "drafting" when the server reports an in-flight progress, OR
+  // the user just clicked the CTA, OR the lock dialog redirected.
+  const isDrafting = pending || draftingFromUrl || (progress !== null && !progress.error);
+  const errored = progress?.error ?? null;
 
-  // Realtime: subscribe to this trip's row and refresh when enriched_draft
-  // lands. Closes the SSR-to-realtime race per project pattern.
   useEffect(() => {
     const supabase = createClient();
     const channelId =
@@ -60,10 +61,14 @@ export function DraftingFlow({
         (payload) => {
           const next = (payload.new ?? {}) as {
             enriched_draft_generated_at?: string | null;
+            meta?: TripMeta | null;
           };
+          // Update progress UI from real server stage transitions.
+          const nextProgress = next.meta?.draft_progress ?? null;
+          setProgress(nextProgress);
+
           const nextAt = next.enriched_draft_generated_at ?? null;
           if (nextAt && nextAt !== initialDraftedAt) {
-            // Strip the ?drafting=1 param if it's there before refreshing.
             if (searchParams.get("drafting")) {
               const url = new URL(window.location.href);
               url.searchParams.delete("drafting");
@@ -75,8 +80,6 @@ export function DraftingFlow({
         },
       )
       .subscribe((status) => {
-        // Catch-up refresh on SUBSCRIBED — covers the case where the
-        // after() draft completed in the SSR-to-subscribe gap.
         if (status !== "SUBSCRIBED") return;
         router.refresh();
       });
@@ -88,6 +91,7 @@ export function DraftingFlow({
 
   const handleClick = () => {
     setUpgradeError(null);
+    setProgress(null);
     startTransition(async () => {
       const result = await generateLockAndDraft({ tripId, userId });
       if (result.success) {
@@ -107,8 +111,34 @@ export function DraftingFlow({
     });
   };
 
+  if (errored) {
+    return (
+      <div className="border border-err/40 bg-err/[0.06] mb-10 px-7 py-8 grid gap-4">
+        <div className="flex items-center gap-2">
+          <span className="w-[6px] h-[6px] rounded-full bg-err" aria-hidden />
+          <span className="label-sm text-err">Drafting failed</span>
+        </div>
+        <p className="text-[14px] text-fg-2 leading-[1.55] max-w-[560px]">
+          {errored.message}
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button
+            tone="accent"
+            size="md"
+            onClick={handleClick}
+            disabled={pending}
+          >
+            {pending ? "Retrying…" : "Retry draft"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (isDrafting) {
-    return <DraftingProgress destination={destination} />;
+    return (
+      <DraftingProgress destination={destination} progress={progress} />
+    );
   }
 
   return (

@@ -1,5 +1,11 @@
 "use server";
 
+// Lock & draft can take 20-40s with a Gemini retry. Default Vercel
+// timeout would clip the function mid-call. 90s is well under the
+// Pro plan ceiling and gives headroom for one retry on schema
+// validation failure.
+export const maxDuration = 90;
+
 import { z } from "zod";
 import { canGenerateDraft } from "@/lib/gates";
 import { getUserPlan, hasProAccessForTrip } from "@/lib/plan";
@@ -29,6 +35,8 @@ import type {
   AiOccasion,
   AiPreferences,
   AiVibeTag,
+  DraftProgress,
+  DraftStage,
   TripMeta,
   TripPin,
 } from "@/lib/types";
@@ -182,6 +190,21 @@ export async function generateLockAndDraft(
     };
   }
 
+  const startedAt = new Date().toISOString();
+  const writeProgress = async (
+    stage: DraftStage,
+    detail?: string,
+  ): Promise<void> => {
+    const progress: DraftProgress = { stage, startedAt };
+    if (detail) progress.detail = detail;
+    await supabase
+      .from("trips")
+      .update({
+        meta: { ...(trip.meta ?? {}), draft_progress: progress },
+      })
+      .eq("id", tripId);
+  };
+
   try {
     let draft: Draft;
     let placesCalls = 0;
@@ -191,12 +214,14 @@ export async function generateLockAndDraft(
     let model = getGeminiModelName();
 
     if (tier === "enriched") {
+      await writeProgress("places", "Pulling live places near " + ctx.destination);
       const enriched = await enrichDestination({
         destination: ctx.destination,
         vibeQueries: vibePlacesQueries(ctx.vibes),
       });
       placesCalls = enriched.placesCalls;
 
+      await writeProgress("weather", `Checking weather for ${ctx.startDate}…${ctx.endDate}`);
       const weather =
         enriched.resolved && ctx.startDate && ctx.endDate
           ? await getWeatherForecast(
@@ -221,9 +246,10 @@ export async function generateLockAndDraft(
         weather,
         flightSearchUrl,
       );
-      // Gemini occasionally undershoots schema floors (e.g. <6 activities,
-      // <3 bookings). Retry once silently before surfacing the error to
-      // the user — Pioneers paid for this to work, not for them to retry.
+
+      await writeProgress("drafting", "Drafting itinerary, hotels, and budget");
+      // Retry on Zod failure; the wrapper feeds the validation error
+      // back to Gemini on attempt 2 with explicit fix instructions.
       const result = await callWithRetryOnSchemaError(prompt, EnrichedDraftSchema);
 
       draft = result.data;
@@ -232,6 +258,7 @@ export async function generateLockAndDraft(
       durationMs = result.durationMs;
       model = result.model;
     } else {
+      await writeProgress("drafting", "Drafting summary and themes");
       const prompt = buildBasicDraftPrompt(ctx);
       const result = await callWithRetryOnSchemaError(prompt, BasicDraftSchema);
 
@@ -242,13 +269,20 @@ export async function generateLockAndDraft(
       model = result.model;
     }
 
+    await writeProgress("saving", "Saving plan");
+
     const estimatedCostGBP = estimateGeminiCostGBP(inputTokens, outputTokens);
     const nowIso = new Date().toISOString();
 
     if (tier === "enriched") {
       const setup = (draft as EnrichedDraft).setup;
+      // Drop draft_progress on success — the page will see "no progress
+      // marker + enriched_draft_generated_at populated" and render the
+      // finished plan.
+      const { draft_progress: _drop, ...metaWithoutProgress } = trip.meta ?? {};
+      void _drop;
       const nextMeta: TripMeta = {
-        ...(trip.meta ?? {}),
+        ...metaWithoutProgress,
         spec_grid: setup.specGrid,
         schedule: setup.schedule,
       };
@@ -368,6 +402,21 @@ export async function generateLockAndDraft(
       p_trip_id: tripId,
       p_is_trial: userPlan === "trial",
     });
+
+    // Surface the failure on the trips row so the client can render an
+    // error state with a Retry button instead of just spinning.
+    const friendlyMessage = classifyDraftError(err);
+    const failedProgress: DraftProgress = {
+      stage: "drafting",
+      startedAt,
+      error: { message: friendlyMessage, retryable: true },
+    };
+    await service
+      .from("trips")
+      .update({
+        meta: { ...(trip.meta ?? {}), draft_progress: failedProgress },
+      })
+      .eq("id", tripId);
 
     const message = err instanceof Error ? err.message : String(err);
     await logAiUsage({

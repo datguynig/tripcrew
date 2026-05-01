@@ -188,6 +188,7 @@ export default async function TripOverview({
         lastPriceRefreshAt={trip.last_price_refresh_at}
         livePricing={trip.meta?.live_pricing ?? null}
         briefStale={briefStale}
+        draftProgress={trip.meta?.draft_progress ?? null}
       />
     </>
   );

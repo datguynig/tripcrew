@@ -1,37 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { DraftStage, DraftProgress } from "@/lib/types";
 
-const STAGES = [
-  { label: "Mapping the destination", duration: 2500 },
-  { label: "Pulling live places (food, hotels, sights)", duration: 4000 },
-  { label: "Drafting the day-by-day itinerary", duration: 6000 },
-  { label: "Estimating budget bands", duration: 2500 },
-  { label: "Polishing", duration: 2000 },
+const STAGES: { id: DraftStage; label: string }[] = [
+  { id: "places", label: "Pulling live places" },
+  { id: "weather", label: "Checking the weather" },
+  { id: "drafting", label: "Drafting itinerary, hotels, and budget" },
+  { id: "saving", label: "Saving the plan" },
 ];
 
-export function DraftingProgress({ destination }: { destination: string }) {
-  const [stageIdx, setStageIdx] = useState(0);
+function indexOfStage(id: DraftStage | undefined): number {
+  if (!id) return 0;
+  const i = STAGES.findIndex((s) => s.id === id);
+  return i === -1 ? 0 : i;
+}
+
+export function DraftingProgress({
+  destination,
+  progress,
+}: {
+  destination: string;
+  progress: DraftProgress | null;
+}) {
   const [elapsed, setElapsed] = useState(0);
+  const stageIdx = indexOfStage(progress?.stage);
+  const startedAt = progress?.startedAt
+    ? Date.parse(progress.startedAt)
+    : Date.now();
 
   useEffect(() => {
-    const start = Date.now();
     const interval = window.setInterval(() => {
-      const now = Date.now() - start;
-      setElapsed(now);
-      let acc = 0;
-      let idx = STAGES.length - 1;
-      for (let i = 0; i < STAGES.length; i++) {
-        acc += STAGES[i].duration;
-        if (now < acc) {
-          idx = i;
-          break;
-        }
-      }
-      setStageIdx(idx);
-    }, 200);
+      setElapsed(Date.now() - startedAt);
+    }, 1000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [startedAt]);
 
   return (
     <div className="border border-accent/40 bg-accent/[0.04] mb-10 px-7 py-10 max-[640px]:px-5 max-[640px]:py-8">
@@ -48,20 +51,16 @@ export function DraftingProgress({ destination }: { destination: string }) {
         <span className="text-accent">.</span>
       </h3>
 
-      <ol className="grid gap-3 max-w-[520px]">
+      <ol className="grid gap-3 max-w-[560px]">
         {STAGES.map((stage, i) => {
           const done = i < stageIdx;
           const active = i === stageIdx;
           return (
             <li
-              key={stage.label}
+              key={stage.id}
               className={[
                 "flex items-center gap-3 text-[14px] leading-[1.5]",
-                done
-                  ? "text-fg-3"
-                  : active
-                    ? "text-fg"
-                    : "text-fg-3/60",
+                done ? "text-fg-3" : active ? "text-fg" : "text-fg-3/60",
               ].join(" ")}
             >
               <span
@@ -81,18 +80,24 @@ export function DraftingProgress({ destination }: { destination: string }) {
                 {stage.label}
                 {active && "…"}
               </span>
+              {active && progress?.detail && (
+                <span className="text-fg-3/80 text-[12px]">
+                  · {progress.detail}
+                </span>
+              )}
             </li>
           );
         })}
       </ol>
 
       <p className="mt-7 text-[12px] text-fg-3 leading-[1.5] max-w-[520px]">
-        This usually lands in 10-20 seconds. The page will update on its own.
-        {elapsed > 25000 && (
+        This usually lands in 10-25 seconds. The page will update on its
+        own.
+        {elapsed > 35000 && (
           <>
             {" "}
-            Still drafting. Tight schemas can need a second pass; give it
-            another 10 seconds before retrying.
+            Still working. Drafts can take longer when the model retries
+            for higher-quality output.
           </>
         )}
       </p>

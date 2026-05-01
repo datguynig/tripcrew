@@ -208,6 +208,21 @@ export type LivePricing = {
   };
 };
 
+export type DraftStage =
+  | "places"
+  | "weather"
+  | "drafting"
+  | "validating"
+  | "saving"
+  | "done";
+
+export type DraftProgress = {
+  stage: DraftStage;
+  startedAt: string;
+  detail?: string;
+  error?: { message: string; retryable: boolean };
+};
+
 export type TripMeta = {
   spec_grid?: SpecItem[];
   schedule?: ScheduleItem[];
@@ -219,6 +234,10 @@ export type TripMeta = {
   // "Regenerate plan" banner on the trip overview.
   brief_updated_at?: string;
   live_pricing?: LivePricing;
+  // Live progress for an in-flight Lock & Draft. Cleared on success.
+  // On failure, stage stays + error is set so the client can render
+  // a Retry button with the actual reason.
+  draft_progress?: DraftProgress;
 };
 
 export type Trip = {
