@@ -195,3 +195,29 @@ test("buildApplicationApprovedEmail points to checkout and not legacy invite sig
   );
   assert.doesNotMatch(email.text, /\/sign-in\?invite=/);
 });
+
+test("buildApplicationApprovedEmail surfaces both annual and monthly CTAs when annual is wired", () => {
+  const email = buildApplicationApprovedEmail({
+    email: "alex@example.com",
+    applicationId: "app-123",
+    annualEnabled: true,
+  });
+
+  assert.match(
+    email.text,
+    /https:\/\/tripcrew\.app\/api\/applications\/app-123\/checkout\?interval=annual/,
+  );
+  assert.match(email.text, /£79\/year/);
+  assert.match(email.text, /£9\/month/);
+});
+
+test("buildApplicationApprovedEmail omits annual CTA when annual env is unset", () => {
+  const email = buildApplicationApprovedEmail({
+    email: "alex@example.com",
+    applicationId: "app-123",
+    annualEnabled: false,
+  });
+
+  assert.doesNotMatch(email.text, /interval=annual/);
+  assert.doesNotMatch(email.text, /£79\/year/);
+});

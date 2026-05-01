@@ -6,7 +6,17 @@ import { siteOriginFromRequestUrl } from "@/lib/url/siteOrigin";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function resolvePriceId(): string | null {
+type Interval = "monthly" | "annual";
+
+function parseInterval(request: Request): Interval {
+  const value = new URL(request.url).searchParams.get("interval");
+  return value === "annual" ? "annual" : "monthly";
+}
+
+function resolvePriceId(interval: Interval): string | null {
+  if (interval === "annual") {
+    return process.env.STRIPE_PRICE_ID_ANNUAL ?? null;
+  }
   return process.env.STRIPE_PRICE_ID ?? null;
 }
 
@@ -56,9 +66,12 @@ export async function GET(
   }
 
   const origin = siteOrigin(request);
-  const priceId = resolvePriceId();
+  const interval = parseInterval(request);
+  const priceId = resolvePriceId(interval);
   if (!priceId) {
-    console.error("crew-plus checkout: STRIPE_PRICE_ID is unset");
+    const envVar =
+      interval === "annual" ? "STRIPE_PRICE_ID_ANNUAL" : "STRIPE_PRICE_ID";
+    console.error(`crew-plus checkout: ${envVar} is unset`);
     return NextResponse.json(
       { error: "Crew Plus checkout is not configured." },
       { status: 500 },
@@ -78,6 +91,7 @@ export async function GET(
       cancel_url: `${origin}/`,
       metadata: {
         kind: "crew_plus",
+        interval,
         application_id: application.id,
         draft_lead_id: application.draft_lead_id ?? "",
       },

@@ -69,6 +69,7 @@ export async function approveApplication(
       buildApplicationApprovedEmail({
         email: application.email,
         applicationId,
+        annualEnabled: !!process.env.STRIPE_PRICE_ID_ANNUAL,
       }),
     );
   } catch (err) {

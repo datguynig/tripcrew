@@ -231,26 +231,52 @@ export async function sendApplicationReceived(
 export type BuildApplicationApprovedInput = {
   email: string;
   applicationId: string;
+  // True when STRIPE_PRICE_ID_ANNUAL is configured at approval time.
+  // When true, the email surfaces both annual and monthly CTAs so the
+  // applicant picks at click. When false, the email links to monthly
+  // only — same shape as before annual was wired.
+  annualEnabled?: boolean;
 };
 
 export function buildApplicationApprovedEmail({
   email,
   applicationId,
+  annualEnabled = false,
 }: BuildApplicationApprovedInput): TeaserEmail {
-  const checkoutUrl = `${siteUrl()}/api/applications/${applicationId}/checkout`;
+  const baseUrl = `${siteUrl()}/api/applications/${applicationId}/checkout`;
+  const monthlyUrl = baseUrl;
+  const annualUrl = `${baseUrl}?interval=annual`;
+
+  const lines: string[] = [
+    `You're in. Welcome to Crew Plus, Cohort 01.`,
+    ``,
+    `Tap to set up billing and get started:`,
+  ];
+
+  if (annualEnabled) {
+    lines.push(
+      ``,
+      `Pay annually (£79/year, save 27%):`,
+      annualUrl,
+      ``,
+      `Or pay monthly (£9/month):`,
+      monthlyUrl,
+    );
+  } else {
+    lines.push(monthlyUrl);
+  }
+
+  lines.push(
+    ``,
+    `Once payment lands, you'll get a sign-in link by email and we'll seed your first trip from the draft you saved.`,
+    ``,
+    `— Tripcrew`,
+  );
+
   return {
     to: email,
     subject: `You're in. Crew Plus, Cohort 01.`,
-    text: [
-      `You're in. Welcome to Crew Plus, Cohort 01.`,
-      ``,
-      `Tap to set up billing and get started:`,
-      checkoutUrl,
-      ``,
-      `Once payment lands, you'll get a sign-in link by email and we'll seed your first trip from the draft you saved.`,
-      ``,
-      `— Tripcrew`,
-    ].join("\n"),
+    text: lines.join("\n"),
   };
 }
 
