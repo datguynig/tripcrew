@@ -10,6 +10,10 @@ import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
 import { formatMoney } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
+// Lock & draft can take 20-40s with a Gemini retry. The action runs
+// on this page's function invocation, so the page-level maxDuration
+// applies. 90s gives headroom for one retry.
+export const maxDuration = 90;
 
 function formatDateRange(start: string | null, end: string | null) {
   if (!start && !end) return "Dates TBD";

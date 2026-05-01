@@ -1,10 +1,8 @@
 "use server";
 
-// Lock & draft can take 20-40s with a Gemini retry. Default Vercel
-// timeout would clip the function mid-call. 90s is well under the
-// Pro plan ceiling and gives headroom for one retry on schema
-// validation failure.
-export const maxDuration = 90;
+// NOTE: maxDuration is set on the pages that invoke this action
+// (/trips/[slug]/destinations/page.tsx and /trips/[slug]/page.tsx)
+// since "use server" files can only export async functions.
 
 import { z } from "zod";
 import { canGenerateDraft } from "@/lib/gates";

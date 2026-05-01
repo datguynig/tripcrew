@@ -11,6 +11,10 @@ import { Destinations } from "@/components/destinations/Destinations";
 import type { DestinationCandidate, DestinationVote } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
+// Lock dialog → lockAndStartDraft kicks off generateLockAndDraft via
+// after(); both run on this page's function invocation, so the
+// page-level maxDuration governs them.
+export const maxDuration = 90;
 
 export default async function DestinationsPage({
   params,
