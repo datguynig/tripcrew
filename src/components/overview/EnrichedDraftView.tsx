@@ -352,11 +352,7 @@ function WhereToStaySection({
 
       {hasQuotes && (
         <div className="grid gap-3">
-          <div className="grid gap-3 grid-cols-3 max-[760px]:grid-cols-1">
-            {quotes.slice(0, 3).map((q, i) => (
-              <HotelCard key={`${q.place_id ?? q.name}-${i}`} quote={q} isPioneer={isPioneer} />
-            ))}
-          </div>
+          {renderHotelLayout(quotes.slice(0, 3), isPioneer)}
           {!isPioneer && (
             <div className="text-[13px] text-fg-2">
               Pioneer to see live prices ·{" "}
@@ -394,6 +390,104 @@ function WhereToStaySection({
         </div>
       )}
     </section>
+  );
+}
+
+function renderHotelLayout(quotes: HotelQuote[], isPioneer: boolean) {
+  if (quotes.length === 1) {
+    return <FeaturedHotelCard quote={quotes[0]} isPioneer={isPioneer} />;
+  }
+  const gridClass =
+    quotes.length === 2
+      ? "grid gap-3 grid-cols-2 max-[520px]:grid-cols-1"
+      : "grid gap-3 grid-cols-3 max-[520px]:grid-cols-1";
+  return (
+    <div className={gridClass}>
+      {quotes.map((q, i) => (
+        <HotelCard
+          key={`${q.place_id ?? q.name}-${i}`}
+          quote={q}
+          isPioneer={isPioneer}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FeaturedHotelCard({
+  quote,
+  isPioneer,
+}: {
+  quote: HotelQuote;
+  isPioneer: boolean;
+}) {
+  const sym = currencySymbol(quote.price_per_night.currency);
+  const target = quote.deeplink || "#";
+  const Wrapper = quote.deeplink
+    ? ({ children }: { children: React.ReactNode }) => (
+        <a
+          href={target}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="border border-line bg-bg-2 hover:bg-bg-3 transition-colors grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] max-[640px]:grid-cols-1 items-stretch"
+        >
+          {children}
+        </a>
+      )
+    : ({ children }: { children: React.ReactNode }) => (
+        <div className="border border-line bg-bg-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] max-[640px]:grid-cols-1 items-stretch">
+          {children}
+        </div>
+      );
+
+  return (
+    <Wrapper>
+      {quote.thumbnail_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={quote.thumbnail_url}
+          alt=""
+          className="w-full h-full object-cover bg-bg-3 border-r border-line min-h-[220px] max-[640px]:border-r-0 max-[640px]:border-b max-[640px]:aspect-[4/3] max-[640px]:min-h-0"
+        />
+      ) : (
+        <div
+          aria-hidden
+          className="w-full h-full bg-bg-3 border-r border-line min-h-[220px] max-[640px]:border-r-0 max-[640px]:border-b max-[640px]:aspect-[4/3] max-[640px]:min-h-0"
+        />
+      )}
+      <div className="p-6 max-[640px]:p-5 grid gap-2.5 content-center">
+        <h5 className="text-[22px] max-[640px]:text-[18px] font-medium text-fg leading-[1.2] tracking-[-0.015em]">
+          {quote.name}
+        </h5>
+        <div className="flex items-baseline gap-2.5 flex-wrap">
+          {typeof quote.rating === "number" && (
+            <span className="text-[13px] text-fg-2">
+              <span className="text-warn">★</span> {quote.rating.toFixed(1)}
+            </span>
+          )}
+          {isPioneer ? (
+            <>
+              {typeof quote.rating === "number" && (
+                <span className="text-fg-3 text-[12px]">·</span>
+              )}
+              <span className="text-[15px] text-fg tabular">
+                {sym}
+                {quote.price_per_night.amount.toLocaleString()}
+                <span className="text-fg-3 text-[12px]"> /nt</span>
+                <span className="text-fg-3 text-[12px]"> · </span>
+                {sym}
+                {quote.total_price.amount.toLocaleString()}
+                <span className="text-fg-3 text-[12px]"> total</span>
+              </span>
+            </>
+          ) : (
+            <span className="text-[12px] text-fg-3">
+              See price on Booking.com
+            </span>
+          )}
+        </div>
+      </div>
+    </Wrapper>
   );
 }
 
