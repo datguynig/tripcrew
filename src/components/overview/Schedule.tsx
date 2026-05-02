@@ -12,6 +12,7 @@ import {
 } from "@/lib/actions/overviewInline";
 import { useToast } from "@/hooks/useToast";
 import type { ScheduleItem } from "@/lib/types";
+import { PlacePills } from "./PlacePills";
 
 type Props = {
   rows: ScheduleItem[];
@@ -222,6 +223,7 @@ export function Schedule({
                     emptyLabel="Body. Two sentences. Name specific venues."
                     className="text-fg-2 text-[14px] leading-[1.55]"
                   />
+                  <PlacePills places={row.places ?? []} />
                 </div>
                 {isAdmin && (
                   <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex items-start gap-1 pt-[3px]">
