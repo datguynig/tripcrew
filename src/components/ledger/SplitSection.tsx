@@ -166,12 +166,16 @@ export function SplitSection({
                 />
               ) : (
                 <span className="text-fg-3 text-right tabular-nums">
-                  {computedShare ? computedShare.share_amount.toFixed(2) : ""}
+                  {computedShare && total > 0
+                    ? computedShare.share_amount.toFixed(2)
+                    : "–"}
                 </span>
               )}
               {value.basis !== "exact" && (
                 <span className="text-fg-3 text-right tabular-nums text-[12px]">
-                  {computedShare ? `${computedShare.share_amount.toFixed(2)}` : "."}
+                  {computedShare && total > 0
+                    ? computedShare.share_amount.toFixed(2)
+                    : "–"}
                 </span>
               )}
             </label>
