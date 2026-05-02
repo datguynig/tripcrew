@@ -31,7 +31,7 @@ export function BookingPlaceLinks({ booking }: { booking: Booking }) {
           icon={<MapPinIcon className="w-3.5 h-3.5" />}
         />
       )}
-      {booking.website_url && (
+      {booking.website_url && booking.website_url !== booking.maps_url && (
         <IconLink
           href={booking.website_url}
           label={`Website for ${booking.title}`}

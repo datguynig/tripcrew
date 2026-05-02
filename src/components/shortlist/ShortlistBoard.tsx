@@ -222,8 +222,7 @@ export function ShortlistBoard({
                     href={a.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-0.5 mb-1
-                      text-[10px] font-mono tracking-[0.15em] uppercase
+                    className="label-sm inline-flex items-center gap-1 mt-0.5 mb-1
                       text-fg-3 hover:text-fg
                       transition-colors"
                   >
