@@ -84,7 +84,7 @@ export default async function JoinPage({
 
   const { data: members } = await service
     .from("trip_members")
-    .select("user_id, role, profiles!inner(name)")
+    .select("user_id, role, profiles!trip_members_user_id_fkey(name)")
     .eq("trip_id", trip.id);
 
   const crewMembers = (members ?? []).slice(0, 5).map((m: JoinMemberRow) => {

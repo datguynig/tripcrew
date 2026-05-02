@@ -53,12 +53,16 @@ export async function hasProAccessForTrip(
   if (await hasProAccess(userId)) return true;
 
   const supabase = await createClient();
+  // Disambiguate the FK — trip_members has both user_id_fkey and
+  // invited_by_fkey to profiles, so the bare `profiles!inner` form
+  // throws PGRST201 ("could not embed because more than one
+  // relationship was found").
   const { data, error } = await supabase
     .from("trip_members")
     .select(
       `
       user_id,
-      profiles!inner (
+      profiles!trip_members_user_id_fkey (
         stripe_subscription_status,
         trial_started_at
       )
@@ -105,12 +109,18 @@ export async function isPioneerForTrip(
   // userId is kept for API stability; the check is trip-scoped only.
   void userId;
   const supabase = await createClient();
+  // Disambiguate the FK — trip_members has both user_id_fkey and
+  // invited_by_fkey to profiles, so the bare `profiles!inner` form
+  // throws PGRST201 ("could not embed because more than one
+  // relationship was found"). This bug previously masked the entire
+  // Pioneer-tier rendering path: every Pioneer trip rendered Member
+  // UI because the function silently returned false on every call.
   const { data, error } = await supabase
     .from("trip_members")
     .select(
       `
       user_id,
-      profiles!inner (
+      profiles!trip_members_user_id_fkey (
         founding_crew_at,
         is_founder
       )
