@@ -6,7 +6,7 @@
 
 import { z } from "zod";
 import { canGenerateDraft } from "@/lib/gates";
-import { getUserPlan, hasProAccessForTrip } from "@/lib/plan";
+import { getUserPlan, hasProAccessForTrip, isPioneerForTrip } from "@/lib/plan";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { enrichDestination } from "@/lib/places/orchestrator";
 import { getWeatherForecast } from "@/lib/weather/client";
@@ -30,12 +30,18 @@ import {
 import { logAiUsage } from "@/lib/ai/usage";
 import { buildGoogleFlightsUrl } from "@/lib/deeplinks/builders";
 import { resolvePlaceNames, type ResolvedPlace } from "@/lib/places/resolveBatch";
+import { fetchHotelQuotes, fetchFlightPrices, serpApiEnabled } from "@/lib/serpapi/client";
+import { checkSerpApiBudget } from "@/lib/serpapi/costCap";
+import { resolveOriginIata, resolveDestinationIata } from "@/lib/iata";
 import type {
   AiOccasion,
   AiPreferences,
   AiVibeTag,
   DraftProgress,
   DraftStage,
+  ErrorEnvelope,
+  FlightPricing,
+  HotelPricing,
   TripMeta,
   TripPin,
 } from "@/lib/types";
@@ -375,6 +381,9 @@ export async function generateLockAndDraft(
         // shape — but the runtime mutation above attaches place_id /
         // maps_url / website_url. The cast crosses that boundary.
         schedule: setup.schedule as unknown as TripMeta["schedule"],
+        // Empty shell so realtime listeners see a "loading" state even if
+        // the fire-and-forget pricing call is reaped before it completes.
+        live_pricing: { flights: undefined, hotels: undefined },
       };
 
       const { error: updateError } = await supabase
@@ -494,6 +503,23 @@ export async function generateLockAndDraft(
           .insert(bookingRows);
         if (bookErr) {
           console.error("[generateLockAndDraft] bookings insert failed", bookErr);
+        }
+      }
+
+      // Spec B Phase 2: pricing fetch. Non-blocking — this runs AFTER the
+      // plan + bookings are committed. SerpApi failures cannot poison the
+      // draft. Hotels run for any pro; flights run only for Pioneer.
+      if (serpApiEnabled() && trip.start_date && trip.end_date && trip.destination) {
+        const cap = await checkSerpApiBudget();
+        if (cap.allowed) {
+          await runPricingFetch({
+            userId,
+            tripId,
+            trip,
+            tier: "enriched",
+          });
+        } else {
+          console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
         }
       }
     } else {
@@ -651,4 +677,146 @@ function classifyDraftError(err: unknown): string {
   }
 
   return "Drafting failed. Please retry in a moment.";
+}
+
+async function runPricingFetch(args: {
+  userId: string;
+  tripId: string;
+  trip: {
+    start_date: string | null;
+    end_date: string | null;
+    destination: string | null;
+    target_crew_size: number | null;
+    target_budget_pp?: number | string | null;
+    currency: string | null;
+    meta: TripMeta | null;
+    slug?: string;
+  };
+  tier: "enriched";
+}): Promise<void> {
+  const { userId, tripId, trip } = args;
+  if (!trip.start_date || !trip.end_date || !trip.destination) return;
+
+  const tripDays = Math.max(
+    1,
+    Math.round((Date.parse(trip.end_date) - Date.parse(trip.start_date)) / 86_400_000),
+  );
+  const rooms = Math.max(1, Math.ceil((trip.target_crew_size ?? 1) / 2));
+  const targetBudgetPp =
+    trip.target_budget_pp !== null && trip.target_budget_pp !== undefined
+      ? Number(trip.target_budget_pp)
+      : null;
+  const perRoomBudget =
+    targetBudgetPp && tripDays
+      ? (targetBudgetPp * 0.4) / tripDays * 2
+      : undefined;
+  const currency = trip.currency ?? "GBP";
+
+  let hotelQuotes: Awaited<ReturnType<typeof fetchHotelQuotes>> = null;
+  try {
+    hotelQuotes = await fetchHotelQuotes({
+      destination: trip.destination,
+      checkIn: trip.start_date,
+      checkOut: trip.end_date,
+      rooms,
+      perRoomBudget,
+      currency,
+    });
+  } catch (err) {
+    console.error("[lockAndDraft.pricing] hotels fetch threw", err);
+    hotelQuotes = null;
+  }
+
+  const refreshedAt = new Date().toISOString();
+  const buildError = (code: ErrorEnvelope["code"], message: string): ErrorEnvelope => ({
+    code,
+    message,
+    occurred_at: refreshedAt,
+  });
+
+  const hotels: HotelPricing =
+    hotelQuotes && hotelQuotes.length > 0
+      ? {
+          quotes: hotelQuotes,
+          refreshed_at: refreshedAt,
+          provider: "serpapi-google-hotels",
+          fetch_error: null,
+        }
+      : {
+          quotes: [],
+          refreshed_at: refreshedAt,
+          provider: "serpapi-google-hotels",
+          fetch_error: buildError("no_results", "SerpApi returned no hotels at draft time."),
+        };
+
+  const isPioneer = await isPioneerForTrip(userId, tripId);
+  let flights: FlightPricing | undefined;
+  if (isPioneer) {
+    const originRaw = trip.meta?.ai_preferences?.origin ?? null;
+    const originIata = resolveOriginIata(originRaw);
+    const destinationIata = resolveDestinationIata(trip.destination);
+    if (originIata && destinationIata) {
+      try {
+        const fp = await fetchFlightPrices({
+          originIata,
+          destinationIata,
+          outboundDate: trip.start_date,
+          returnDate: trip.end_date,
+          adults: Math.max(1, trip.target_crew_size ?? 1),
+          currency,
+        });
+        if (fp) {
+          flights = {
+            low: fp.low,
+            high: fp.high,
+            currency: fp.currency,
+            provider: "serpapi-google-flights",
+            refreshed_at: refreshedAt,
+            origin_iata: originIata,
+            destination_iata: destinationIata,
+            best_price: fp.best_price,
+            options: fp.options,
+            fetch_error: null,
+          };
+        }
+      } catch (err) {
+        console.error("[lockAndDraft.pricing] flights fetch threw", err);
+      }
+    }
+  }
+
+  // Persist the live_pricing into trips.meta. Re-read the latest meta
+  // so we don't clobber other concurrent writes.
+  const service = await createServiceClient();
+  const { data: latest } = await service
+    .from("trips")
+    .select("meta")
+    .eq("id", tripId)
+    .maybeSingle<{ meta: TripMeta | null }>();
+  const pricingMeta: TripMeta = {
+    ...(latest?.meta ?? {}),
+    live_pricing: { flights, hotels },
+  };
+  await service.from("trips").update({ meta: pricingMeta }).eq("id", tripId);
+
+  await logAiUsage({
+    userId,
+    tripId,
+    feature: "lock_and_draft_pricing_hotels",
+    model: "serpapi",
+    estimatedCostGBP: 0.012,
+    succeeded: hotels.fetch_error === null,
+    errorMessage: hotels.fetch_error?.message,
+  });
+  if (isPioneer) {
+    await logAiUsage({
+      userId,
+      tripId,
+      feature: "lock_and_draft_pricing_flights",
+      model: "serpapi",
+      estimatedCostGBP: 0.012,
+      succeeded: !!flights && !flights.fetch_error,
+      errorMessage: flights?.fetch_error?.message,
+    });
+  }
 }

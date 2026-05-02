@@ -4,6 +4,8 @@ export type UsageFeature =
   | "lock_and_draft_basic"
   | "lock_and_draft_enriched"
   | "lock_and_draft_places_resolution"
+  | "lock_and_draft_pricing_hotels"
+  | "lock_and_draft_pricing_flights"
   | "price_refresh"
   | "candidate_draft_basic"
   | "curated_teaser"
