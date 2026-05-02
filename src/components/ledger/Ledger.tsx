@@ -342,18 +342,35 @@ export function Ledger({
   const handleDelete = (id: string) => {
     const removed = expenses.find((e) => e.id === id);
     if (!removed) return;
+    // Mirror the server's shared-timestamp pattern in deleteExpense so paid
+    // and owed totals stay aligned during the undo window. The timestamp
+    // also scopes the undo restore: we only un-soft-delete participant rows
+    // whose deleted_at matches this exact stamp, leaving any pre-existing
+    // soft-deleted participants alone.
+    const ts = new Date().toISOString();
     setExpenses((prev) =>
-      prev.map((e) =>
-        e.id === id ? { ...e, deleted_at: new Date().toISOString() } : e,
+      prev.map((e) => (e.id === id ? { ...e, deleted_at: ts } : e)),
+    );
+    setParticipants((prev) =>
+      prev.map((p) =>
+        p.expense_id === id && !p.deleted_at ? { ...p, deleted_at: ts } : p,
       ),
     );
     toast.undo({
       message: `Deleted "${removed.description}"`,
       duration: 5000,
-      onUndo: () =>
+      onUndo: () => {
         setExpenses((prev) =>
           prev.map((e) => (e.id === id ? { ...e, deleted_at: null } : e)),
-        ),
+        );
+        setParticipants((prev) =>
+          prev.map((p) =>
+            p.expense_id === id && p.deleted_at === ts
+              ? { ...p, deleted_at: null }
+              : p,
+          ),
+        );
+      },
       onCommit: () =>
         startTransition(async () => {
           await deleteExpense(id);

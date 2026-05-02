@@ -96,7 +96,7 @@ export function ExpenseRow({
             <EditIcon className="w-3.5 h-3.5" />
           </Button>
         )}
-        {isMine && !expense.deleted_at && (
+        {(isMine || isAdmin) && !expense.deleted_at && (
           <Button
             variant="icon"
             onClick={onDelete}
