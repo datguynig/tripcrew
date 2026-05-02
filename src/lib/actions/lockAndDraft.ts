@@ -533,12 +533,16 @@ export async function generateLockAndDraft(
       // are non-blocking.
       if (serpApiEnabled() && trip.start_date && trip.end_date && trip.destination) {
         after(async () => {
-          const cap = await checkSerpApiBudget();
-          if (!cap.allowed) {
-            console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
-            return;
+          try {
+            const cap = await checkSerpApiBudget();
+            if (!cap.allowed) {
+              console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
+              return;
+            }
+            await runPricingFetch({ userId, tripId, trip, tier: "enriched" });
+          } catch (err) {
+            console.error("[lockAndDraft.pricing] background pricing failed", err);
           }
-          await runPricingFetch({ userId, tripId, trip, tier: "enriched" });
         });
       }
     } else {
