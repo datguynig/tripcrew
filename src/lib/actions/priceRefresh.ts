@@ -97,10 +97,17 @@ export async function refreshPrices(
     .maybeSingle<TripRow>();
 
   if (tripError || !trip) {
+    console.warn("[priceRefresh] trip not found", { tripId, error: tripError });
     return { success: false, error: "Trip not found.", upgradeCta: false };
   }
 
   if (!trip.destination || !trip.start_date || !trip.end_date) {
+    console.warn("[priceRefresh] trip incomplete", {
+      tripId,
+      destination: trip.destination,
+      start_date: trip.start_date,
+      end_date: trip.end_date,
+    });
     return {
       success: false,
       error: "Lock the destination and dates before checking prices.",
@@ -110,22 +117,13 @@ export async function refreshPrices(
 
   const origin = trip.meta?.ai_preferences?.origin ?? null;
   const originIata = resolveOriginIata(origin);
-  if (!originIata) {
-    return {
-      success: false,
-      error:
-        "Couldn't resolve your origin airport. Set an origin in /admin → Trip preferences.",
-      upgradeCta: false,
-    };
-  }
-
   const destinationIata = resolveDestinationIata(trip.destination);
+
+  if (!originIata) {
+    console.warn("[priceRefresh] origin IATA unresolvable — skipping flights", { tripId, origin });
+  }
   if (!destinationIata) {
-    return {
-      success: false,
-      error: `No IATA mapping for "${trip.destination}". Live pricing is limited to common destinations for now.`,
-      upgradeCta: false,
-    };
+    console.warn("[priceRefresh] destination IATA unresolvable — skipping flights", { tripId, destination: trip.destination });
   }
 
   const adults = Math.max(1, trip.target_crew_size ?? 1);
@@ -145,15 +143,23 @@ export async function refreshPrices(
 
   const rooms = Math.max(1, Math.ceil((trip.target_crew_size ?? 1) / 2));
 
+  // Flights need IATA on both sides. Hotels search by destination string
+  // and don't need IATA at all — they should run independently. When
+  // IATA is missing we skip the flight call entirely and surface the
+  // reason on flight_error.
+  const flightTask = (originIata && destinationIata)
+    ? fetchFlightPrices({
+        originIata,
+        destinationIata,
+        outboundDate: trip.start_date,
+        returnDate: trip.end_date,
+        adults,
+        currency,
+      })
+    : Promise.resolve(null);
+
   const [flightResult, hotelResult] = await Promise.allSettled([
-    fetchFlightPrices({
-      originIata,
-      destinationIata,
-      outboundDate: trip.start_date,
-      returnDate: trip.end_date,
-      adults,
-      currency,
-    }),
+    flightTask,
     fetchHotelQuotes({
       destination: trip.destination,
       checkIn: trip.start_date,
@@ -177,6 +183,7 @@ export async function refreshPrices(
   let flights: FlightPricing | undefined;
   let flightError: ErrorEnvelope | null = null;
   if (flightResult.status === "fulfilled" && flightResult.value) {
+    // fulfilled only when flightTask was the real fetch (both IATA non-null)
     const fp = flightResult.value;
     flights = {
       low: Math.round(fp.low),
@@ -184,14 +191,26 @@ export async function refreshPrices(
       currency: fp.currency,
       provider: "serpapi-google-flights",
       refreshed_at: refreshedAt,
-      origin_iata: originIata,
-      destination_iata: destinationIata,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      origin_iata: originIata!,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      destination_iata: destinationIata!,
       best_price: fp.best_price,
       options: fp.options,
       fetch_error: null,
     };
   } else if (flightResult.status === "rejected") {
     flightError = buildError("provider_error", String(flightResult.reason));
+  } else if (!originIata) {
+    flightError = buildError(
+      "missing_input",
+      "Couldn't resolve your origin airport. Set an origin in /admin → Trip preferences.",
+    );
+  } else if (!destinationIata) {
+    flightError = buildError(
+      "missing_input",
+      `No IATA mapping for "${trip.destination}". Live flight pricing is limited to common destinations.`,
+    );
   } else {
     flightError = buildError("no_results", "SerpApi returned no flights for this route + dates.");
   }
@@ -222,19 +241,24 @@ export async function refreshPrices(
 
   if (flightError) {
     // Preserve previous live_pricing.flights if any, attach the per-side error.
+    // If we never had IATA codes, keep flights undefined and let the UI
+    // render the deeplink fallback rather than a phantom row.
     const prev = trip.meta?.live_pricing?.flights;
-    flights = prev
-      ? { ...prev, fetch_error: flightError }
-      : {
-          low: 0,
-          high: 0,
-          currency,
-          provider: "serpapi-google-flights",
-          refreshed_at: refreshedAt,
-          origin_iata: originIata,
-          destination_iata: destinationIata,
-          fetch_error: flightError,
-        };
+    if (prev) {
+      flights = { ...prev, fetch_error: flightError };
+    } else if (originIata && destinationIata) {
+      flights = {
+        low: 0,
+        high: 0,
+        currency,
+        provider: "serpapi-google-flights",
+        refreshed_at: refreshedAt,
+        origin_iata: originIata,
+        destination_iata: destinationIata,
+        fetch_error: flightError,
+      };
+    }
+    // else: leave flights undefined; UI shows deeplink fallback.
   }
 
   const livePricing: LivePricing = { flights, hotels };
