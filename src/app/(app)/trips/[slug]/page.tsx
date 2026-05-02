@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
 import { isPioneerForTrip } from "@/lib/plan";
+import { resolveOriginIata, resolveDestinationIata } from "@/lib/iata";
 import { Hero } from "@/components/layout/Hero";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
@@ -74,6 +75,12 @@ export default async function TripOverview({
   const bookingsDone = bookings?.filter((b) => b.done).length ?? 0;
   const kittyTotal =
     expenses?.reduce((sum, e) => sum + Number(e.amount), 0) ?? 0;
+
+  const originRaw = trip.meta?.ai_preferences?.origin ?? null;
+  const originIata = resolveOriginIata(originRaw);
+  const destinationIata = trip.destination
+    ? resolveDestinationIata(trip.destination)
+    : null;
 
   const planExists = !!trip.enriched_draft_generated_at;
   const briefStale =
@@ -163,6 +170,8 @@ export default async function TripOverview({
               startDate={trip.start_date}
               endDate={trip.end_date}
               destination={trip.destination}
+              originIata={originIata}
+              destinationIata={destinationIata}
             />
             <Schedule
               rows={scheduleRows}
@@ -189,6 +198,8 @@ export default async function TripOverview({
               startDate={trip.start_date}
               endDate={trip.end_date}
               destination={trip.destination}
+              originIata={originIata}
+              destinationIata={destinationIata}
             />
             <Schedule
               rows={scheduleRows}

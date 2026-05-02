@@ -28,6 +28,11 @@ type Props = {
   startDate?: string | null;
   endDate?: string | null;
   destination?: string | null;
+  // Resolved from trip prefs so hasOriginIata is correct even before
+  // live pricing arrives (Member sees no prices but still needs the
+  // "Add origin airport" prompt when origin is unset).
+  originIata?: string | null;
+  destinationIata?: string | null;
 };
 
 function buildFlightFallback({
@@ -82,6 +87,8 @@ export function SpecGrid({
   startDate,
   endDate,
   destination,
+  originIata,
+  destinationIata,
 }: Props) {
   const toast = useToast();
   const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
@@ -115,7 +122,10 @@ export function SpecGrid({
   }
 
   const tier: "member" | "pioneer" = isPioneer ? "pioneer" : "member";
-  const hasOriginIata = !!livePricing?.flights?.origin_iata;
+  // Derive from trip prefs (resolved at page level), not from livePricing.
+  // This ensures hasOriginIata is correct for Member-tier and for trips
+  // where pricing hasn't arrived yet.
+  const hasOriginIata = !!originIata;
   const hasFlightOptions = (livePricing?.flights?.options?.length ?? 0) > 0;
   const hasHotelQuotes = (livePricing?.hotels?.quotes?.length ?? 0) > 0;
   const showStayCell = (targetCrewSize ?? 1) > 1 && hasHotelQuotes;
@@ -123,8 +133,8 @@ export function SpecGrid({
   const rooms = Math.max(1, Math.ceil((targetCrewSize ?? 1) / 2));
 
   const flightFallbackUrl = buildFlightFallback({
-    originIata: livePricing?.flights?.origin_iata,
-    destinationIata: livePricing?.flights?.destination_iata,
+    originIata: originIata ?? undefined,
+    destinationIata: destinationIata ?? undefined,
     departDate: startDate,
     returnDate: endDate,
     adults,
