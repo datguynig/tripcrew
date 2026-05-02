@@ -40,7 +40,7 @@ This spec defines a relational money model that handles both flows, multi-curren
 
 The ledger keeps a hybrid model: `expenses` records purchases, but money flow between members lives in two new normalized tables — `payment_obligations` (what is owed) and `payments` (what has actually moved). A third small table, `payment_due_reminders_sent`, makes the cron idempotent. Subset and weighted shares live in a fourth new table, `expense_participants`, which replaces the originally-proposed `participants` JSONB column. JSONB stays only for `expenses.schedule`, where it describes the shape of the payback timeline rather than financial state.
 
-Editing an expense never silently mutates obligations. Instead, affected open obligations transition to `superseded`, and new obligations are generated from the updated participant + schedule data. Payments stay attached to their original obligation rows. A "Reissued" admin panel lists superseded obligations whose payments need to be paired with the new ones.
+Editing an expense never silently mutates obligations. Instead, affected open obligations transition to `superseded`, and new obligations are generated from the updated participant + schedule data. Payments may **migrate** from the superseded obligation to the new one when an auto-pair is unambiguous (rules below). When a pair is ambiguous (overpayment, no matching new slot), the verified payments stay attached to the superseded obligation and surface in the Reissued admin panel for explicit handling.
 
 Soft-delete is mandatory for expenses, participants, obligations, and payments. Hard deletes do not exist for money rows.
 
@@ -80,8 +80,9 @@ type Schedule =
 ```sql
 create table expense_participants (
   id uuid primary key default gen_random_uuid(),
-  expense_id uuid not null references expenses(id),
-  user_id text not null references profiles(id),
+  trip_id uuid not null references trips(id) on delete cascade,
+  expense_id uuid not null references expenses(id) on delete cascade,
+  user_id uuid not null references profiles(id) on delete cascade,
   share_amount numeric(12, 2) not null,             -- in trip currency
   share_basis text not null,                        -- "equal" | "percentage" | "exact"
   share_input numeric(12, 4) null,                  -- raw user input (e.g. 50 for 50%)
@@ -90,6 +91,7 @@ create table expense_participants (
   created_at timestamptz not null default now()
 );
 
+create index expense_participants_trip_idx on expense_participants (trip_id) where deleted_at is null;
 create index expense_participants_expense_id_idx on expense_participants (expense_id) where deleted_at is null;
 create index expense_participants_user_id_idx on expense_participants (user_id) where deleted_at is null;
 ```
@@ -103,11 +105,11 @@ When an expense is logged with the default even-split, the system creates one ro
 ```sql
 create table payment_obligations (
   id uuid primary key default gen_random_uuid(),
-  trip_id uuid not null references trips(id),
-  expense_id uuid null references expenses(id),     -- null = ad-hoc post-trip settlement (Phase 3)
+  trip_id uuid not null references trips(id) on delete cascade,
+  expense_id uuid null references expenses(id) on delete cascade, -- null = ad-hoc post-trip settlement (Phase 3)
   expense_version int null,                         -- version of expense when this obligation was created
-  debtor_id text not null references profiles(id),
-  creditor_id text not null references profiles(id),
+  debtor_id uuid not null references profiles(id) on delete restrict,
+  creditor_id uuid not null references profiles(id) on delete restrict,
   debtor_name_snapshot text not null,
   creditor_name_snapshot text not null,
   due_date date null,
@@ -116,11 +118,11 @@ create table payment_obligations (
   installment_index int null,                       -- which slot of the schedule
   status text not null default 'open',              -- 'open' | 'superseded' | 'voided'
   superseded_by uuid null references payment_obligations(id),
-  voided_by text null references profiles(id),
+  voided_by uuid null references profiles(id),
   voided_at timestamptz null,
   void_reason text null,
   created_at timestamptz not null default now(),
-  created_by text not null references profiles(id),
+  created_by uuid not null references profiles(id),
   check (debtor_id <> creditor_id)
 );
 
@@ -136,17 +138,17 @@ One row per (debtor, creditor, installment slot). For an expense with 4 non-paye
 ```sql
 create table payments (
   id uuid primary key default gen_random_uuid(),
-  obligation_id uuid not null references payment_obligations(id),
+  obligation_id uuid not null references payment_obligations(id) on delete restrict,
   amount numeric(12, 2) not null,                   -- positive; partial payments allowed
-  recorded_by text not null references profiles(id),
+  recorded_by uuid not null references profiles(id),
   recorded_at timestamptz not null default now(),
   status text not null default 'pending',           -- 'pending' | 'verified' | 'rejected' | 'voided'
-  verified_by text null references profiles(id),
+  verified_by uuid null references profiles(id),
   verified_at timestamptz null,
-  rejected_by text null references profiles(id),
+  rejected_by uuid null references profiles(id),
   rejected_at timestamptz null,
   rejection_note text null,
-  voided_by text null references profiles(id),
+  voided_by uuid null references profiles(id),
   voided_at timestamptz null,
   void_reason text null,
   note text null,                                   -- payment method, bank ref, freeform context
@@ -162,14 +164,24 @@ Rejected payments are non-destructive: the row stays with `status = 'rejected'`,
 
 ```sql
 create table payment_due_reminders_sent (
-  obligation_id uuid not null references payment_obligations(id),
-  reminder_date date not null,                      -- the date the reminder was for
+  trip_id uuid not null references trips(id) on delete cascade,
+  debtor_id uuid not null references profiles(id),
+  reminder_date date not null,                      -- the date the reminder was for (= due_date)
   sent_at timestamptz not null default now(),
-  primary key (obligation_id, reminder_date)
+  primary key (trip_id, debtor_id, reminder_date)
 );
 ```
 
-The cron filters on `obligation.due_date = current_date + 1` and inserts into this table only after the notification fans out. Composite primary key blocks duplicates on retries.
+Idempotency keys per **summary recipient**, not per obligation, because the cron coalesces a debtor's multiple obligations due on the same date into one notification. `(trip_id, debtor_id, reminder_date)` uniquely identifies one summary.
+
+The cron must commit the marker row and the notification together to avoid both duplicate fanout and silent missed reminders. Implementation: a Postgres function `record_payment_reminder_summary(trip_id, debtor_id, reminder_date, payload jsonb)` that does both inserts inside a single transaction. Caller logic:
+
+1. Query open obligations where `due_date = current_date + 1`, group by `(trip_id, debtor_id)`
+2. For each group, build the summary payload and call the RPC
+3. If RPC returns "already sent" (PK conflict on the marker), skip (idempotent)
+4. If RPC raises any other error, the transaction rolls back both the marker and the notification, and the cron's outer error-handling logs and retries on the next nightly run
+
+This trades a possible 24h reminder delay (if the cron hits a hard error mid-run) for never silently dropping a reminder. Acceptable for friend-group cash flow.
 
 ## State machines
 
@@ -183,7 +195,18 @@ open ──────────► superseded   (expense edited; new obligat
 
 `is_settled` is a derived view: an open obligation is settled when `SUM(payments.amount WHERE status = 'verified') >= obligation.amount`. A `provisionally_settled` flag covers the in-between state where pending payments would settle the obligation but haven't been verified yet.
 
-Superseded obligations are read-only history. Their payments stay attached and remain queryable for audit. The Reissued panel lists superseded obligations with non-zero verified payments where the new obligations don't auto-pair.
+Superseded obligations are read-only history once the regenerate step completes. Their `superseded_by` column points to the new obligation when an auto-pair succeeded; otherwise it stays null and the row surfaces in the Reissued panel.
+
+#### Auto-pairing rules
+
+When a regenerate produces a new obligation, the system looks for a candidate to pair with: an existing **superseded** obligation in the same expense's history with the same `(debtor, creditor, due_date)` and matching `installment_index` if both have one. Then:
+
+- **Exact match (`new.amount == sum(verified payments on old)`):** auto-pair. Migrate every payment row by updating `payment.obligation_id` to the new obligation. Set `old.superseded_by = new.id`. Log the pairing as an audit row in `notifications` (kind `payment_reissued`) to both parties.
+- **New is larger (`new.amount > sum(verified payments)`):** auto-pair. Migrate all payments. New obligation becomes partially paid; debtor still owes the difference. `old.superseded_by = new.id`.
+- **New is smaller (`new.amount < sum(verified payments)`):** **DO NOT auto-pair.** Leave payments on old; old.superseded_by stays null. Surface in the Reissued panel: "Old obligation £100 verified-paid, new obligation only £75. Resolve overpayment of £25." Admin can void the new obligation, manually re-pair after voiding excess payments, or (post-Phase 3) create an ad-hoc reverse obligation for the £25 credit.
+- **No matching old obligation:** no pairing needed; new obligation starts at zero paid.
+
+Pending and rejected payments never migrate. Only `verified` payments are subject to auto-pair logic. A `pending` payment on a superseded obligation surfaces in the Reissued panel as "needs reverification" — admin verifies (then it migrates) or rejects.
 
 ### Payment status
 
@@ -203,6 +226,20 @@ Superseded obligations are read-only history. Their payments stay attached and r
 
 Only `verified` payments count toward `obligation.is_settled`. `pending` and `rejected` and `voided` do not.
 
+#### Allowed transitions (enforced at the server-action layer + DB CHECK constraint)
+
+| From | To | Notes |
+|---|---|---|
+| `pending` | `verified` | Admin only |
+| `pending` | `rejected` | Creditor or admin |
+| `pending` | `voided` | Recorder ≤5 min, otherwise admin |
+| `verified` | `voided` | Admin only — "I shouldn't have verified that" |
+| `verified` | `rejected` | **Forbidden.** Must void first, then re-record + reject |
+| `rejected` | (any) | **Terminal.** Forbidden |
+| `voided` | (any) | **Terminal.** Forbidden |
+
+A subsequent recording from the debtor creates a *new* `payments` row in `pending`; rejected and voided rows stay in audit history.
+
 ## Authority model
 
 | Action | Allowed actors |
@@ -221,12 +258,12 @@ Only `verified` payments count toward `obligation.is_settled`. `pending` and `re
 ### What ships
 
 1. Migrations: extend `expenses`, create `expense_participants`, soft-delete columns, indexes
-2. Backfill migration: for each existing `expenses` row, create `expense_participants` rows for the current `target_crew_size` count of trip members with `share_basis = "equal"` and `share_amount = amount / N`
+2. Backfill migration: for each existing `expenses` row, create `expense_participants` rows for the trip's currently joined `trip_members` (NOT for the full `target_crew_size`). `share_basis = "equal"` and `share_amount = amount / target_crew_size` (preserving the historical even-split math). When `joined < target_crew_size`, the sum of created participant shares is **less than** `expenses.amount` by the missing-member share. The migration logs these trips with a `migration_warnings` JSONB on the trip's `meta` so admins see a one-time banner: "Some legacy expenses split across [target] but only [joined] crew members joined. The unallocated share is preserved as a payer-side credit you can resolve manually." See "Backfill edge case" in the Phase 1 edge cases below
 3. Logging form: opt-in expanding sections for "Paid in another currency" and "Customise split"
 4. Frankfurter integration in `src/lib/fx/` with a thin server action `getFxSuggestion(currency, amount, trip_currency, date)` that returns `{ suggested_amount, rate, rate_date, source }`. Manual-only fallback for unsupported currencies
 5. Ledger expense list: render participants summary ("Split 4 ways" or "4 of 5 · weighted") and FX badge ("€85 at 0.847")
 6. Settlement section: extend the existing balance computation to read from `expense_participants.share_amount` instead of even-split-derived from `target_crew_size`
-7. Soft-delete UX: deleted expenses hidden from list but reachable via admin "Show deleted" toggle. Restoring is a one-click action
+7. Soft-delete UX: deleted expenses hidden from list but reachable via admin "Show deleted" toggle. **Phase 1 restore semantics:** clear `deleted_at` on the expense + cascade-clear on participants. No obligations exist yet, so a one-click restore is safe. (Phase 2 introduces a different restore behavior — see that section.)
 
 ### What does NOT ship in Phase 1
 
@@ -270,7 +307,8 @@ Paid by                                                      [Me ▼]
 
 - **Unsupported currency.** Frankfurter does not list it. UI shows "We don't have a live rate for [XYZ]. Enter both amounts manually." Both fields editable; `fx_rate_source = "manual"` on save.
 - **Weekend FX log.** Banner under the suggested rate explains the rate is from the previous Friday's ECB close. User can still override.
-- **Backfill rounding.** When backfilling participants for legacy even-split expenses, the last participant's `share_amount` absorbs rounding remainder so the sum matches `expenses.amount` exactly.
+- **Backfill rounding.** When backfilling participants for legacy even-split expenses where joined == target_crew_size, the last participant's `share_amount` absorbs rounding remainder so the sum matches `expenses.amount` exactly.
+- **Backfill edge case — joined < target_crew_size.** Legacy ledger math used `target_crew_size` as the divisor regardless of how many people had actually joined. To preserve historical totals exactly, the backfill keeps using `amount / target_crew_size` per share but only creates rows for current `trip_members` (you cannot FK to a profile that doesn't exist). Result: `sum(participants.share_amount) < expenses.amount` for affected expenses. The shortfall is a "phantom share" that was always implicit and is now visible. Admin sees a per-trip migration banner once. Resolution paths: (a) accept the gap (the trip is over, nobody's joining, write off), (b) for an in-progress trip, add the missing crew via the existing invite flow and re-edit the affected expenses to include them.
 - **Member leaves trip mid-Phase 1.** Their `expense_participants` rows stay intact via `display_name_snapshot`. The settlement section shows them by their snapshot name with a small "Left trip" pill.
 - **Subset / weighted re-default check.** If admin opens an existing legacy expense in the edit form, the form opens in even-split mode showing the current rows. They can re-customise from there.
 
@@ -288,7 +326,7 @@ Paid by                                                      [Me ▼]
 8. Verification: server action `verifyPayment(paymentId)` checked admin-only; sets `verified_by`, `verified_at`
 9. Rejection: server action `rejectPayment(paymentId, note?)` checked creditor-or-admin; sets `rejected_by`, `rejected_at`, optional `rejection_note`. Row stays in audit trail
 10. Void: server action `voidPayment(paymentId, reason?)` checked recorder-within-5-min OR admin
-11. Cron route at `/api/cron/payment-reminders`: nightly, honors `CRON_SECRET`. Selects open obligations where `due_date = (current_date + 1)` and the `(obligation_id, reminder_date)` row is absent from `payment_due_reminders_sent`. Inserts the row before fanning out the notification (insert-first prevents duplicate fanout on retry)
+11. Cron route at `/api/cron/payment-reminders`: nightly, honors `CRON_SECRET`. Selects open obligations where `due_date = (current_date + 1)`, groups by `(trip_id, debtor_id)`, and for each group calls the `record_payment_reminder_summary` Postgres RPC which inserts the marker row and the notification atomically (see "`payment_due_reminders_sent`" above). Idempotency comes from the marker's PK conflict on retry; transactional commit prevents silent dropped reminders
 12. Notifications: 4 new kinds layered onto existing system
     - `payment_due_reminder` → debtor, 1 day before due_date
     - `payment_recorded` → creditor, on payment record
@@ -327,14 +365,14 @@ Tap a row to expand — shows payment history (all rows, including rejected with
 
 ### Edge cases
 
-- **Edit changes installment count from 3 to 4.** Existing 3 obligations transition to `superseded`. 4 new obligations generated. Verified payments on the old obligations stay attached. If the new schedule's `(debtor, creditor, due_date)` matches the old, system auto-pairs (logs each pairing for audit). Unmatched verified payments surface in the Reissued panel for admin
-- **Edit reduces participant set.** A removed participant's open obligations transition to `superseded`. Any verified payments on those superseded obligations represent a credit — surfaced in the Reissued panel for admin to void or convert into an ad-hoc obligation in the other direction (only relevant after Phase 3 ships, so v1 just leaves the credit in audit history)
+- **Edit changes installment count from 3 to 4.** Existing 3 obligations transition to `superseded`. 4 new obligations generated. Auto-pair runs per the rules in the data model section: when a new obligation matches an old `(debtor, creditor, due_date)` with new amount ≥ verified-payments-on-old, payments migrate to the new obligation. Old slots that had no payments are simply marked superseded with no migration. Slots without a counterpart in the new schedule (e.g., the dates shifted) surface in the Reissued panel
+- **Edit reduces participant set.** A removed participant's open obligations transition to `superseded`. Verified payments on those obligations stay on the superseded row (overpayment case in the auto-pair rules) and the Reissued panel offers admin: void the credit, or — once Phase 3 ships — convert it into an ad-hoc reverse obligation
 - **Overpayment.** A debtor records £200 toward a £150 obligation. The system stores the £200, computes `paid_amount > amount`, and flags the obligation as overpaid in the UI. Admin resolves manually (Phase 3 introduces the proper Settle-up flow that accepts these as ad-hoc credits)
 - **Partial payment + rejection.** Debtor records £50 toward £150. Creditor rejects the £50 (claim it didn't arrive). Row stays as `status=rejected`, paid_amount drops to £0. Debtor records again later
 - **Pending invitee as debtor.** v1 only creates obligations for current trip members. If admin tries to log an expense with a not-yet-joined participant, the form blocks with "Add the crew member first, then log this expense." The trip-invite-token-as-placeholder approach is in the backlog
-- **Cron retry.** Cron handler always inserts into `payment_due_reminders_sent` BEFORE fanning out. If insert fails on the unique constraint, the reminder was already sent today — skip
+- **Cron retry.** Marker insert and notification insert happen in one transaction inside the `record_payment_reminder_summary` RPC. PK conflict on `(trip_id, debtor_id, reminder_date)` means the summary was already sent today — skip. Any other RPC failure rolls back both the marker and the notification, so the next nightly run will retry. Worst case: a debtor sees their reminder ~24h late if the cron hits a hard error
 - **Trip timezone.** v1 interprets "1 day before due_date" as 24h before midnight UTC. A trip in Singapore with a 2026-06-01 due_date gets reminded at 2026-05-31 00:00 UTC, which is 2026-05-31 08:00 SGT. Document. Per-trip timezone is a backlog item
-- **Soft-deleted expense.** All linked obligations transition to `voided` with `void_reason = "expense soft-deleted"`. Linked payments stay (audit trail). Restoring the expense regenerates fresh obligations (does not reopen the voided ones)
+- **Soft-deleted expense (Phase 2).** All linked open obligations transition to `voided` with `void_reason = "expense soft-deleted"`. Linked payments stay (audit trail) and any verified payments surface in the Reissued panel as orphaned credit. **Restore semantics in Phase 2:** clearing `deleted_at` increments `expense.version` and runs a fresh `generateObligations`. The previously voided obligations stay voided (their void was authoritative); fresh ones are issued with the new version. Auto-pairing then runs against the still-attached payments per the rules above. This avoids "undo accidentally double-bills the crew" while preserving payment history
 
 ## Phase 3 — Post-trip settle-up
 
