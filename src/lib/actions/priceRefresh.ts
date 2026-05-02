@@ -5,9 +5,10 @@ import { canRefreshPrices } from "@/lib/gates";
 import { getUserPlan } from "@/lib/plan";
 import { logAiUsage } from "@/lib/ai/usage";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
-import { fetchFlightPrices, serpApiEnabled } from "@/lib/serpapi/client";
+import { fetchFlightPrices, fetchHotelQuotes, serpApiEnabled } from "@/lib/serpapi/client";
+import { checkSerpApiBudget } from "@/lib/serpapi/costCap";
 import { resolveDestinationIata, resolveOriginIata } from "@/lib/iata";
-import type { LivePricing, TripMeta } from "@/lib/types";
+import type { LivePricing, HotelPricing, FlightPricing, ErrorEnvelope, TripMeta } from "@/lib/types";
 
 export type PriceRefreshResult =
   | { success: true; refreshedAt: string }
@@ -20,6 +21,7 @@ type TripRow = {
   start_date: string | null;
   end_date: string | null;
   target_crew_size: number | null;
+  target_budget_pp: number | null;
   currency: string | null;
   meta: TripMeta | null;
 };
@@ -68,10 +70,28 @@ export async function refreshPrices(
     };
   }
 
+  const cap = await checkSerpApiBudget();
+  if (!cap.allowed) {
+    await logAiUsage({
+      userId,
+      tripId,
+      feature: "price_refresh",
+      model: "none",
+      estimatedCostGBP: 0,
+      succeeded: false,
+      errorMessage: "monthly_budget_cap",
+    });
+    return {
+      success: false,
+      error: "Monthly pricing budget reached. Refresh disabled until next month.",
+      upgradeCta: false,
+    };
+  }
+
   const { data: trip, error: tripError } = await supabase
     .from("trips")
     .select(
-      "id, slug, destination, start_date, end_date, target_crew_size, currency, meta",
+      "id, slug, destination, start_date, end_date, target_crew_size, target_budget_pp, currency, meta",
     )
     .eq("id", tripId)
     .maybeSingle<TripRow>();
@@ -111,32 +131,118 @@ export async function refreshPrices(
   const adults = Math.max(1, trip.target_crew_size ?? 1);
   const currency = trip.currency ?? "GBP";
 
-  const prices = await fetchFlightPrices({
-    originIata,
-    destinationIata,
-    outboundDate: trip.start_date,
-    returnDate: trip.end_date,
-    adults,
-    currency,
+  const tripDays = (() => {
+    if (!trip.start_date || !trip.end_date) return null;
+    const ms = Date.parse(trip.end_date) - Date.parse(trip.start_date);
+    if (!Number.isFinite(ms) || ms < 0) return null;
+    return Math.max(1, Math.round(ms / 86_400_000));
+  })();
+  const targetBudgetPp = trip.target_budget_pp ?? null;
+  const perRoomBudget =
+    targetBudgetPp && tripDays
+      ? (targetBudgetPp * 0.4) / tripDays * 2
+      : undefined;
+
+  const rooms = Math.max(1, Math.ceil((trip.target_crew_size ?? 1) / 2));
+
+  const [flightResult, hotelResult] = await Promise.allSettled([
+    fetchFlightPrices({
+      originIata,
+      destinationIata,
+      outboundDate: trip.start_date,
+      returnDate: trip.end_date,
+      adults,
+      currency,
+    }),
+    fetchHotelQuotes({
+      destination: trip.destination,
+      checkIn: trip.start_date,
+      checkOut: trip.end_date,
+      rooms,
+      perRoomBudget,
+      currency,
+    }),
+  ]);
+
+  const refreshedAt = new Date().toISOString();
+  const buildError = (
+    code: ErrorEnvelope["code"],
+    message: string,
+  ): ErrorEnvelope => ({
+    code,
+    message,
+    occurred_at: refreshedAt,
   });
 
-  if (!prices) {
-    await logAiUsage({
-      userId,
-      tripId,
-      feature: "price_refresh",
-      model: "none",
-      estimatedCostGBP: 0,
-      succeeded: false,
-      errorMessage: "SerpApi returned no prices",
-    });
-    return {
-      success: false,
-      error:
-        "No flights found for this route + dates. Try adjusting the trip dates.",
-      upgradeCta: false,
+  let flights: FlightPricing | undefined;
+  let flightError: ErrorEnvelope | null = null;
+  if (flightResult.status === "fulfilled" && flightResult.value) {
+    const fp = flightResult.value;
+    flights = {
+      low: Math.round(fp.low),
+      high: Math.round(fp.high),
+      currency: fp.currency,
+      provider: "serpapi-google-flights",
+      refreshed_at: refreshedAt,
+      origin_iata: originIata,
+      destination_iata: destinationIata,
+      best_price: fp.best_price,
+      options: fp.options,
+      fetch_error: null,
+    };
+  } else if (flightResult.status === "rejected") {
+    flightError = buildError("provider_error", String(flightResult.reason));
+  } else {
+    flightError = buildError("no_results", "SerpApi returned no flights for this route + dates.");
+  }
+
+  let hotels: HotelPricing;
+  if (hotelResult.status === "fulfilled" && hotelResult.value && hotelResult.value.length > 0) {
+    hotels = {
+      quotes: hotelResult.value,
+      refreshed_at: refreshedAt,
+      provider: "serpapi-google-hotels",
+      fetch_error: null,
+    };
+  } else if (hotelResult.status === "rejected") {
+    hotels = {
+      quotes: [],
+      refreshed_at: refreshedAt,
+      provider: "serpapi-google-hotels",
+      fetch_error: buildError("provider_error", String(hotelResult.reason)),
+    };
+  } else {
+    hotels = {
+      quotes: [],
+      refreshed_at: refreshedAt,
+      provider: "serpapi-google-hotels",
+      fetch_error: buildError("no_results", "SerpApi returned no hotels."),
     };
   }
+
+  if (flightError) {
+    // Preserve previous live_pricing.flights if any, attach the per-side error.
+    const prev = trip.meta?.live_pricing?.flights;
+    flights = prev
+      ? { ...prev, fetch_error: flightError }
+      : {
+          low: 0,
+          high: 0,
+          currency,
+          provider: "serpapi-google-flights",
+          refreshed_at: refreshedAt,
+          origin_iata: originIata,
+          destination_iata: destinationIata,
+          fetch_error: flightError,
+        };
+  }
+
+  const livePricing: LivePricing = { flights, hotels };
+
+  // If BOTH sides failed and we have nothing previously cached, we still
+  // want to record the attempt timestamp via record_price_refresh (so the
+  // rate limit advances) but signal failure to the user.
+  const bothFailed = flightError !== null && hotels.fetch_error !== null;
 
   const userPlan = await getUserPlan(userId);
   const { error: rpcError } = await supabase.rpc("record_price_refresh", {
@@ -151,19 +257,6 @@ export async function refreshPrices(
       upgradeCta: false,
     };
   }
-
-  const refreshedAt = new Date().toISOString();
-  const livePricing: LivePricing = {
-    flights: {
-      low: Math.round(prices.low),
-      high: Math.round(prices.high),
-      currency: prices.currency,
-      provider: "serpapi-google-flights",
-      refreshed_at: refreshedAt,
-      origin_iata: originIata,
-      destination_iata: destinationIata,
-    },
-  };
 
   const nextMeta: TripMeta = {
     ...(trip.meta ?? {}),
@@ -191,9 +284,21 @@ export async function refreshPrices(
     feature: "price_refresh",
     model: "none",
     estimatedCostGBP: 0,
-    succeeded: true,
+    succeeded: !bothFailed,
+    errorMessage: bothFailed
+      ? `flights:${flightError?.code ?? "ok"};hotels:${hotels.fetch_error?.code ?? "ok"}`
+      : undefined,
   });
 
   revalidatePath(`/trips/${trip.slug}`);
+
+  if (bothFailed) {
+    return {
+      success: false,
+      error: "Couldn't fetch fresh flight or hotel prices. Try again later.",
+      upgradeCta: false,
+    };
+  }
+
   return { success: true, refreshedAt };
 }
