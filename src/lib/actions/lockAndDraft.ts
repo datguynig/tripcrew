@@ -300,7 +300,7 @@ export async function generateLockAndDraft(
           await logAiUsage({
             userId,
             tripId,
-            feature: "lock_and_draft_enriched",
+            feature: "lock_and_draft_places_resolution",
             model: "google-places",
             estimatedCostGBP: 0,
             succeeded: false,

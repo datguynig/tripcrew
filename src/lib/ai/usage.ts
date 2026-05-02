@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 export type UsageFeature =
   | "lock_and_draft_basic"
   | "lock_and_draft_enriched"
+  | "lock_and_draft_places_resolution"
   | "price_refresh"
   | "candidate_draft_basic"
   | "curated_teaser"

@@ -1,4 +1,4 @@
-import { textSearch } from "@/lib/places/text-search";
+import { textSearch, type LocationBias } from "@/lib/places/text-search";
 
 export type ResolvedPlace = {
   place_id: string;
@@ -50,17 +50,19 @@ export async function resolvePlaceNames(
   names: string[],
   destinationLatLng: { lat: number; lng: number },
   radiusMeters: number,
-  options: { searchText?: PlaceSearchFn; maxLookups?: number } = {},
+  options: { searchText?: PlaceSearchFn; maxLookups?: number; locationBias?: LocationBias } = {},
 ): Promise<Map<string, ResolvedPlace>> {
+  const locationBias: LocationBias = options.locationBias ?? {
+    circle: {
+      center: { latitude: destinationLatLng.lat, longitude: destinationLatLng.lng },
+      radius: radiusMeters,
+    },
+  };
+
   const search: PlaceSearchFn =
     options.searchText ??
     (async (query) => {
-      const results = await textSearch({ query, maxResults: 1 });
-      // NOTE: this default path does NOT pass locationBias to Places, so
-      // the distance filter at line 100 may discard the top-1 result for
-      // common names (e.g. "Central Park" near Stockholm). Task 5 (lockAndDraft)
-      // MUST supply a bias-aware PlaceSearchFn via options.searchText —
-      // don't rely on this default in production.
+      const results = await textSearch({ query, maxResults: 1, locationBias });
       return results.map((r) => ({
         id: r.id,
         location: { latitude: r.location.latitude, longitude: r.location.longitude },
