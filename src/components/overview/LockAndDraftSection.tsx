@@ -1,7 +1,7 @@
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
   BasicDraftSchema,
-  EnrichedDraftSchema,
+  PersistedEnrichedDraftSchema,
   type Draft,
 } from "@/lib/ai/schema";
 import type {
@@ -44,12 +44,15 @@ function parseDraft(
   tier: "basic" | "enriched" | null,
 ): Draft | null {
   if (!raw || typeof raw !== "object") return null;
-  const schema = tier === "basic" ? BasicDraftSchema : EnrichedDraftSchema;
+  // Use the permissive read schema so legacy enriched drafts (generated
+  // before the Spec B unification pass added `setup`) still render. The
+  // strict generation-time schema lives in lockAndDraft.ts.
+  const schema = tier === "basic" ? BasicDraftSchema : PersistedEnrichedDraftSchema;
   const result = schema.safeParse(raw);
   if (result.success) return result.data;
   // Fall back: try the other schema in case the tier column drifted from
   // the persisted blob.
-  const alt = (tier === "basic" ? EnrichedDraftSchema : BasicDraftSchema).safeParse(raw);
+  const alt = (tier === "basic" ? PersistedEnrichedDraftSchema : BasicDraftSchema).safeParse(raw);
   return alt.success ? alt.data : null;
 }
 

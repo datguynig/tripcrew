@@ -124,6 +124,9 @@ export const SetupSchema = z.object({
   bookings: z.array(SetupBookingSchema).min(1).max(16),
 });
 
+// Strict generation-time shape: every Lock & Draft pass MUST emit these
+// fields (including `setup`) so the post-AI persistence step has a brief
+// to write into trips.meta.{spec_grid, schedule, ...}.
 export const EnrichedDraftSchema = z.object({
   tier: z.literal("enriched"),
   destination: z.string(),
@@ -150,6 +153,15 @@ export const EnrichedDraftSchema = z.object({
   generatedAt: z.string(),
 });
 
+// Read-time shape used by the trip-overview render path. Permissive on
+// fields that legacy persisted drafts predate: `setup` was added in the
+// Spec B Phase 1 unification pass, so existing rows generated before
+// then don't have it. The brief renders from trips.meta.spec_grid +
+// .schedule, so the plan view doesn't need `setup` to draw itself.
+export const PersistedEnrichedDraftSchema = EnrichedDraftSchema.extend({
+  setup: SetupSchema.optional(),
+});
+
 export const BasicDraftSchema = z.object({
   tier: z.literal("basic"),
   destination: z.string(),
@@ -160,9 +172,14 @@ export const BasicDraftSchema = z.object({
   generatedAt: z.string(),
 });
 
+// Strict type used inside the generation pipeline (lockAndDraft.ts) where
+// setup is guaranteed to be present post-validation. The persisted-read
+// path uses PersistedEnrichedDraft instead so legacy drafts without
+// setup still parse.
 export type EnrichedDraft = z.infer<typeof EnrichedDraftSchema>;
+export type PersistedEnrichedDraft = z.infer<typeof PersistedEnrichedDraftSchema>;
 export type BasicDraft = z.infer<typeof BasicDraftSchema>;
-export type Draft = EnrichedDraft | BasicDraft;
+export type Draft = PersistedEnrichedDraft | BasicDraft;
 export type DraftSetup = z.infer<typeof SetupSchema>;
 export type DraftSetupSpecCell = z.infer<typeof SetupSpecCellSchema>;
 export type DraftSetupScheduleRow = z.infer<typeof SetupScheduleRowSchema>;

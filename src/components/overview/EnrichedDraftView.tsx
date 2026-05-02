@@ -1,5 +1,6 @@
-import type { EnrichedDraft } from "@/lib/ai/schema";
+import type { PersistedEnrichedDraft } from "@/lib/ai/schema";
 import type {
+  FlightPricing,
   HotelPricing,
   HotelQuote,
   LivePricing,
@@ -9,7 +10,7 @@ import { currencySymbol } from "@/lib/currency";
 import { ArrowUpRightIcon, MapPinIcon } from "@/components/ui/icons";
 
 type Props = {
-  draft: EnrichedDraft;
+  draft: PersistedEnrichedDraft;
   generatedAt: string | null;
   currency: string;
   livePricing?: LivePricing | null;
@@ -56,7 +57,7 @@ export function EnrichedDraftView({
   placesIndex,
 }: Props) {
   const symbol = currencySymbol(currency);
-  const liveFlights = livePricing?.flights ?? null;
+  const liveFlights = getLiveFlightsForTier(livePricing?.flights ?? null, isPioneer);
   const liveHotels = livePricing?.hotels ?? null;
   const liveAccom = getLiveAccommodationForTier(liveHotels, isPioneer);
 
@@ -337,7 +338,7 @@ function WhereToStaySection({
   liveHotels,
   isPioneer,
 }: {
-  draft: EnrichedDraft;
+  draft: PersistedEnrichedDraft;
   liveHotels: HotelPricing | null;
   isPioneer: boolean;
 }) {
@@ -613,8 +614,23 @@ export function getLiveAccommodationForTier(
   return computeLiveAccommodation(liveHotels);
 }
 
+// Member must never see live flight pricing in the budget rows. Defense
+// in depth: lockAndDraft only fetches flights for Pioneer trips, but
+// stale data from a prior Pioneer state or a race during a tier change
+// could leak through. This helper makes the gate explicit at render
+// time so the BudgetRow renderer cannot accidentally show live numbers
+// to a Member.
+export function getLiveFlightsForTier(
+  liveFlights: FlightPricing | null,
+  isPioneer: boolean,
+): FlightPricing | null {
+  if (!isPioneer) return null;
+  if (!liveFlights || liveFlights.fetch_error) return null;
+  return liveFlights;
+}
+
 function totalLow(
-  b: EnrichedDraft["budget"]["perPersonGBP"],
+  b: PersistedEnrichedDraft["budget"]["perPersonGBP"],
   liveFlightsLow?: number,
   liveAccomLow?: number,
 ): number {
@@ -627,7 +643,7 @@ function totalLow(
 }
 
 function totalHigh(
-  b: EnrichedDraft["budget"]["perPersonGBP"],
+  b: PersistedEnrichedDraft["budget"]["perPersonGBP"],
   liveFlightsHigh?: number,
   liveAccomHigh?: number,
 ): number {
