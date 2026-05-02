@@ -53,12 +53,16 @@ export async function hasProAccessForTrip(
   if (await hasProAccess(userId)) return true;
 
   const supabase = await createClient();
+  // Disambiguate the FK — trip_members has both user_id_fkey and
+  // invited_by_fkey to profiles, so the bare `profiles!inner` form
+  // throws PGRST201 ("could not embed because more than one
+  // relationship was found").
   const { data, error } = await supabase
     .from("trip_members")
     .select(
       `
       user_id,
-      profiles!inner (
+      profiles!trip_members_user_id_fkey (
         stripe_subscription_status,
         trial_started_at
       )
@@ -87,11 +91,17 @@ export async function hasProAccessForTrip(
   });
 }
 
-// A trip is "Pioneer" iff at least one of its admins has
-// founding_crew_at set. This matches the "any admin pays" pricing
-// semantics used elsewhere — Pioneer status is a property of the
-// trip, not of the caller. (A Pioneer who joins a non-Pioneer trip
-// as a member should still see Member-tier UI for that trip.)
+// A trip is "Pioneer" iff at least one of its admins is a permanent
+// founder (`profiles.is_founder = true`) OR has `founding_crew_at` set
+// (i.e. completed founding-crew checkout). The two flags are separate
+// columns: `is_founder` marks the founder account and is forever-true;
+// `founding_crew_at` is stamped at checkout time for paid Pioneers.
+// Either one grants Pioneer-tier UI for the trip.
+//
+// This matches the "any admin pays" pricing semantics used elsewhere —
+// Pioneer status is a property of the trip, not of the caller. (A
+// Pioneer who joins a non-Pioneer trip as a member should still see
+// Member-tier UI for that trip.)
 export async function isPioneerForTrip(
   userId: string,
   tripId: string,
@@ -99,13 +109,20 @@ export async function isPioneerForTrip(
   // userId is kept for API stability; the check is trip-scoped only.
   void userId;
   const supabase = await createClient();
+  // Disambiguate the FK — trip_members has both user_id_fkey and
+  // invited_by_fkey to profiles, so the bare `profiles!inner` form
+  // throws PGRST201 ("could not embed because more than one
+  // relationship was found"). This bug previously masked the entire
+  // Pioneer-tier rendering path: every Pioneer trip rendered Member
+  // UI because the function silently returned false on every call.
   const { data, error } = await supabase
     .from("trip_members")
     .select(
       `
       user_id,
-      profiles!inner (
-        founding_crew_at
+      profiles!trip_members_user_id_fkey (
+        founding_crew_at,
+        is_founder
       )
     `,
     )
@@ -116,6 +133,6 @@ export async function isPioneerForTrip(
 
   return data.some((member) => {
     const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-    return !!p?.founding_crew_at;
+    return !!p?.founding_crew_at || p?.is_founder === true;
   });
 }
