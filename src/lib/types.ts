@@ -31,7 +31,22 @@ export type SpecItem = {
   // legacy reads but never authoritative. Symbol comes from trip.currency.
   amount?: number | null;
 };
-export type ScheduleItem = { day_label: string; heading: string; body: string };
+export type ScheduleItemPlace = {
+  name: string;
+  place_id: string | null;
+  maps_url: string | null;
+  website_url: string | null;
+};
+
+export type ScheduleItem = {
+  day_label: string;
+  heading: string;
+  body: string;
+  // Optional during the rollout window so existing rows without
+  // `places` still render. Always written by Lock & Draft after
+  // Phase 1 Task 5.
+  places?: ScheduleItemPlace[];
+};
 export type SectionLeadKey =
   | "overview"
   | "shortlist"
@@ -293,6 +308,9 @@ export type Activity = {
   rating: number | null;
   price_level: number | null;
   website_url: string | null;
+  // Spec B
+  place_id: string | null;
+  maps_url: string | null;
   created_at: string;
 };
 
@@ -313,6 +331,11 @@ export type Booking = {
   ai_drafted: boolean;
   created_at: string;
   created_by: string | null;
+  // Spec B
+  place_id: string | null;
+  maps_url: string | null;
+  website_url: string | null;
+  custom_url: string | null;
 };
 
 export type Expense = {
