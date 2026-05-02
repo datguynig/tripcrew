@@ -4,7 +4,14 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { addExpense, deleteExpense, dismissMigrationWarning } from "@/lib/actions/ledger";
 import { getFxSuggestionAction } from "@/lib/actions/fx";
-import type { Expense, ExpenseParticipant, ShareBasis } from "@/lib/types";
+import type {
+  Expense,
+  ExpenseParticipant,
+  Payment,
+  PaymentObligation,
+  Schedule,
+  ShareBasis,
+} from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { currencySymbol } from "@/lib/currency";
@@ -13,6 +20,9 @@ import { CurrencySection } from "./CurrencySection";
 import { SplitSection, type SplitState } from "./SplitSection";
 import { ExpenseRow } from "./ExpenseRow";
 import { EditExpenseDialog } from "./EditExpenseDialog";
+import { SchedulePaybackSection } from "./SchedulePaybackSection";
+import { ScheduleView } from "./ScheduleView";
+import { ReissuedPanel } from "./ReissuedPanel";
 
 type CrewOption = { id: string; name: string };
 
@@ -25,11 +35,14 @@ type PhantomWarning = {
 type Props = {
   initial: Expense[];
   participants: ExpenseParticipant[];
+  obligations: PaymentObligation[];
+  payments: Payment[];
   crew: CrewOption[];
   tripId: string;
   currentUserId: string;
   isAdmin: boolean;
   currency: string | null;
+  tripEndDate: string | null;
   phantomWarning: PhantomWarning;
 };
 
@@ -63,11 +76,14 @@ function buildInitialSplitState(crew: CrewOption[]): SplitState {
 export function Ledger({
   initial,
   participants: initialParticipants,
+  obligations,
+  payments,
   crew,
   tripId,
   currentUserId,
   isAdmin,
   currency,
+  tripEndDate,
   phantomWarning,
 }: Props) {
   const symbol = currencySymbol(currency);
@@ -79,9 +95,12 @@ export function Ledger({
   const [fxEnabled, setFxEnabled] = useState(false);
   const [fxState, setFxState] = useState<FxState>(initialFxState);
   const [splitState, setSplitState] = useState<SplitState>(() => buildInitialSplitState(crew));
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduleState, setScheduleState] = useState<Schedule>({ type: "none" });
   const [showDeleted, setShowDeleted] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"expenses" | "schedule">("expenses");
   const [, startTransition] = useTransition();
   const toast = useToast();
 
@@ -238,6 +257,32 @@ export function Ledger({
     return m;
   }, [participants]);
 
+  const paymentsByObligationId = useMemo(() => {
+    const m = new Map<string, Payment[]>();
+    for (const p of payments) {
+      const arr = m.get(p.obligation_id) ?? [];
+      arr.push(p);
+      m.set(p.obligation_id, arr);
+    }
+    return m;
+  }, [payments]);
+
+  // Orphans: superseded obligations with verified payments still attached
+  // and no superseded_by back-link. ReissuedPanel surfaces these for admins
+  // to void or reconcile.
+  const orphans = useMemo(() => {
+    const out: { obligation: PaymentObligation; verifiedTotal: number; payments: Payment[] }[] = [];
+    for (const o of obligations) {
+      if (o.status !== "superseded" || o.superseded_by) continue;
+      const ps = paymentsByObligationId.get(o.id) ?? [];
+      const verifiedTotal = ps
+        .filter((p) => p.status === "verified")
+        .reduce((s, p) => s + Number(p.amount), 0);
+      if (verifiedTotal > 0) out.push({ obligation: o, verifiedTotal, payments: ps });
+    }
+    return out;
+  }, [obligations, paymentsByObligationId]);
+
   const handleAdd = () => {
     const description = desc.trim();
     const amount = parseFloat(amt);
@@ -313,11 +358,15 @@ export function Ledger({
         }
       : {};
 
+    const schedulePayload = scheduleEnabled ? scheduleState : undefined;
+
     setDesc("");
     setAmt("");
     setFxEnabled(false);
     setFxState(initialFxState);
     setSplitState(buildInitialSplitState(crew));
+    setScheduleEnabled(false);
+    setScheduleState({ type: "none" });
 
     startTransition(async () => {
       const result = await addExpense({
@@ -326,6 +375,7 @@ export function Ledger({
         amount: finalAmount,
         ...fxPayload,
         participants: participantsInput,
+        schedule: schedulePayload,
       });
       if (result?.error) toast.error(result.error);
     });
@@ -409,6 +459,8 @@ export function Ledger({
 
   return (
     <>
+      <ReissuedPanel orphans={orphans} isAdmin={isAdmin} />
+
       {showBanner && (
         <div className="border border-warn/40 bg-warn/5 px-5 py-4 mb-6 flex items-start justify-between gap-4 max-[640px]:flex-col">
           <div className="flex-1 min-w-0">
@@ -465,6 +517,33 @@ export function Ledger({
         );
       })()}
 
+      <div className="flex gap-2 mb-5 font-mono text-[11px] uppercase tracking-[0.1em]">
+        <button
+          type="button"
+          onClick={() => setActiveTab("expenses")}
+          className={`px-3 py-2 border transition-colors ${
+            activeTab === "expenses"
+              ? "border-accent text-accent"
+              : "border-line text-fg-3 hover:border-line-2 hover:text-fg"
+          }`}
+        >
+          Expenses
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("schedule")}
+          className={`px-3 py-2 border transition-colors ${
+            activeTab === "schedule"
+              ? "border-accent text-accent"
+              : "border-line text-fg-3 hover:border-line-2 hover:text-fg"
+          }`}
+        >
+          Schedule
+        </button>
+      </div>
+
+      {activeTab === "expenses" && (
+      <>
       <div className="label-sm-wide text-fg-3 mb-3">LOG AN EXPENSE</div>
       <div className="grid gap-3 mb-5">
         <div className="grid grid-cols-[1fr_160px_auto] max-[520px]:grid-cols-1 gap-2">
@@ -509,6 +588,13 @@ export function Ledger({
           value={splitState}
           onChange={setSplitState}
           collapsible={false}
+        />
+        <SchedulePaybackSection
+          enabled={scheduleEnabled}
+          onToggle={setScheduleEnabled}
+          value={scheduleState}
+          onChange={setScheduleState}
+          tripEndDate={tripEndDate}
         />
       </div>
 
@@ -597,6 +683,18 @@ export function Ledger({
             Per expense participant shares. Phantom shares preserved as payer credit.
           </div>
         </div>
+      )}
+      </>
+      )}
+
+      {activeTab === "schedule" && (
+        <ScheduleView
+          obligations={obligations}
+          paymentsByObligationId={paymentsByObligationId}
+          currentUserId={currentUserId}
+          isAdmin={isAdmin}
+          currency={tripCurrency}
+        />
       )}
 
       {editingExpense && (
