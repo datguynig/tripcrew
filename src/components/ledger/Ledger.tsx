@@ -82,7 +82,6 @@ export function Ledger({
   const [participants, setParticipants] = useState<ExpenseParticipant[]>(initialParticipants);
   const [desc, setDesc] = useState("");
   const [amt, setAmt] = useState("");
-  const [paidBy, setPaidBy] = useState(currentUserId);
   const [fxEnabled, setFxEnabled] = useState(false);
   const [fxState, setFxState] = useState<FxState>(initialFxState);
   const [splitEnabled, setSplitEnabled] = useState(false);
@@ -235,6 +234,7 @@ export function Ledger({
       paid.set(e.paid_by, (paid.get(e.paid_by) ?? 0) + Number(e.amount));
     }
     for (const p of participants) {
+      if (p.deleted_at) continue;
       owed.set(p.user_id, (owed.get(p.user_id) ?? 0) + Number(p.share_amount));
     }
     return crew.map((c) => ({
@@ -247,6 +247,7 @@ export function Ledger({
   const participantsByExpense = useMemo(() => {
     const m = new Map<string, ExpenseParticipant[]>();
     for (const p of participants) {
+      if (p.deleted_at) continue;
       const arr = m.get(p.expense_id) ?? [];
       arr.push(p);
       m.set(p.expense_id, arr);
@@ -385,8 +386,6 @@ export function Ledger({
     [expenses],
   );
 
-  // paidBy is surfaced in the select UI below; not yet wired through to the action (Phase 1 limitation).
-  void paidBy;
 
   return (
     <>
@@ -429,7 +428,7 @@ export function Ledger({
       </div>
 
       <div className="grid gap-3 mb-5">
-        <div className="grid grid-cols-[1fr_160px_140px_auto] max-[640px]:grid-cols-1 gap-2">
+        <div className="grid grid-cols-[1fr_160px_auto] max-[520px]:grid-cols-1 gap-2">
           <input
             type="text"
             value={desc}
@@ -452,18 +451,6 @@ export function Ledger({
             placeholder={`Amount (${symbol})`}
             className={INPUT_SM}
           />
-          <select
-            value={paidBy}
-            onChange={(e) => setPaidBy(e.target.value)}
-            aria-label="Paid by"
-            className={INPUT_SM}
-          >
-            {crew.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.id === currentUserId ? "Me" : c.name}
-              </option>
-            ))}
-          </select>
           <Button onClick={handleAdd}>Log</Button>
         </div>
 

@@ -277,9 +277,14 @@ export async function deleteExpense(id: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  // Share one timestamp between the expense and participant rows so
+  // restoreExpense can scope the participant restore to exactly the
+  // rows soft-deleted at delete time (not pre-edit historical rows).
+  const deletedAt = new Date().toISOString();
+
   const { data, error } = await supabase
     .from("expenses")
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: deletedAt })
     .eq("id", parsed.data)
     .eq("paid_by", user.id)
     .is("deleted_at", null)
@@ -288,10 +293,9 @@ export async function deleteExpense(id: string) {
   if (error) return { error: error.message };
   if (!data) return { error: "Only the payer can delete this" };
 
-  // Cascade soft-delete to participants
   await supabase
     .from("expense_participants")
-    .update({ deleted_at: new Date().toISOString() })
+    .update({ deleted_at: deletedAt })
     .eq("expense_id", parsed.data)
     .is("deleted_at", null);
 
@@ -326,11 +330,25 @@ export async function restoreExpense(id: string) {
     if (m?.role !== "admin") return { error: "Not authorised" };
   }
 
+  // Read the expense's deleted_at BEFORE clearing it; use the timestamp
+  // to scope the participant restore so we only un-soft-delete the rows
+  // that were soft-deleted as part of the same delete operation. Pre-edit
+  // historical participant rows (with an earlier deleted_at) stay deleted.
+  const { data: snap } = await supabase
+    .from("expenses")
+    .select("deleted_at")
+    .eq("id", parsed.data)
+    .maybeSingle<{ deleted_at: string | null }>();
+
   await supabase.from("expenses").update({ deleted_at: null }).eq("id", parsed.data);
-  await supabase
-    .from("expense_participants")
-    .update({ deleted_at: null })
-    .eq("expense_id", parsed.data);
+
+  if (snap?.deleted_at) {
+    await supabase
+      .from("expense_participants")
+      .update({ deleted_at: null })
+      .eq("expense_id", parsed.data)
+      .eq("deleted_at", snap.deleted_at);
+  }
 
   await revalidateTrip(row.trip_id);
   return { ok: true };
