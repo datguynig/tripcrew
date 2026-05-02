@@ -290,12 +290,22 @@ export async function refreshPrices(
     }
   }
 
+  const service = await createServiceClient();
+
+  // Re-read meta immediately before the write to avoid clobbering any
+  // concurrent writes (background draft regeneration, polaroid edits,
+  // brief edits) that may have completed during the SerpApi window.
+  // Mirrors the pattern in src/lib/actions/lockAndDraft.ts.
+  const { data: latestTrip } = await service
+    .from("trips")
+    .select("meta")
+    .eq("id", tripId)
+    .maybeSingle<{ meta: TripMeta | null }>();
   const nextMeta: TripMeta = {
-    ...(trip.meta ?? {}),
+    ...(latestTrip?.meta ?? trip.meta ?? {}),
     live_pricing: livePricing,
   };
 
-  const service = await createServiceClient();
   const { error: updateError } = await service
     .from("trips")
     .update({ meta: nextMeta })
