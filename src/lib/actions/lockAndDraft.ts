@@ -330,7 +330,7 @@ export async function generateLockAndDraft(
         }
         if (Array.isArray(row.places)) {
           row.places = row.places.map((p) => {
-            const r = p?.name ? resolvedPlaces.get(p.name) : null;
+            const r = p?.name ? resolvedPlaces.get(p.name.trim().toLowerCase()) : null;
             return {
               name: p.name,
               place_id: r?.place_id ?? null,
@@ -468,7 +468,7 @@ export async function generateLockAndDraft(
       const bookingBase = (lastBooking?.position ?? 0) + 1;
 
       const bookingRows = setup.bookings.map((b, i) => {
-        const r = b.place_name ? resolvedPlaces.get(b.place_name) : null;
+        const r = b.place_name ? resolvedPlaces.get(b.place_name.trim().toLowerCase()) : null;
         const titleKey = (b.title ?? "").toLowerCase().trim();
         const preserved = bookingSnapshot.get(titleKey);
         return {
@@ -592,7 +592,7 @@ async function callWithRetryOnSchemaError<T extends z.ZodTypeAny>(
     const effectivePrompt =
       attempt === 0
         ? prompt
-        : `${prompt}\n\nIMPORTANT: A previous attempt failed schema validation with these errors. Fix them. Pay particular attention to required field names — every object listed below must have BOTH a 'name' (string) AND a 'description' (string) field, never 'title' or other variants.\n\n${lastErrMessage.slice(0, 2000)}`;
+        : `${prompt}\n\nIMPORTANT: A previous attempt failed schema validation with these errors. Fix them carefully — match every required field name and type exactly as defined in the OUTPUT SCHEMA above. Some objects use \`title\` (e.g. setup.activities, setup.bookings) and others use \`name\` (e.g. itinerary activities, bookAhead). Do not rename fields; produce the exact field names the schema requires.\n\n${lastErrMessage.slice(0, 2000)}`;
     try {
       const result = await generateJson(effectivePrompt, (raw) =>
         schema.parse(raw),

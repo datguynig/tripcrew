@@ -26,8 +26,8 @@ test("resolvePlaceNames dedupes case-insensitive duplicates", async () => {
   );
 
   assert.equal(calls.length, 2, "deduped to 2 unique queries");
-  assert.ok(result.get("Vasa Museum"));
-  assert.ok(result.get("Fotografiska"));
+  assert.ok(result.get("vasa museum"));
+  assert.ok(result.get("fotografiska"));
 });
 
 test("resolvePlaceNames drops results outside radius", async () => {
@@ -98,8 +98,8 @@ test("resolvePlaceNames accepts 2-char and 80-char names at boundary", async () 
   );
 
   assert.equal(calls.length, 2, "both boundary-length names looked up");
-  assert.ok(result.get("Hi"), "2-char name accepted");
-  assert.ok(result.get(eightyChar), "80-char name accepted");
+  assert.ok(result.get("hi"), "2-char name accepted");
+  assert.ok(result.get(eightyChar.toLowerCase()), "80-char name accepted");
 });
 
 test("resolvePlaceNames nulls non-https website URLs", async () => {
@@ -112,7 +112,7 @@ test("resolvePlaceNames nulls non-https website URLs", async () => {
     },
   ];
   const result = await resolvePlaceNames(["Vasa"], STOCKHOLM, 25_000, { searchText: search, maxLookups: 25 });
-  const r = result.get("Vasa");
+  const r = result.get("vasa");
   assert.ok(r);
   assert.equal(r?.website_url, null);
   assert.equal(r?.maps_url, "https://www.google.com/maps/x");

@@ -66,32 +66,32 @@ export async function resolvePlaceNames(
       return results.map((r) => ({
         id: r.id,
         location: { latitude: r.location.latitude, longitude: r.location.longitude },
-        googleMapsUri: `https://www.google.com/maps/place/?q=place_id:${r.id}`,
-        websiteUri: null,
+        googleMapsUri: r.googleMapsUri ?? `https://www.google.com/maps/place/?q=place_id:${r.id}`,
+        websiteUri: r.websiteUri ?? null,
       }));
     });
 
   const maxLookups = options.maxLookups ?? DEFAULT_MAX_LOOKUPS;
 
   const seen = new Set<string>();
-  const queue: string[] = [];
+  const queue: Array<{ key: string; display: string }> = [];
   for (const raw of names) {
     if (!isValidName(raw)) continue;
     const key = raw.trim().toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    queue.push(raw.trim());
+    queue.push({ key, display: raw.trim() });
     if (queue.length >= maxLookups) break;
   }
 
   const out = new Map<string, ResolvedPlace>();
 
-  for (const name of queue) {
+  for (const item of queue) {
     let results: PlaceSearchResult[];
     try {
-      results = await search(name);
+      results = await search(item.display);
     } catch (err) {
-      console.error("[resolvePlaceNames] search threw, skipping", name, err);
+      console.error("[resolvePlaceNames] search threw, skipping", item.display, err);
       continue;
     }
     const top = results[0];
@@ -104,7 +104,7 @@ export async function resolvePlaceNames(
     if (!top.id) continue;
     const mapsUri = top.googleMapsUri ?? null;
     const websiteUri = top.websiteUri ?? null;
-    out.set(name, {
+    out.set(item.key, {
       place_id: top.id,
       maps_url: isValidHttpUrl(mapsUri)
         ? mapsUri
