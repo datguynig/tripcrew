@@ -381,9 +381,10 @@ export async function generateLockAndDraft(
         // shape — but the runtime mutation above attaches place_id /
         // maps_url / website_url. The cast crosses that boundary.
         schedule: setup.schedule as unknown as TripMeta["schedule"],
-        // Empty shell so realtime listeners see a "loading" state even if
-        // the fire-and-forget pricing call is reaped before it completes.
-        live_pricing: { flights: undefined, hotels: undefined },
+        // On first lock: empty shell signals "loading" to realtime listeners.
+        // On redraft: preserve existing pricing so a draft failure doesn't
+        // wipe previously-fetched data.
+        live_pricing: trip.meta?.live_pricing ?? { flights: undefined, hotels: undefined },
       };
 
       const { error: updateError } = await supabase
