@@ -52,12 +52,12 @@ type SerpFlight = {
   duration?: number;
   departure_airport?: { time?: string };
   arrival_airport?: { time?: string };
-  layovers?: unknown[];
 };
 
 type SerpFlightOption = {
   price?: number;
   flights?: SerpFlight[];
+  layovers?: unknown[];
   booking_token?: string;
 };
 
@@ -77,7 +77,7 @@ export function parseFlightOptions(raw: unknown, currency: string): FareOption[]
       airline_logo_url: first.airline_logo ?? null,
       price: { amount: Math.round(opt.price), currency },
       duration_minutes: typeof first.duration === "number" ? first.duration : 0,
-      stops: Array.isArray(first.layovers) ? first.layovers.length : 0,
+      stops: Array.isArray(opt.layovers) ? opt.layovers.length : 0,
       depart_iso: first.departure_airport?.time ?? "",
       arrive_iso: first.arrival_airport?.time ?? "",
       deeplink: opt.booking_token
