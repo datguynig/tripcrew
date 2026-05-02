@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
 import { setBookingCustomUrl } from "@/lib/actions/bookingUrl";
 import { useToast } from "@/hooks/useToast";
 
@@ -93,40 +94,32 @@ export function BookingUrlDialog({
 
         <div className="flex gap-2 justify-end items-center flex-wrap">
           {initialUrl && (
-            <button
-              type="button"
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={handleClear}
               disabled={pending}
-              className="label-sm px-4 py-2.5 rounded-md
-                border border-err/30 text-err bg-bg-2
-                hover:bg-err/10 transition-colors
-                disabled:opacity-70 disabled:cursor-not-allowed"
             >
               Clear
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => onOpenChange(false)}
             disabled={pending}
-            className="label-sm px-4 py-2.5 rounded-md
-              border border-line bg-bg-2 text-fg
-              hover:border-line-2 hover:bg-bg-3 transition-colors
-              disabled:opacity-70 disabled:cursor-not-allowed"
           >
             Cancel
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="primary"
+            tone="accent"
+            size="sm"
             onClick={handleSave}
             disabled={pending}
-            className="label-sm px-4 py-2.5 rounded-md
-              bg-accent text-bg border border-accent
-              hover:opacity-90 transition-opacity
-              disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {pending ? "Saving…" : "Save"}
-          </button>
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
