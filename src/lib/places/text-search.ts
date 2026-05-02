@@ -29,6 +29,8 @@ const SUMMARY_FIELD_MASK = [
   "places.shortFormattedAddress",
   "places.location",
   "places.editorialSummary",
+  "places.websiteUri",
+  "places.googleMapsUri",
 ].join(",");
 
 export async function textSearch(
