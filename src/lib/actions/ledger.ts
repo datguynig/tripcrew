@@ -328,11 +328,18 @@ export async function editExpense(input: EditExpenseInput) {
   // versioned regeneration of obligations on top of this edit. An RPC
   // transaction is the right shape long term; pre-validation above keeps
   // the partial-failure window tight (only the final insert can fail).
-  await supabase
+  const { error: partDeleteErr } = await supabase
     .from("expense_participants")
     .update({ deleted_at: new Date().toISOString() })
     .eq("expense_id", data.expenseId)
     .is("deleted_at", null);
+  if (partDeleteErr) {
+    console.error("[ledger.editExpense] participants soft-delete failed", partDeleteErr);
+    return {
+      error:
+        "Saved expense changes, but the old split couldn't be cleared. Try again before editing the split.",
+    };
+  }
 
   const { error: insErr } = await supabase.from("expense_participants").insert(
     shares.map((s) => ({

@@ -257,6 +257,10 @@ export function Ledger({
     const amount = parseFloat(amt);
     if (!description || !Number.isFinite(amount) || amount <= 0) return;
     const rounded = Math.round(amount * 100) / 100;
+    const finalAmount =
+      fxEnabled && fxState.trip_amount
+        ? Math.round(fxState.trip_amount * 100) / 100
+        : rounded;
 
     // Build participants if SplitSection enabled; otherwise default = even split (action handles).
     // The server recomputes share_amount from (share_basis, share_input), so we only
@@ -289,8 +293,8 @@ export function Ledger({
         }));
       } else {
         const sum = included.reduce((s, p) => s + (p.input ?? 0), 0);
-        if (Math.abs(sum - rounded) > 0.01) {
-          toast.error(`Shares must sum to ${rounded.toFixed(2)}.`);
+        if (Math.abs(sum - finalAmount) > 0.01) {
+          toast.error(`Shares must sum to ${finalAmount.toFixed(2)}.`);
           return;
         }
         participantsInput = included.map((p) => ({
@@ -316,9 +320,6 @@ export function Ledger({
           fx_user_overridden: fxState.fx_user_overridden,
         }
       : {};
-
-    const finalAmount =
-      fxEnabled && fxState.trip_amount ? fxState.trip_amount : rounded;
 
     setDesc("");
     setAmt("");

@@ -127,6 +127,10 @@ export function EditExpenseDialog({
       return;
     }
     const rounded = Math.round(amount * 100) / 100;
+    const finalAmount =
+      fxEnabled && fxState.trip_amount
+        ? Math.round(fxState.trip_amount * 100) / 100
+        : rounded;
 
     let participantsInput:
       | { user_id: string; share_basis: ShareBasis; share_input: number | null }[]
@@ -156,8 +160,8 @@ export function EditExpenseDialog({
         }));
       } else {
         const sum = included.reduce((s, p) => s + (p.input ?? 0), 0);
-        if (Math.abs(sum - rounded) > 0.01) {
-          toast.error(`Shares must sum to ${rounded.toFixed(2)}.`);
+        if (Math.abs(sum - finalAmount) > 0.01) {
+          toast.error(`Shares must sum to ${finalAmount.toFixed(2)}.`);
           return;
         }
         participantsInput = included.map((p) => ({
@@ -195,9 +199,6 @@ export function EditExpenseDialog({
             fx_suggested_amount: null,
             fx_user_overridden: false,
           };
-
-    const finalAmount =
-      fxEnabled && fxState.trip_amount ? fxState.trip_amount : rounded;
 
     startTransition(async () => {
       const result = await editExpense({
