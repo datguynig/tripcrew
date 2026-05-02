@@ -8,9 +8,6 @@ import { updateSpecCell } from "@/lib/actions/overviewInline";
 import { useToast } from "@/hooks/useToast";
 import { DEFAULT_SPEC_LABELS } from "@/lib/constants";
 import type { SpecItem } from "@/lib/types";
-import { PriceCellSummary } from "./PriceCellSummary";
-import { FlightsSheet } from "./FlightsSheet";
-import { StaySheet } from "./StaySheet";
 
 type Props = {
   cells: SpecItem[];
@@ -18,93 +15,12 @@ type Props = {
   tripId: string;
   tripSlug?: string;
   currency: string;
-  // All optional so callers without live pricing data work unchanged.
-  livePricing?: import("@/lib/types").LivePricing | null;
-  isPioneer?: boolean;
-  userId?: string;
-  draftedAt?: string | null;
-  lastPriceRefreshAt?: string | null;
-  targetCrewSize?: number | null;
-  startDate?: string | null;
-  endDate?: string | null;
-  destination?: string | null;
-  // Resolved from trip prefs so hasOriginIata is correct even before
-  // live pricing arrives (Member sees no prices but still needs the
-  // "Add origin airport" prompt when origin is unset).
-  originIata?: string | null;
-  // Free-text origin name — used as fallback in the Google Flights deeplink
-  // when the user's origin isn't in the IATA table (e.g. small regional airport).
-  originLabel?: string | null;
-  destinationIata?: string | null;
 };
 
-function buildFlightFallback({
-  originIata,
-  originLabel,
-  destinationIata,
-  destinationLabel,
-  departDate,
-  returnDate,
-  adults,
-}: {
-  originIata?: string;
-  originLabel?: string;
-  destinationIata?: string;
-  destinationLabel?: string;
-  departDate?: string | null;
-  returnDate?: string | null;
-  adults: number;
-}): string {
-  const parts: string[] = ["Flights"];
-  const fromText = originIata ?? originLabel;
-  if (fromText) parts.push(`from ${fromText}`);
-  const toText = destinationIata ?? destinationLabel;
-  if (toText) parts.push(`to ${toText}`);
-  if (departDate) parts.push(`on ${departDate}`);
-  if (returnDate) parts.push(`returning ${returnDate}`);
-  parts.push(`for ${adults} ${adults === 1 ? "adult" : "adults"}`);
-  return `https://www.google.com/travel/flights?q=${encodeURIComponent(parts.join(" "))}`;
-}
-
-function buildStayFallback({
-  destination,
-  checkIn,
-  checkOut,
-}: {
-  destination?: string | null;
-  checkIn?: string | null;
-  checkOut?: string | null;
-}): string {
-  const params = new URLSearchParams();
-  if (destination) params.set("ss", destination);
-  if (checkIn) params.set("checkin", checkIn);
-  if (checkOut) params.set("checkout", checkOut);
-  return `https://www.booking.com/searchresults.html?${params.toString()}`;
-}
-
-export function SpecGrid({
-  cells,
-  isAdmin,
-  tripId,
-  currency,
-  livePricing,
-  isPioneer,
-  userId,
-  draftedAt,
-  lastPriceRefreshAt,
-  targetCrewSize,
-  startDate,
-  endDate,
-  destination,
-  originIata,
-  originLabel,
-  destinationIata,
-}: Props) {
+export function SpecGrid({ cells, isAdmin, tripId, currency }: Props) {
   const toast = useToast();
   const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [flightsSheetOpen, setFlightsSheetOpen] = useState(false);
-  const [staySheetOpen, setStaySheetOpen] = useState(false);
 
   // Drop the optimistic overlay once the server's revalidated cells
   // land. Same reasoning as Schedule — avoids a visible flicker back
@@ -130,35 +46,6 @@ export function SpecGrid({
       </div>
     );
   }
-
-  const tier: "member" | "pioneer" = isPioneer ? "pioneer" : "member";
-  // Derive from trip prefs (resolved at page level), not from livePricing.
-  // This ensures hasOriginConfigured is correct for Member-tier and for trips
-  // where pricing hasn't arrived yet. True when an origin was set even if we
-  // couldn't map it to an IATA code (e.g. small regional airport).
-  const hasOriginConfigured = !!originIata || !!originLabel;
-  const hasFlightOptions = (livePricing?.flights?.options?.length ?? 0) > 0;
-  const hasHotelQuotes = (livePricing?.hotels?.quotes?.length ?? 0) > 0;
-  const showStayCell = (targetCrewSize ?? 1) > 1 && hasHotelQuotes;
-  const adults = Math.max(1, targetCrewSize ?? 1);
-  const rooms = Math.max(1, Math.ceil((targetCrewSize ?? 1) / 2));
-
-  const flightFallbackUrl = buildFlightFallback({
-    originIata: originIata ?? undefined,
-    originLabel: originLabel ?? undefined,
-    destinationIata: destinationIata ?? undefined,
-    destinationLabel: destination ?? undefined,
-    departDate: startDate,
-    returnDate: endDate,
-    adults,
-  });
-  const stayFallbackUrl = buildStayFallback({
-    destination,
-    checkIn: startDate,
-    checkOut: endDate,
-  });
-
-  const lastIndex = displayed.length - 1;
 
   const commit = async (
     index: number,
@@ -193,10 +80,6 @@ export function SpecGrid({
               ? "opacity-40 transition-opacity"
               : "transition-opacity";
 
-          const isFlightCell = cell.label.toLowerCase().includes("flight");
-          const isLastCell = i === lastIndex;
-          const isStayOverride = showStayCell && isLastCell;
-
           return (
             <div
               key={`${cell.label}-${i}`}
@@ -208,16 +91,10 @@ export function SpecGrid({
                   : ""
               } max-[900px]:[&:nth-child(2n)]:border-r-0 max-[900px]:[&:nth-last-child(-n+2)]:border-b-0 max-[520px]:border-r-0 max-[520px]:last:border-b-0 ${dim}`}
             >
-              <div className="label-sm-wide text-fg-3 mb-3">
-                {isStayOverride ? "STAY" : cell.label}
-              </div>
+              <div className="label-sm-wide text-fg-3 mb-3">{cell.label}</div>
 
               <div className="text-[22px] font-medium tracking-[-0.02em] leading-[1.2]">
-                {isStayOverride ? (
-                  <span>
-                    {livePricing?.hotels?.quotes?.length ?? 0} picks
-                  </span>
-                ) : isMoney || cell.label.toLowerCase() === "per head" ? (
+                {isMoney || cell.label.toLowerCase() === "per head" ? (
                   <InlineMoneyEdit
                     amount={cell.amount ?? 0}
                     currency={currency}
@@ -242,40 +119,7 @@ export function SpecGrid({
               </div>
 
               <div className="label-sm text-fg-3 mt-2">
-                {isStayOverride ? (
-                  <button
-                    type="button"
-                    onClick={() => setStaySheetOpen(true)}
-                    className="inline-flex items-center gap-1.5 hover:text-fg transition-colors text-left"
-                  >
-                    <PriceCellSummary
-                      kind="stay"
-                      tier={tier}
-                      livePricing={livePricing}
-                      draftedAtIso={draftedAt ?? null}
-                    />
-                  </button>
-                ) : isFlightCell ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (tier === "pioneer" && hasFlightOptions) {
-                        setFlightsSheetOpen(true);
-                      } else {
-                        window.open(flightFallbackUrl, "_blank", "noopener,noreferrer");
-                      }
-                    }}
-                    className="inline-flex items-center gap-1.5 hover:text-fg transition-colors text-left"
-                  >
-                    <PriceCellSummary
-                      kind="flight"
-                      tier={tier}
-                      livePricing={livePricing}
-                      draftedAtIso={draftedAt ?? null}
-                      hasOriginIata={hasOriginConfigured}
-                    />
-                  </button>
-                ) : cell.label.toLowerCase() === "the rule" ? (
+                {cell.label.toLowerCase() === "the rule" ? (
                   <InlineTextarea
                     value={cell.sub}
                     onCommit={(next) => commit(i, { sub: next })}
@@ -304,34 +148,6 @@ export function SpecGrid({
           );
         })}
       </div>
-
-      {userId && (
-        <>
-          <FlightsSheet
-            open={flightsSheetOpen}
-            onOpenChange={setFlightsSheetOpen}
-            flights={livePricing?.flights}
-            fallbackDeeplink={flightFallbackUrl}
-            userId={userId}
-            tripId={tripId}
-            lastPriceRefreshAt={lastPriceRefreshAt ?? null}
-            adults={adults}
-          />
-          <StaySheet
-            open={staySheetOpen}
-            onOpenChange={setStaySheetOpen}
-            hotels={livePricing?.hotels}
-            fallbackDeeplink={stayFallbackUrl}
-            isPioneer={!!isPioneer}
-            datesLabel={startDate && endDate ? `${startDate} – ${endDate}` : null}
-            rooms={rooms}
-            userId={userId}
-            tripId={tripId}
-            lastPriceRefreshAt={lastPriceRefreshAt ?? null}
-            perRoomNightlyBudget={null}
-          />
-        </>
-      )}
     </div>
   );
 }

@@ -162,18 +162,6 @@ export default async function TripOverview({
               tripId={trip.id}
               tripSlug={trip.slug}
               currency={trip.currency ?? "GBP"}
-              livePricing={trip.meta?.live_pricing}
-              isPioneer={isPioneer}
-              userId={user?.id}
-              draftedAt={trip.enriched_draft_generated_at}
-              lastPriceRefreshAt={trip.last_price_refresh_at}
-              targetCrewSize={trip.target_crew_size}
-              startDate={trip.start_date}
-              endDate={trip.end_date}
-              destination={trip.destination}
-              originIata={originIata}
-              originLabel={originLabel}
-              destinationIata={destinationIata}
             />
             <Schedule
               rows={scheduleRows}
@@ -191,18 +179,6 @@ export default async function TripOverview({
               tripId={trip.id}
               tripSlug={trip.slug}
               currency={trip.currency ?? "GBP"}
-              livePricing={trip.meta?.live_pricing}
-              isPioneer={isPioneer}
-              userId={user?.id}
-              draftedAt={trip.enriched_draft_generated_at}
-              lastPriceRefreshAt={trip.last_price_refresh_at}
-              targetCrewSize={trip.target_crew_size}
-              startDate={trip.start_date}
-              endDate={trip.end_date}
-              destination={trip.destination}
-              originIata={originIata}
-              originLabel={originLabel}
-              destinationIata={destinationIata}
             />
             <Schedule
               rows={scheduleRows}
@@ -229,6 +205,13 @@ export default async function TripOverview({
         livePricing={trip.meta?.live_pricing ?? null}
         briefStale={briefStale}
         draftProgress={trip.meta?.draft_progress ?? null}
+        scheduleRows={scheduleRows}
+        startDate={trip.start_date}
+        endDate={trip.end_date}
+        targetCrewSize={trip.target_crew_size}
+        originIata={originIata}
+        originLabel={originLabel}
+        destinationIata={destinationIata}
       />
     </>
   );
