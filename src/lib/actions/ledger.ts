@@ -13,7 +13,28 @@ import {
   computeExactShares,
   type ComputedShare,
 } from "@/lib/ledger/shares";
-import type { ShareBasis } from "@/lib/types";
+import { buildObligationRows } from "@/lib/ledger/obligations";
+import type { Schedule, ShareBasis } from "@/lib/types";
+
+const scheduleSchema: z.ZodType<Schedule> = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("none") }),
+  z.object({
+    type: z.literal("single"),
+    due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  }),
+  z.object({
+    type: z.literal("installments"),
+    installments: z
+      .array(
+        z.object({
+          due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          fraction: z.number().min(0).max(1),
+        }),
+      )
+      .min(2)
+      .max(12),
+  }),
+]);
 
 // share_amount is intentionally NOT in the input schema. The server
 // always recomputes shares from (share_basis, share_input) so a
@@ -80,6 +101,8 @@ const addExpenseSchema = z.object({
   fx_user_overridden: z.boolean().optional(),
   // Participants. When omitted, defaults to even split across all current trip members.
   participants: z.array(participantInputSchema).min(1).optional(),
+  // Phase 2 — payback schedule. Omit / "none" = no obligations generated.
+  schedule: scheduleSchema.optional(),
 });
 
 export type AddExpenseInput = z.infer<typeof addExpenseSchema>;
@@ -222,6 +245,42 @@ export async function addExpense(input: AddExpenseInput) {
     },
     recipients,
   });
+
+  // Phase 2 — persist the schedule on the expense and generate one
+  // obligation row per (non-payer × installment-period). Omit / "none"
+  // schedules generate no obligations; the existing per-expense splits
+  // continue to drive the live settlement panel.
+  if (data.schedule) {
+    await supabase
+      .from("expenses")
+      .update({ schedule: data.schedule })
+      .eq("id", expense.id);
+  }
+  if (data.schedule && data.schedule.type !== "none") {
+    const rows = buildObligationRows({
+      expense_id: expense.id,
+      trip_id: data.tripId,
+      payer_id: user.id,
+      payer_name: actor?.name ?? "Crew",
+      expense_version: 1,
+      currency: trip?.currency ?? "GBP",
+      participants: shares.map((s) => ({
+        user_id: s.user_id,
+        share_amount: s.share_amount,
+        display_name_snapshot: s.display_name,
+      })),
+      schedule: data.schedule,
+    });
+    if (rows.length > 0) {
+      const { error: obErr } = await supabase
+        .from("payment_obligations")
+        .insert(rows.map((r) => ({ ...r, created_by: user.id })));
+      if (obErr) {
+        console.error("[ledger.addExpense] obligation insert failed", obErr);
+      }
+    }
+  }
+
   return { ok: true };
 }
 
@@ -358,6 +417,88 @@ export async function editExpense(input: EditExpenseInput) {
       error:
         "Saved expense changes, but the split couldn't be re-recorded. Edit the expense again to retry.",
     };
+  }
+
+  // Phase 2 — persist schedule, supersede current obligations, regenerate
+  // from the new (amount, participants, schedule), then auto-pair the
+  // simplest exact-match case (debtor/creditor/due_date/amount all equal).
+  // Anything that doesn't auto-pair surfaces in ReissuedPanel for admin
+  // attention.
+  if (data.schedule) {
+    await supabase
+      .from("expenses")
+      .update({ schedule: data.schedule })
+      .eq("id", data.expenseId);
+  }
+
+  const { data: oldObligations } = await supabase
+    .from("payment_obligations")
+    .select("id, debtor_id, creditor_id, due_date, amount")
+    .eq("expense_id", data.expenseId)
+    .eq("status", "open");
+  const oldIds = (oldObligations ?? []).map((o) => o.id);
+  if (oldIds.length > 0) {
+    await supabase
+      .from("payment_obligations")
+      .update({ status: "superseded" })
+      .in("id", oldIds);
+  }
+
+  if (data.schedule && data.schedule.type !== "none") {
+    const { data: payerRow } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", existing.paid_by)
+      .maybeSingle<{ name: string }>();
+    const { data: tripRow } = await supabase
+      .from("trips")
+      .select("currency")
+      .eq("id", existing.trip_id)
+      .maybeSingle<{ currency: string }>();
+    const newRows = buildObligationRows({
+      expense_id: data.expenseId,
+      trip_id: existing.trip_id,
+      payer_id: existing.paid_by,
+      payer_name: payerRow?.name ?? "Crew",
+      expense_version: existing.version + 1,
+      currency: tripRow?.currency ?? "GBP",
+      participants: shares.map((s) => ({
+        user_id: s.user_id,
+        share_amount: s.share_amount,
+        display_name_snapshot: s.display_name,
+      })),
+      schedule: data.schedule,
+    });
+    if (newRows.length > 0) {
+      const { data: insertedRows } = await supabase
+        .from("payment_obligations")
+        .insert(
+          newRows.map((r) => ({ ...r, created_by: user.id })),
+        )
+        .select("id, debtor_id, creditor_id, due_date, amount");
+
+      const newRowsInserted = insertedRows ?? [];
+      for (const oldOb of oldObligations ?? []) {
+        const candidate = newRowsInserted.find(
+          (n) =>
+            n.debtor_id === oldOb.debtor_id &&
+            n.creditor_id === oldOb.creditor_id &&
+            n.due_date === oldOb.due_date &&
+            Number(n.amount) === Number(oldOb.amount),
+        );
+        if (candidate) {
+          await supabase
+            .from("payments")
+            .update({ obligation_id: candidate.id })
+            .eq("obligation_id", oldOb.id)
+            .eq("status", "verified");
+          await supabase
+            .from("payment_obligations")
+            .update({ superseded_by: candidate.id })
+            .eq("id", oldOb.id);
+        }
+      }
+    }
   }
 
   await revalidateTrip(existing.trip_id);
