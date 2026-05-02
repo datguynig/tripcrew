@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-export const DraftHotelSuggestionSchema = z.object({
-  area: z.string(),
-  description: z.string(),
-  searchUrl: z.string().url(),
+const ScheduleItemPlaceSchema = z.object({
+  name: z.string().min(2).max(80),
 });
+
+const PlaceListSchema = z.array(ScheduleItemPlaceSchema).max(4).default([]);
 
 export const DraftActivitySchema = z.object({
   placeId: z.string().optional(),
@@ -94,6 +94,7 @@ export const SetupScheduleRowSchema = z.object({
   day_label: z.string().min(1).max(30),
   heading: z.string().min(1).max(120),
   body: z.string().min(1).max(500),
+  places: PlaceListSchema,
 });
 
 export const SetupActivitySchema = z.object({
@@ -104,6 +105,7 @@ export const SetupActivitySchema = z.object({
 
 export const SetupBookingSchema = z.object({
   title: z.string().min(1).max(100),
+  place_name: z.string().min(2).max(80).optional(),
 });
 
 export const SetupSchema = z.object({
@@ -133,12 +135,11 @@ export const EnrichedDraftSchema = z.object({
     .nullable(),
   whereToStay: z.array(
     z.object({
-      neighbourhood: z.string(),
-      description: z.string(),
-      bestFor: z.string(),
-      hotelSuggestions: z.array(DraftHotelSuggestionSchema),
+      neighbourhood: z.string().min(2).max(80),
+      description: z.string().min(2).max(300),
+      bestFor: z.string().min(2).max(60),
     }),
-  ),
+  ).min(1).max(5),
   itinerary: z.array(DraftDaySchema),
   bookAhead: z.array(DraftActivityLikeSchema),
   budget: DraftBudgetSchema,
