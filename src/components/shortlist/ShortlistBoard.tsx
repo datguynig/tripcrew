@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { castVote } from "@/lib/actions/shortlist";
 import { useToast } from "@/hooks/useToast";
+import { ArrowUpRightIcon } from "@/components/ui/icons";
 import type { Activity, Vote } from "@/lib/types";
 type Props = {
   activities: Activity[];
@@ -216,6 +217,20 @@ export function ShortlistBoard({
                     {a.title}
                   </div>
                 </div>
+                {a.website_url && (
+                  <a
+                    href={a.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-0.5 mb-1
+                      text-[10px] font-mono tracking-[0.15em] uppercase
+                      text-fg-3 hover:text-fg
+                      transition-colors"
+                  >
+                    <span>Visit website</span>
+                    <ArrowUpRightIcon className="w-2.5 h-2.5" />
+                  </a>
+                )}
                 {a.meta && (
                   <div className="text-xs text-fg-2 font-mono tracking-[0.02em]">
                     {a.meta}
