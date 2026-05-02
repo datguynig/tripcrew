@@ -33,7 +33,7 @@ export async function checkSerpApiBudget(): Promise<CapCheck> {
     return { allowed: true, spendGbp: 0, capGbp: null };
   }
 
-  const service = createServiceClient();
+  const service = await createServiceClient();
   const since = new Date();
   since.setUTCDate(1);
   since.setUTCHours(0, 0, 0, 0);
