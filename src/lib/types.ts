@@ -209,18 +209,73 @@ export type PolaroidOverride = {
   sourceId?: string | null;
 };
 
-// Flight (and later, hotel) pricing fetched from a real provider.
-// Replaces the AI's vibes-based estimate in the budget block when present.
+export type Money = { amount: number; currency: string };
+
+export type SerpErrorCode =
+  | "timeout"
+  | "rate_limit"
+  | "parse_error"
+  | "no_results"
+  | "provider_error"
+  | "missing_input"
+  | "monthly_budget_cap";
+
+export type ErrorEnvelope = {
+  code: SerpErrorCode;
+  message: string;
+  occurred_at: string;
+};
+
+export type FareOption = {
+  airline: string;
+  airline_logo_url: string | null;
+  price: Money;
+  duration_minutes: number;
+  stops: number;
+  depart_iso: string;
+  arrive_iso: string;
+  deeplink: string;
+};
+
+export type HotelQuote = {
+  name: string;
+  place_id: string | null;
+  rating: number | null;
+  price_per_night: Money;
+  total_price: Money;
+  thumbnail_url: string | null;
+  deeplink: string;
+};
+
+export type FlightPricing = {
+  // Pre-existing fields preserved so existing readers keep working.
+  low: number;
+  high: number;
+  currency: string;
+  provider: "serpapi-google-flights";
+  refreshed_at: string;
+  origin_iata: string;
+  destination_iata: string;
+  // Structured fare options + cheapest pick + per-side error envelope
+  // added in Spec B Phase 2.
+  best_price?: Money;
+  options?: FareOption[];
+  fallback_deeplink?: string;
+  fetch_error?: ErrorEnvelope | null;
+};
+
+export type HotelPricing = {
+  quotes: HotelQuote[];
+  refreshed_at: string;
+  provider: "serpapi-google-hotels";
+  fetch_error: ErrorEnvelope | null;
+};
+
+// Flight + hotel quotes from SerpApi. Both are optional so partial
+// success (one side fetched, the other failed) round-trips cleanly.
 export type LivePricing = {
-  flights?: {
-    low: number;
-    high: number;
-    currency: string;
-    provider: "serpapi-google-flights";
-    refreshed_at: string;
-    origin_iata: string;
-    destination_iata: string;
-  };
+  flights?: FlightPricing;
+  hotels?: HotelPricing;
 };
 
 export type DraftStage =
