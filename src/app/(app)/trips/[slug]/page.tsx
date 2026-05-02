@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip, getTripMember } from "@/lib/auth";
+import { isPioneerForTrip } from "@/lib/plan";
 import { Hero } from "@/components/layout/Hero";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { SpecGrid } from "@/components/overview/SpecGrid";
@@ -58,6 +59,7 @@ export default async function TripOverview({
     { data: bookings },
     { data: expenses },
     { count: crewCount },
+    isPioneer,
   ] = await Promise.all([
     supabase.from("bookings").select("done").eq("trip_id", trip.id),
     supabase.from("expenses").select("amount").eq("trip_id", trip.id),
@@ -65,6 +67,7 @@ export default async function TripOverview({
       .from("trip_members")
       .select("user_id", { count: "exact", head: true })
       .eq("trip_id", trip.id),
+    user ? isPioneerForTrip(user.id, trip.id) : Promise.resolve(false),
   ]);
 
   const bookingsTotal = bookings?.length ?? 0;
@@ -193,6 +196,9 @@ export default async function TripOverview({
         livePricing={trip.meta?.live_pricing ?? null}
         briefStale={briefStale}
         draftProgress={trip.meta?.draft_progress ?? null}
+        isPioneer={isPioneer}
+        targetCrewSize={trip.target_crew_size}
+        slug={trip.slug}
       />
     </>
   );

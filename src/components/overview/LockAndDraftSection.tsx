@@ -24,6 +24,9 @@ type Props = {
   livePricing?: LivePricing | null;
   briefStale?: boolean;
   draftProgress?: DraftProgress | null;
+  isPioneer?: boolean;
+  targetCrewSize?: number | null;
+  slug?: string;
 };
 
 function parseDraft(
@@ -53,6 +56,9 @@ export function LockAndDraftSection({
   livePricing,
   briefStale = false,
   draftProgress = null,
+  isPioneer = false,
+  targetCrewSize = null,
+  slug = "",
 }: Props) {
   const draft = parseDraft(enrichedDraft, enrichedDraftTier);
   const hasDraft = draft !== null;
@@ -126,6 +132,12 @@ export function LockAndDraftSection({
             generatedAt={enrichedDraftGeneratedAt}
             currency={currency}
             livePricing={livePricing}
+            isPioneer={isPioneer}
+            userId={userId ?? ""}
+            tripId={tripId}
+            lastPriceRefreshAt={lastPriceRefreshAt}
+            targetCrewSize={targetCrewSize}
+            slug={slug}
           />
         )}
       </div>

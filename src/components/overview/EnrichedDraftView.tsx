@@ -1,12 +1,24 @@
+"use client";
+
+import { useState } from "react";
 import type { EnrichedDraft } from "@/lib/ai/schema";
 import type { LivePricing } from "@/lib/types";
 import { currencySymbol } from "@/lib/currency";
+import { PriceCellSummary } from "./PriceCellSummary";
+import { FlightsSheet } from "./FlightsSheet";
+import { StaySheet } from "./StaySheet";
 
 type Props = {
   draft: EnrichedDraft;
   generatedAt: string | null;
   currency: string;
   livePricing?: LivePricing | null;
+  isPioneer: boolean;
+  userId: string;
+  tripId: string;
+  lastPriceRefreshAt: string | null;
+  targetCrewSize: number | null;
+  slug: string;
 };
 
 function formatRelative(iso: string): string {
@@ -27,14 +39,56 @@ const PERIOD_LABEL: Record<"morning" | "afternoon" | "evening", string> = {
   evening: "EVENING",
 };
 
+function buildStayFallback({
+  destination,
+  itinerary,
+}: {
+  destination: string;
+  itinerary: { date: string }[];
+}): string {
+  const checkIn = itinerary[0]?.date ?? "";
+  const checkOut = itinerary.at(-1)?.date ?? "";
+  const params = new URLSearchParams({
+    ss: destination,
+    checkin: checkIn,
+    checkout: checkOut,
+  });
+  return `https://www.booking.com/searchresults.html?${params.toString()}`;
+}
+
 export function EnrichedDraftView({
   draft,
   generatedAt,
   currency,
   livePricing,
+  isPioneer,
+  userId,
+  tripId,
+  lastPriceRefreshAt,
+  targetCrewSize,
 }: Props) {
   const symbol = currencySymbol(currency);
   const liveFlights = livePricing?.flights ?? null;
+
+  const tier: "member" | "pioneer" = isPioneer ? "pioneer" : "member";
+  const [flightsSheetOpen, setFlightsSheetOpen] = useState(false);
+  const [staySheetOpen, setStaySheetOpen] = useState(false);
+
+  const hasHotelQuotes = (livePricing?.hotels?.quotes?.length ?? 0) > 0;
+  const showStayCell = (targetCrewSize ?? 1) > 1 && hasHotelQuotes;
+  const adults = Math.max(1, targetCrewSize ?? 1);
+  const rooms = Math.max(1, Math.ceil((targetCrewSize ?? 1) / 2));
+  const hasOriginIata = !!livePricing?.flights?.origin_iata;
+  const stayFallbackDeeplink = buildStayFallback({
+    destination: draft.destination,
+    itinerary: draft.itinerary,
+  });
+  const hasFlightOptions = (livePricing?.flights?.options?.length ?? 0) > 0;
+
+  const datesLabel =
+    draft.itinerary[0]?.date && draft.itinerary.at(-1)?.date
+      ? `${draft.itinerary[0].date} – ${draft.itinerary.at(-1)!.date}`
+      : null;
 
   return (
     <article className="grid gap-12">
@@ -240,19 +294,70 @@ export function EnrichedDraftView({
         )}
       </section>
 
-      {draft.flightSearchUrl && (
-        <section>
-          <a
-            href={draft.flightSearchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 border border-line bg-bg-2 hover:bg-bg-3 px-5 py-3 text-[14px] text-fg transition-colors"
+      <section className="grid gap-3">
+        <div className="label-sm text-fg-3">FLIGHTS</div>
+        <button
+          type="button"
+          onClick={() => {
+            if (tier === "pioneer" && hasFlightOptions) {
+              setFlightsSheetOpen(true);
+            } else {
+              window.open(draft.flightSearchUrl, "_blank", "noopener,noreferrer");
+            }
+          }}
+          className="inline-flex items-center gap-2 border border-line bg-bg-2 hover:bg-bg-3 px-5 py-3 text-[14px] text-fg transition-colors text-left"
+        >
+          <PriceCellSummary
+            kind="flight"
+            tier={tier}
+            livePricing={livePricing}
+            draftedAtIso={generatedAt}
+            hasOriginIata={hasOriginIata}
+          />
+        </button>
+      </section>
+
+      {showStayCell && (
+        <section className="grid gap-3">
+          <div className="label-sm text-fg-3">STAY</div>
+          <button
+            type="button"
+            onClick={() => setStaySheetOpen(true)}
+            className="inline-flex items-center gap-2 border border-line bg-bg-2 hover:bg-bg-3 px-5 py-3 text-[14px] text-fg transition-colors text-left"
           >
-            <span>Search flights on Google Flights</span>
-            <span className="text-accent">↗</span>
-          </a>
+            <PriceCellSummary
+              kind="stay"
+              tier={tier}
+              livePricing={livePricing}
+              draftedAtIso={generatedAt}
+            />
+          </button>
         </section>
       )}
+
+      <FlightsSheet
+        open={flightsSheetOpen}
+        onOpenChange={setFlightsSheetOpen}
+        flights={livePricing?.flights}
+        fallbackDeeplink={draft.flightSearchUrl}
+        userId={userId}
+        tripId={tripId}
+        lastPriceRefreshAt={lastPriceRefreshAt}
+        adults={adults}
+      />
+      <StaySheet
+        open={staySheetOpen}
+        onOpenChange={setStaySheetOpen}
+        hotels={livePricing?.hotels}
+        fallbackDeeplink={stayFallbackDeeplink}
+        isPioneer={isPioneer}
+        datesLabel={datesLabel}
+        rooms={rooms}
+        userId={userId}
+        tripId={tripId}
+        lastPriceRefreshAt={lastPriceRefreshAt}
+        perRoomNightlyBudget={null}
+      />
     </article>
   );
 }
