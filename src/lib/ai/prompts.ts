@@ -1,6 +1,5 @@
 import type { EnrichedDestination } from "@/lib/places/orchestrator";
 import type { WeatherForecast } from "@/lib/weather/client";
-import { buildBookingUrl } from "@/lib/deeplinks/builders";
 import { vibePromptBlock } from "@/lib/ai/vibeMap";
 import { occasionPromptLine } from "@/lib/ai/occasionMap";
 import {
@@ -61,12 +60,6 @@ export function buildEnrichedDraftPrompt(
   flightSearchUrl: string,
 ): string {
   const days = tripDays(ctx.startDate, ctx.endDate);
-  const hotelSearchUrl = buildBookingUrl({
-    destination: ctx.destination,
-    checkIn: ctx.startDate,
-    checkOut: ctx.endDate,
-    adults: ctx.crewSize,
-  });
 
   const placesContext = JSON.stringify(
     {
@@ -143,19 +136,23 @@ Use this data. Do not invent places. When VIBE PREFERENCES above demands a kind 
 ${placesContext}
 
 LINKS
+- The flight search URL below is the only URL you should output anywhere in your response.
 - Flight search URL, use exactly: ${flightSearchUrl}
-- Booking search URL, use for every hotel suggestion: ${hotelSearchUrl}
+- Do not embed any other URLs in your output. The platform resolves all other place links server-side.
 
 REQUIREMENTS
 1. Use only places from REAL DESTINATION DATA. Do not invent attractions, restaurants, or hotels.
 2. When referencing a place from the data, include its placeId in the activity object.
-3. Hotel suggestions must use the provided Booking.com search URL, not invented hotel names.
+3. Hotels: do NOT emit specific hotel names. For each "whereToStay" entry, give only neighbourhood + description + bestFor. The platform sources specific hotels separately.
 4. For budget ranges, give honest ${currency} per-person ranges. Include caveats that prices are estimates and change.
 5. Itinerary must have exactly ${days} day(s), each with morning, afternoon, and evening blocks where reasonable.
 6. The bookAhead array should contain 2 to 5 activities likely to require advance booking.
 7. The VIBE PREFERENCES and OCCASION INSTRUCTION blocks above are binding. Every selected vibe must be visibly reflected somewhere in the itinerary, schedule, bookings, or budget, not just in the summary copy.
 8. Do not use em dash characters anywhere in the output. Use commas, colons, or separate sentences.
 9. Output valid JSON only. Do not wrap in markdown code fences.
+10. For every schedule day item, populate \`places\` with up to 4 entries from REAL DESTINATION DATA — just \`{ name }\`, no URLs. The platform resolves these to verified Google Maps + website links.
+11. For every bookAhead item that targets a specific venue, set \`place_name\` to that venue's exact name from REAL DESTINATION DATA. Skip \`place_name\` for generic bookings (e.g. "Book the morning train").
+12. Do not output any URLs in your response, anywhere — neither in \`body\`, \`description\`, or any free-text field, nor in structured fields like \`googleMapsUrl\` or \`website\`. The platform resolves all place links server-side via \`placeId\`. URLs in prose will be silently stripped; URLs in structured fields will be ignored. Use \`placeId\` to ground places, never URLs.
 
 SETUP REQUIREMENTS
 Alongside the itinerary above, you also produce a "setup" object. This is the trip's at-a-glance brief: editorial hero copy, a 4-cell spec grid, a day-by-day schedule, an activity shortlist, and a list of bookings the crew should action. Rules:
@@ -179,10 +176,7 @@ OUTPUT SCHEMA
     {
       "neighbourhood": "string",
       "description": "2-3 sentences",
-      "bestFor": "string",
-      "hotelSuggestions": [
-        { "area": "string", "description": "string", "searchUrl": "Booking.com URL" }
-      ]
+      "bestFor": "string"
     }
   ],
   "itinerary": [
@@ -200,8 +194,7 @@ OUTPUT SCHEMA
               "name": "string",
               "description": "string",
               "approxDurationMinutes": number,
-              "bookAhead": boolean,
-              "googleMapsUrl": "string, optional"
+              "bookAhead": boolean
             }
           ],
           "notes": "string, optional"
@@ -226,9 +219,12 @@ OUTPUT SCHEMA
     "cityLabel": "string",
     "datesLabel": "string",
     "specGrid": [ { "label": "string", "value": "string", "sub": "string", "amount": number | null }, ... × 4 ],
-    "schedule": [ { "day_label": "string", "heading": "string", "body": "string" }, ... ],
+    "schedule": [
+      { "day_label": "Day 1, Sat", "heading": "Arrive + explore Alfama", "body": "Land mid-morning and drop bags in Baixa. Spend the afternoon wandering Alfama's cobbled lanes.", "places": [{ "name": "Castelo de São Jorge" }, { "name": "Miradouro da Graça" }] },
+      { "day_label": "Day 2, Sun", "heading": "Belém and the waterfront", "body": "Take the tram to Belém for pastéis and the Jerónimos Monastery, then walk the riverfront back.", "places": [{ "name": "Pastéis de Belém" }, { "name": "Mosteiro dos Jerónimos" }, { "name": "MAAT" }] }
+    ],
     "activities": [ { "title": "string", "meta": "string", "category": "day" | "night" }, ... ],
-    "bookings": [ { "title": "string" }, ... ]
+    "bookings": [ { "title": "Book Fado dinner at Tasca do Chico", "place_name": "Tasca do Chico" }, { "title": "Book return flights" } ]
   },
   "generatedAt": "ISO timestamp"
 }`;

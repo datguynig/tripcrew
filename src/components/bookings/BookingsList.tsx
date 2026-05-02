@@ -12,6 +12,9 @@ import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
+import { BookingPlaceLinks } from "./BookingPlaceLinks";
+import { BookingUrlDialog } from "./BookingUrlDialog";
+import { EditIcon } from "@/components/ui/icons";
 type CrewOption = { id: string; name: string };
 
 type Props = {
@@ -31,6 +34,7 @@ export function BookingsList({
   const [title, setTitle] = useState("");
   const [, startTransition] = useTransition();
   const toast = useToast();
+  const [editingBooking, setEditingBooking] = useState<{ id: string; title: string; customUrl: string | null } | null>(null);
 
   useEffect(() => setBookings(initial), [initial]);
 
@@ -177,11 +181,30 @@ export function BookingsList({
                 }`}
               />
               <div
-                className={`text-[15px] font-medium tracking-[-0.01em] flex items-center gap-2 flex-wrap ${
+                className={`text-[15px] font-medium tracking-[-0.01em] flex items-center gap-2 flex-wrap min-w-0 ${
                   b.done ? "line-through" : ""
                 }`}
               >
-                <span>{b.title}</span>
+                <span className="truncate">{b.title}</span>
+                <BookingPlaceLinks booking={b} />
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditingBooking({
+                        id: b.id,
+                        title: b.title,
+                        customUrl: b.custom_url ?? null,
+                      })
+                    }
+                    aria-label={`Edit URL for ${b.title}`}
+                    className="inline-flex items-center justify-center w-7 h-7
+                      text-fg-3 hover:text-fg transition-colors"
+                    title="Edit URL"
+                  >
+                    <EditIcon className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
               <select
                 value={b.assignee_id ?? ""}
@@ -208,6 +231,18 @@ export function BookingsList({
             );
           })}
         </div>
+      )}
+
+      {editingBooking && (
+        <BookingUrlDialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setEditingBooking(null);
+          }}
+          bookingId={editingBooking.id}
+          bookingTitle={editingBooking.title}
+          initialUrl={editingBooking.customUrl}
+        />
       )}
     </>
   );

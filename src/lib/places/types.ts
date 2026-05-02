@@ -17,6 +17,8 @@ export interface PlaceSummary {
   location: { latitude: number; longitude: number };
   shortFormattedAddress?: string;
   editorialSummary?: string;
+  websiteUri?: string;
+  googleMapsUri?: string;
 }
 
 export interface PlaceDetails extends PlaceSummary {
@@ -78,6 +80,8 @@ export function mapToSummary(place: RawPlace): PlaceSummary {
       longitude: place.location?.longitude ?? 0,
     },
     editorialSummary: place.editorialSummary?.text,
+    websiteUri: place.websiteUri,
+    googleMapsUri: place.googleMapsUri,
   };
 }
 

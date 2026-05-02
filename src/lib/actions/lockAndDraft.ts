@@ -5,8 +5,9 @@
 // since "use server" files can only export async functions.
 
 import { z } from "zod";
+import { after } from "next/server";
 import { canGenerateDraft } from "@/lib/gates";
-import { getUserPlan, hasProAccessForTrip } from "@/lib/plan";
+import { getUserPlan, hasProAccessForTrip, isPioneerForTrip } from "@/lib/plan";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { enrichDestination } from "@/lib/places/orchestrator";
 import { getWeatherForecast } from "@/lib/weather/client";
@@ -29,12 +30,19 @@ import {
 } from "@/lib/ai/schema";
 import { logAiUsage } from "@/lib/ai/usage";
 import { buildGoogleFlightsUrl } from "@/lib/deeplinks/builders";
+import { resolvePlaceNames, type ResolvedPlace } from "@/lib/places/resolveBatch";
+import { fetchHotelQuotes, fetchFlightPrices, serpApiEnabled } from "@/lib/serpapi/client";
+import { checkSerpApiBudget } from "@/lib/serpapi/costCap";
+import { resolveOriginIata, resolveDestinationIata } from "@/lib/iata";
 import type {
   AiOccasion,
   AiPreferences,
   AiVibeTag,
   DraftProgress,
   DraftStage,
+  ErrorEnvelope,
+  FlightPricing,
+  HotelPricing,
   TripMeta,
   TripPin,
 } from "@/lib/types";
@@ -199,10 +207,20 @@ export async function generateLockAndDraft(
   ): Promise<void> => {
     const progress: DraftProgress = { stage, startedAt };
     if (detail) progress.detail = detail;
+
+    // Re-read meta to avoid clobbering concurrent writes (e.g. price
+    // refresh racing in parallel). Last-writer-wins on draft_progress is
+    // acceptable since progress is sequential within this action.
+    const { data: latest } = await supabase
+      .from("trips")
+      .select("meta")
+      .eq("id", tripId)
+      .maybeSingle<{ meta: TripMeta | null }>();
+
     await supabase
       .from("trips")
       .update({
-        meta: { ...(trip.meta ?? {}), draft_progress: progress },
+        meta: { ...(latest?.meta ?? {}), draft_progress: progress },
       })
       .eq("id", tripId);
   };
@@ -214,6 +232,10 @@ export async function generateLockAndDraft(
     let outputTokens = 0;
     let durationMs = 0;
     let model = getGeminiModelName();
+    // Hoisted so the post-Gemini resolution and the save block downstream
+    // share scope; populated only on the enriched path.
+    let resolvedPlaces = new Map<string, ResolvedPlace>();
+    let placeIdToData = new Map<string, { maps_url: string | null; website_url: string | null }>();
 
     if (tier === "enriched") {
       await writeProgress("places", "Pulling live places near " + ctx.destination);
@@ -259,6 +281,86 @@ export async function generateLockAndDraft(
       outputTokens = result.outputTokens;
       durationMs = result.durationMs;
       model = result.model;
+
+      // One Places batch per draft: any name the AI mentions on schedule
+      // or bookings becomes a verified place_id, or it's silently dropped.
+      // Activities take a different path (backfill-media script) because
+      // SetupActivitySchema has no placeId field.
+      const allNames = new Set<string>();
+      const enrichedDraft = draft as EnrichedDraft;
+      for (const row of enrichedDraft.setup?.schedule ?? []) {
+        for (const p of row.places ?? []) {
+          if (p?.name) allNames.add(p.name);
+        }
+      }
+      for (const b of enrichedDraft.setup?.bookings ?? []) {
+        if (b.place_name) allNames.add(b.place_name);
+      }
+
+      const destLatLng = enriched.resolved?.location
+        ? {
+            lat: enriched.resolved.location.latitude,
+            lng: enriched.resolved.location.longitude,
+          }
+        : null;
+
+      if (destLatLng && allNames.size > 0) {
+        try {
+          resolvedPlaces = await resolvePlaceNames(
+            Array.from(allNames),
+            destLatLng,
+            50_000,
+          );
+        } catch (err) {
+          // Per spec §2.5 item 4: places resolution failure NEVER blocks the
+          // draft save. Log and proceed with empty resolutions.
+          console.error("[lockAndDraft] places resolution failed, continuing", err);
+          await logAiUsage({
+            userId,
+            tripId,
+            feature: "lock_and_draft_places_resolution",
+            model: "google-places",
+            estimatedCostGBP: 0,
+            succeeded: false,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // Build a map of placeId → { maps_url, website_url } for activity
+      // enrichment. Only topAttractions are PlaceDetails (carry googleMapsUri
+      // + websiteUri); the other collections are PlaceSummary and lack those
+      // fields. SetupActivitySchema has no placeId field so this map is used
+      // as a future hook; currently no setup activity references a placeId.
+      for (const item of enriched.topAttractions ?? []) {
+        if (!item.id || placeIdToData.has(item.id)) continue;
+        placeIdToData.set(item.id, {
+          maps_url: item.googleMapsUri ?? null,
+          website_url: item.websiteUri ?? null,
+        });
+      }
+
+      // Belt-and-braces: even though the prompt forbids inline URLs, strip
+      // any that slip through before persisting. Pills come from the
+      // structured `places` array, never from the body prose.
+      const URL_RE = /https?:\/\/\S+/g;
+      for (const row of enrichedDraft.setup?.schedule ?? []) {
+        if (typeof row.body === "string") {
+          row.body = row.body.replace(URL_RE, "").replace(/\s+/g, " ").trim();
+        }
+        if (Array.isArray(row.places)) {
+          row.places = row.places.map((p) => {
+            const r = p?.name ? resolvedPlaces.get(p.name.trim().toLowerCase()) : null;
+            return {
+              name: p.name,
+              place_id: r?.place_id ?? null,
+              maps_url: r?.maps_url ?? null,
+              website_url: r?.website_url ?? null,
+            };
+          });
+        }
+      }
+
     } else {
       await writeProgress("drafting", "Drafting summary and themes");
       const prompt = buildBasicDraftPrompt(ctx);
@@ -278,15 +380,30 @@ export async function generateLockAndDraft(
 
     if (tier === "enriched") {
       const setup = (draft as EnrichedDraft).setup;
+      // Re-read meta immediately before commit to avoid clobbering any
+      // concurrent writes (price refresh, polaroid edits, brief edits).
+      const { data: latestTrip } = await supabase
+        .from("trips")
+        .select("meta")
+        .eq("id", tripId)
+        .maybeSingle<{ meta: TripMeta | null }>();
+      const currentMeta = latestTrip?.meta ?? trip.meta ?? {};
       // Drop draft_progress on success — the page will see "no progress
       // marker + enriched_draft_generated_at populated" and render the
       // finished plan.
-      const { draft_progress: _drop, ...metaWithoutProgress } = trip.meta ?? {};
+      const { draft_progress: _drop, ...metaWithoutProgress } = currentMeta;
       void _drop;
       const nextMeta: TripMeta = {
         ...metaWithoutProgress,
         spec_grid: setup.specGrid,
-        schedule: setup.schedule,
+        // Zod's inferred type for places is { name }[] — the validation
+        // shape — but the runtime mutation above attaches place_id /
+        // maps_url / website_url. The cast crosses that boundary.
+        schedule: setup.schedule as unknown as TripMeta["schedule"],
+        // On first lock: empty shell signals "loading" to realtime listeners.
+        // On redraft: preserve existing pricing so a draft failure doesn't
+        // wipe previously-fetched data.
+        live_pricing: currentMeta.live_pricing ?? { flights: undefined, hotels: undefined },
       };
 
       const { error: updateError } = await supabase
@@ -330,6 +447,11 @@ export async function generateLockAndDraft(
         category: a.category,
         position: activityBase + i,
         ai_drafted: true,
+        // SetupActivitySchema has no placeId; place enrichment for activities
+        // runs via the backfill-media script. These fields are left null here.
+        place_id: null as string | null,
+        maps_url: null as string | null,
+        website_url: null as string | null,
       }));
       if (activityRows.length > 0) {
         const { error: actErr } = await service
@@ -338,6 +460,28 @@ export async function generateLockAndDraft(
         if (actErr) {
           console.error("[generateLockAndDraft] activities insert failed", actErr);
         }
+      }
+
+      // Manual admin edits (custom_url, assignee, done) survive regeneration:
+      // snapshot existing ai_drafted rows before delete, merge by exact-title
+      // match after re-insert. Title rename loses the merge — accepted v1
+      // trade-off; Levenshtein is a follow-up.
+      const { data: existingAiBookings } = await service
+        .from("bookings")
+        .select("title, custom_url, assignee_id, done")
+        .eq("trip_id", tripId)
+        .eq("ai_drafted", true);
+
+      const bookingSnapshot = new Map<
+        string,
+        { custom_url: string | null; assignee_id: string | null; done: boolean }
+      >();
+      for (const b of existingAiBookings ?? []) {
+        bookingSnapshot.set((b.title ?? "").toLowerCase().trim(), {
+          custom_url: b.custom_url ?? null,
+          assignee_id: b.assignee_id ?? null,
+          done: !!b.done,
+        });
       }
 
       await service
@@ -355,13 +499,24 @@ export async function generateLockAndDraft(
         .maybeSingle<{ position: number }>();
       const bookingBase = (lastBooking?.position ?? 0) + 1;
 
-      const bookingRows = setup.bookings.map((b, i) => ({
-        trip_id: tripId,
-        title: b.title,
-        position: bookingBase + i,
-        created_by: userId,
-        ai_drafted: true,
-      }));
+      const bookingRows = setup.bookings.map((b, i) => {
+        const r = b.place_name ? resolvedPlaces.get(b.place_name.trim().toLowerCase()) : null;
+        const titleKey = (b.title ?? "").toLowerCase().trim();
+        const preserved = bookingSnapshot.get(titleKey);
+        return {
+          trip_id: tripId,
+          title: b.title,
+          position: bookingBase + i,
+          created_by: userId,
+          ai_drafted: true,
+          place_id: r?.place_id ?? null,
+          maps_url: r?.maps_url ?? null,
+          website_url: r?.website_url ?? null,
+          custom_url: preserved?.custom_url ?? null,
+          assignee_id: preserved?.assignee_id ?? null,
+          done: preserved?.done ?? false,
+        };
+      });
       if (bookingRows.length > 0) {
         const { error: bookErr } = await service
           .from("bookings")
@@ -369,6 +524,26 @@ export async function generateLockAndDraft(
         if (bookErr) {
           console.error("[generateLockAndDraft] bookings insert failed", bookErr);
         }
+      }
+
+      // Non-blocking pricing fetch — runs after plan + bookings are committed
+      // so SerpApi failures cannot poison the draft. Hotels run for any pro;
+      // flights run only for Pioneer. Fire outside the response path via
+      // after() so both lockAndStartDraft and direct DraftingFlow callers
+      // are non-blocking.
+      if (serpApiEnabled() && trip.start_date && trip.end_date && trip.destination) {
+        after(async () => {
+          try {
+            const cap = await checkSerpApiBudget();
+            if (!cap.allowed) {
+              console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
+              return;
+            }
+            await runPricingFetch({ userId, tripId, trip, tier: "enriched" });
+          } catch (err) {
+            console.error("[lockAndDraft.pricing] background pricing failed", err);
+          }
+        });
       }
     } else {
       const { error: updateError } = await supabase
@@ -413,10 +588,17 @@ export async function generateLockAndDraft(
       startedAt,
       error: { message: friendlyMessage, retryable: true },
     };
+    // Re-read meta before writing the error state to avoid clobbering
+    // any concurrent writes that happened before the failure.
+    const { data: latestOnFailure } = await service
+      .from("trips")
+      .select("meta")
+      .eq("id", tripId)
+      .maybeSingle<{ meta: TripMeta | null }>();
     await service
       .from("trips")
       .update({
-        meta: { ...(trip.meta ?? {}), draft_progress: failedProgress },
+        meta: { ...(latestOnFailure?.meta ?? trip.meta ?? {}), draft_progress: failedProgress },
       })
       .eq("id", tripId);
 
@@ -469,7 +651,7 @@ async function callWithRetryOnSchemaError<T extends z.ZodTypeAny>(
     const effectivePrompt =
       attempt === 0
         ? prompt
-        : `${prompt}\n\nIMPORTANT: A previous attempt failed schema validation with these errors. Fix them. Pay particular attention to required field names — every object listed below must have BOTH a 'name' (string) AND a 'description' (string) field, never 'title' or other variants.\n\n${lastErrMessage.slice(0, 2000)}`;
+        : `${prompt}\n\nIMPORTANT: A previous attempt failed schema validation with these errors. Fix them carefully — match every required field name and type exactly as defined in the OUTPUT SCHEMA above. Some objects use \`title\` (e.g. setup.activities, setup.bookings) and others use \`name\` (e.g. itinerary activities, bookAhead). Do not rename fields; produce the exact field names the schema requires.\n\n${lastErrMessage.slice(0, 2000)}`;
     try {
       const result = await generateJson(effectivePrompt, (raw) =>
         schema.parse(raw),
@@ -525,4 +707,148 @@ function classifyDraftError(err: unknown): string {
   }
 
   return "Drafting failed. Please retry in a moment.";
+}
+
+async function runPricingFetch(args: {
+  userId: string;
+  tripId: string;
+  trip: {
+    start_date: string | null;
+    end_date: string | null;
+    destination: string | null;
+    target_crew_size: number | null;
+    target_budget_pp?: number | string | null;
+    currency: string | null;
+    meta: TripMeta | null;
+    slug?: string;
+  };
+  tier: "enriched";
+}): Promise<void> {
+  const { userId, tripId, trip } = args;
+  if (!trip.start_date || !trip.end_date || !trip.destination) return;
+
+  const tripDays = Math.max(
+    1,
+    Math.round((Date.parse(trip.end_date) - Date.parse(trip.start_date)) / 86_400_000),
+  );
+  const rooms = Math.max(1, Math.ceil((trip.target_crew_size ?? 1) / 2));
+  const targetBudgetPp =
+    trip.target_budget_pp !== null && trip.target_budget_pp !== undefined
+      ? Number(trip.target_budget_pp)
+      : null;
+  const perRoomBudget =
+    targetBudgetPp && tripDays
+      ? (targetBudgetPp * 0.4) / tripDays * 2
+      : undefined;
+  const currency = trip.currency ?? "GBP";
+
+  // Resolve Pioneer status and IATA codes before launching parallel fetches.
+  const isPioneer = await isPioneerForTrip(userId, tripId);
+  const originRaw = trip.meta?.ai_preferences?.origin ?? null;
+  const originIata = resolveOriginIata(originRaw);
+  const destinationIata = resolveDestinationIata(trip.destination);
+
+  // Launch hotel and flight fetches in parallel. Flights only run for
+  // Pioneer trips with resolvable IATA codes.
+  const hotelTask = fetchHotelQuotes({
+    destination: trip.destination,
+    checkIn: trip.start_date,
+    checkOut: trip.end_date,
+    rooms,
+    perRoomBudget,
+    currency,
+  }).catch((err) => {
+    console.error("[lockAndDraft.pricing] hotels fetch threw", err);
+    return null;
+  });
+
+  const flightTask =
+    isPioneer && originIata && destinationIata
+      ? fetchFlightPrices({
+          originIata,
+          destinationIata,
+          outboundDate: trip.start_date,
+          returnDate: trip.end_date,
+          adults: Math.max(1, trip.target_crew_size ?? 1),
+          currency,
+        }).catch((err) => {
+          console.error("[lockAndDraft.pricing] flights fetch threw", err);
+          return null;
+        })
+      : Promise.resolve(null);
+
+  const [hotelQuotes, flightResult] = await Promise.all([hotelTask, flightTask]);
+
+  const refreshedAt = new Date().toISOString();
+  const buildError = (code: ErrorEnvelope["code"], message: string): ErrorEnvelope => ({
+    code,
+    message,
+    occurred_at: refreshedAt,
+  });
+
+  const hotels: HotelPricing =
+    hotelQuotes && hotelQuotes.length > 0
+      ? {
+          quotes: hotelQuotes,
+          refreshed_at: refreshedAt,
+          provider: "serpapi-google-hotels",
+          fetch_error: null,
+        }
+      : {
+          quotes: [],
+          refreshed_at: refreshedAt,
+          provider: "serpapi-google-hotels",
+          fetch_error: buildError("no_results", "SerpApi returned no hotels at draft time."),
+        };
+
+  let flights: FlightPricing | undefined;
+  if (isPioneer && originIata && destinationIata && flightResult) {
+    flights = {
+      low: flightResult.low,
+      high: flightResult.high,
+      currency: flightResult.currency,
+      provider: "serpapi-google-flights",
+      refreshed_at: refreshedAt,
+      origin_iata: originIata,
+      destination_iata: destinationIata,
+      best_price: flightResult.best_price,
+      options: flightResult.options,
+      fetch_error: null,
+    };
+  }
+
+  // Persist the live_pricing into trips.meta. Re-read the latest meta
+  // so we don't clobber other concurrent writes.
+  const service = await createServiceClient();
+  const { data: latest } = await service
+    .from("trips")
+    .select("meta")
+    .eq("id", tripId)
+    .maybeSingle<{ meta: TripMeta | null }>();
+  const pricingMeta: TripMeta = {
+    ...(latest?.meta ?? {}),
+    live_pricing: { flights, hotels },
+  };
+  await service.from("trips").update({ meta: pricingMeta }).eq("id", tripId);
+
+  await logAiUsage({
+    userId,
+    tripId,
+    feature: "lock_and_draft_pricing_hotels",
+    model: "serpapi",
+    estimatedCostGBP: 0.012,
+    succeeded: hotels.fetch_error === null,
+    errorMessage: hotels.fetch_error?.message,
+  });
+  if (isPioneer) {
+    await logAiUsage({
+      userId,
+      tripId,
+      feature: "lock_and_draft_pricing_flights",
+      model: "serpapi",
+      estimatedCostGBP: 0.012,
+      succeeded: !!flights && !flights.fetch_error,
+      errorMessage: flights?.fetch_error?.message,
+    });
+  }
 }

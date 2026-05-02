@@ -1,20 +1,26 @@
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import {
   BasicDraftSchema,
-  EnrichedDraftSchema,
+  PersistedEnrichedDraftSchema,
   type Draft,
 } from "@/lib/ai/schema";
-import type { DraftProgress, LivePricing } from "@/lib/types";
+import type {
+  DraftProgress,
+  LivePricing,
+  ScheduleItem,
+  ScheduleItemPlace,
+} from "@/lib/types";
 import { BasicDraftView } from "./BasicDraftView";
 import { DraftingFlow } from "./DraftingFlow";
 import { EnrichedDraftView } from "./EnrichedDraftView";
 import { LockAndDraftCTA } from "./LockAndDraftCTA";
-import { RefreshPricesButton } from "./RefreshPricesButton";
+import { TravelBlock } from "./TravelBlock";
 
 type Props = {
   tripId: string;
   userId: string | null;
   isAdmin: boolean;
+  isPioneer?: boolean;
   destination: string | null;
   currency: string;
   enrichedDraft: unknown;
@@ -24,6 +30,13 @@ type Props = {
   livePricing?: LivePricing | null;
   briefStale?: boolean;
   draftProgress?: DraftProgress | null;
+  scheduleRows?: ScheduleItem[];
+  startDate?: string | null;
+  endDate?: string | null;
+  targetCrewSize?: number | null;
+  originIata?: string | null;
+  originLabel?: string | null;
+  destinationIata?: string | null;
 };
 
 function parseDraft(
@@ -31,19 +44,38 @@ function parseDraft(
   tier: "basic" | "enriched" | null,
 ): Draft | null {
   if (!raw || typeof raw !== "object") return null;
-  const schema = tier === "basic" ? BasicDraftSchema : EnrichedDraftSchema;
+  // Use the permissive read schema so legacy enriched drafts (generated
+  // before the Spec B unification pass added `setup`) still render. The
+  // strict generation-time schema lives in lockAndDraft.ts.
+  const schema = tier === "basic" ? BasicDraftSchema : PersistedEnrichedDraftSchema;
   const result = schema.safeParse(raw);
   if (result.success) return result.data;
   // Fall back: try the other schema in case the tier column drifted from
   // the persisted blob.
-  const alt = (tier === "basic" ? EnrichedDraftSchema : BasicDraftSchema).safeParse(raw);
+  const alt = (tier === "basic" ? PersistedEnrichedDraftSchema : BasicDraftSchema).safeParse(raw);
   return alt.success ? alt.data : null;
+}
+
+function buildPlacesIndex(
+  rows: ScheduleItem[] | undefined,
+): Map<string, ScheduleItemPlace> {
+  const index = new Map<string, ScheduleItemPlace>();
+  if (!rows) return index;
+  for (const row of rows) {
+    for (const place of row.places ?? []) {
+      if (place.place_id && place.maps_url) {
+        index.set(place.place_id, place);
+      }
+    }
+  }
+  return index;
 }
 
 export function LockAndDraftSection({
   tripId,
   userId,
   isAdmin,
+  isPioneer = false,
   destination,
   currency,
   enrichedDraft,
@@ -53,10 +85,18 @@ export function LockAndDraftSection({
   livePricing,
   briefStale = false,
   draftProgress = null,
+  scheduleRows,
+  startDate = null,
+  endDate = null,
+  targetCrewSize = null,
+  originIata = null,
+  originLabel = null,
+  destinationIata = null,
 }: Props) {
   const draft = parseDraft(enrichedDraft, enrichedDraftTier);
   const hasDraft = draft !== null;
   const showStale = hasDraft && briefStale;
+  const placesIndex = buildPlacesIndex(scheduleRows);
 
   return (
     <section className="py-14 pb-24 section-enter">
@@ -109,6 +149,26 @@ export function LockAndDraftSection({
         </p>
       )}
 
+      {hasDraft && draft.tier === "enriched" && (
+        <div className="mb-10">
+          <TravelBlock
+            livePricing={livePricing ?? null}
+            isPioneer={isPioneer}
+            userId={userId}
+            tripId={tripId}
+            draftedAt={enrichedDraftGeneratedAt}
+            lastPriceRefreshAt={lastPriceRefreshAt}
+            destination={destination}
+            startDate={startDate}
+            endDate={endDate}
+            targetCrewSize={targetCrewSize}
+            originIata={originIata}
+            originLabel={originLabel}
+            destinationIata={destinationIata}
+          />
+        </div>
+      )}
+
       <div className={showStale ? "relative opacity-60" : "relative"}>
         {showStale && (
           <span className="absolute right-0 top-0 z-10 label-sm-wide text-accent border border-accent/40 px-2 py-1 bg-bg">
@@ -126,37 +186,26 @@ export function LockAndDraftSection({
             generatedAt={enrichedDraftGeneratedAt}
             currency={currency}
             livePricing={livePricing}
+            isPioneer={isPioneer}
+            placesIndex={placesIndex}
           />
         )}
       </div>
 
       {hasDraft && isAdmin && userId && destination && (
-        <div className="mt-10 pt-6 border-t border-line grid gap-6 grid-cols-2 max-[760px]:grid-cols-1">
-          <div className="grid gap-2">
-            <div className="label-sm text-fg-3">REGENERATE</div>
-            <p className="text-[13px] text-fg-3 leading-[1.55] max-w-[440px]">
-              Rerun the draft. Counts against your generation cap.
-            </p>
-            <div className="mt-1">
-              <LockAndDraftCTA
-                tripId={tripId}
-                userId={userId}
-                destination={destination}
-                variant="regenerate"
-              />
-            </div>
+        <div className="mt-10 pt-6 border-t border-line grid gap-2 max-w-[440px]">
+          <div className="label-sm text-fg-3">REGENERATE</div>
+          <p className="text-[13px] text-fg-3 leading-[1.55]">
+            Rerun the draft. Counts against your generation cap.
+          </p>
+          <div className="mt-1">
+            <LockAndDraftCTA
+              tripId={tripId}
+              userId={userId}
+              destination={destination}
+              variant="regenerate"
+            />
           </div>
-
-          {draft.tier === "enriched" && (
-            <div className="grid gap-2">
-              <div className="label-sm text-fg-3">PRICE CHECK</div>
-              <RefreshPricesButton
-                tripId={tripId}
-                userId={userId}
-                lastRefreshedAt={lastPriceRefreshAt}
-              />
-            </div>
-          )}
         </div>
       )}
     </section>

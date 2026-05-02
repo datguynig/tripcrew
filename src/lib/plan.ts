@@ -86,3 +86,36 @@ export async function hasProAccessForTrip(
     });
   });
 }
+
+// A trip is "Pioneer" iff at least one of its admins has
+// founding_crew_at set. This matches the "any admin pays" pricing
+// semantics used elsewhere — Pioneer status is a property of the
+// trip, not of the caller. (A Pioneer who joins a non-Pioneer trip
+// as a member should still see Member-tier UI for that trip.)
+export async function isPioneerForTrip(
+  userId: string,
+  tripId: string,
+): Promise<boolean> {
+  // userId is kept for API stability; the check is trip-scoped only.
+  void userId;
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("trip_members")
+    .select(
+      `
+      user_id,
+      profiles!inner (
+        founding_crew_at
+      )
+    `,
+    )
+    .eq("trip_id", tripId)
+    .eq("role", "admin");
+
+  if (error || !data) return false;
+
+  return data.some((member) => {
+    const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
+    return !!p?.founding_crew_at;
+  });
+}

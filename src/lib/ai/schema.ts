@@ -1,10 +1,13 @@
 import { z } from "zod";
 
-export const DraftHotelSuggestionSchema = z.object({
-  area: z.string(),
-  description: z.string(),
-  searchUrl: z.string().url(),
+const ScheduleItemPlaceSchema = z.object({
+  name: z.string().min(2).max(80),
 });
+
+const PlaceListSchema = z.preprocess(
+  (raw) => (raw == null ? [] : raw),
+  z.array(ScheduleItemPlaceSchema).max(4),
+);
 
 export const DraftActivitySchema = z.object({
   placeId: z.string().optional(),
@@ -12,7 +15,6 @@ export const DraftActivitySchema = z.object({
   description: z.string(),
   approxDurationMinutes: z.number().int().positive().optional(),
   bookAhead: z.boolean().default(false),
-  googleMapsUrl: z.string().url().optional(),
 });
 
 // Permissive: Gemini occasionally returns bookAhead items as objects
@@ -94,6 +96,7 @@ export const SetupScheduleRowSchema = z.object({
   day_label: z.string().min(1).max(30),
   heading: z.string().min(1).max(120),
   body: z.string().min(1).max(500),
+  places: PlaceListSchema,
 });
 
 export const SetupActivitySchema = z.object({
@@ -104,6 +107,7 @@ export const SetupActivitySchema = z.object({
 
 export const SetupBookingSchema = z.object({
   title: z.string().min(1).max(100),
+  place_name: z.string().min(2).max(80).optional(),
 });
 
 export const SetupSchema = z.object({
@@ -120,6 +124,9 @@ export const SetupSchema = z.object({
   bookings: z.array(SetupBookingSchema).min(1).max(16),
 });
 
+// Strict generation-time shape: every Lock & Draft pass MUST emit these
+// fields (including `setup`) so the post-AI persistence step has a brief
+// to write into trips.meta.{spec_grid, schedule, ...}.
 export const EnrichedDraftSchema = z.object({
   tier: z.literal("enriched"),
   destination: z.string(),
@@ -133,18 +140,26 @@ export const EnrichedDraftSchema = z.object({
     .nullable(),
   whereToStay: z.array(
     z.object({
-      neighbourhood: z.string(),
-      description: z.string(),
-      bestFor: z.string(),
-      hotelSuggestions: z.array(DraftHotelSuggestionSchema),
+      neighbourhood: z.string().min(2).max(80),
+      description: z.string().min(2).max(300),
+      bestFor: z.string().min(2).max(60),
     }),
-  ),
+  ).max(5),
   itinerary: z.array(DraftDaySchema),
   bookAhead: z.array(DraftActivityLikeSchema),
   budget: DraftBudgetSchema,
   flightSearchUrl: z.string().url(),
   setup: SetupSchema,
   generatedAt: z.string(),
+});
+
+// Read-time shape used by the trip-overview render path. Permissive on
+// fields that legacy persisted drafts predate: `setup` was added in the
+// Spec B Phase 1 unification pass, so existing rows generated before
+// then don't have it. The brief renders from trips.meta.spec_grid +
+// .schedule, so the plan view doesn't need `setup` to draw itself.
+export const PersistedEnrichedDraftSchema = EnrichedDraftSchema.extend({
+  setup: SetupSchema.optional(),
 });
 
 export const BasicDraftSchema = z.object({
@@ -157,9 +172,14 @@ export const BasicDraftSchema = z.object({
   generatedAt: z.string(),
 });
 
+// Strict type used inside the generation pipeline (lockAndDraft.ts) where
+// setup is guaranteed to be present post-validation. The persisted-read
+// path uses PersistedEnrichedDraft instead so legacy drafts without
+// setup still parse.
 export type EnrichedDraft = z.infer<typeof EnrichedDraftSchema>;
+export type PersistedEnrichedDraft = z.infer<typeof PersistedEnrichedDraftSchema>;
 export type BasicDraft = z.infer<typeof BasicDraftSchema>;
-export type Draft = EnrichedDraft | BasicDraft;
+export type Draft = PersistedEnrichedDraft | BasicDraft;
 export type DraftSetup = z.infer<typeof SetupSchema>;
 export type DraftSetupSpecCell = z.infer<typeof SetupSpecCellSchema>;
 export type DraftSetupScheduleRow = z.infer<typeof SetupScheduleRowSchema>;

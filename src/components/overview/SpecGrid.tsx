@@ -17,12 +17,7 @@ type Props = {
   currency: string;
 };
 
-export function SpecGrid({
-  cells,
-  isAdmin,
-  tripId,
-  currency,
-}: Props) {
+export function SpecGrid({ cells, isAdmin, tripId, currency }: Props) {
   const toast = useToast();
   const [optimistic, setOptimistic] = useState<SpecItem[] | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);

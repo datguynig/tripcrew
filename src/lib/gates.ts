@@ -1,4 +1,4 @@
-import { getUserPlan, hasProAccessForTrip, type Plan } from "@/lib/plan";
+import { getUserPlan, hasProAccessForTrip, isPioneerForTrip, type Plan } from "@/lib/plan";
 import { createClient } from "@/lib/supabase/server";
 
 export const TRIAL_GENERATION_CAP = 3;
@@ -97,10 +97,10 @@ export async function canRefreshPrices(
 ): Promise<GateResult> {
   const supabase = await createClient();
 
-  if (!(await hasProAccessForTrip(userId, tripId))) {
+  if (!(await isPioneerForTrip(userId, tripId))) {
     return {
       allowed: false,
-      reason: "Price refresh requires Member access.",
+      reason: "Live price refresh is a Pioneer feature.",
       upgrade_cta: true,
     };
   }

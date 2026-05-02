@@ -2,11 +2,19 @@ import { getCached, setCached } from "@/lib/places/cache";
 import { placesRequestWithRetry } from "@/lib/places/client";
 import { mapToSummary, type PlaceSummary, type RawPlace } from "@/lib/places/types";
 
+export interface LocationBias {
+  circle: {
+    center: { latitude: number; longitude: number };
+    radius: number;
+  };
+}
+
 export interface TextSearchParams {
   query: string;
   maxResults?: number;
   languageCode?: string;
   regionCode?: string;
+  locationBias?: LocationBias;
 }
 
 const SUMMARY_FIELD_MASK = [
@@ -21,6 +29,8 @@ const SUMMARY_FIELD_MASK = [
   "places.shortFormattedAddress",
   "places.location",
   "places.editorialSummary",
+  "places.websiteUri",
+  "places.googleMapsUri",
 ].join(",");
 
 export async function textSearch(
@@ -39,6 +49,7 @@ export async function textSearch(
       maxResultCount: params.maxResults ?? 10,
       languageCode: params.languageCode ?? "en",
       regionCode: params.regionCode,
+      ...(params.locationBias ? { locationBias: params.locationBias } : {}),
     },
   });
 

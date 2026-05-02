@@ -31,7 +31,22 @@ export type SpecItem = {
   // legacy reads but never authoritative. Symbol comes from trip.currency.
   amount?: number | null;
 };
-export type ScheduleItem = { day_label: string; heading: string; body: string };
+export type ScheduleItemPlace = {
+  name: string;
+  place_id: string | null;
+  maps_url: string | null;
+  website_url: string | null;
+};
+
+export type ScheduleItem = {
+  day_label: string;
+  heading: string;
+  body: string;
+  // Optional during the rollout window so existing rows without
+  // `places` still render. Always written by Lock & Draft after
+  // Phase 1 Task 5.
+  places?: ScheduleItemPlace[];
+};
 export type SectionLeadKey =
   | "overview"
   | "shortlist"
@@ -194,18 +209,71 @@ export type PolaroidOverride = {
   sourceId?: string | null;
 };
 
-// Flight (and later, hotel) pricing fetched from a real provider.
-// Replaces the AI's vibes-based estimate in the budget block when present.
+export type Money = { amount: number; currency: string };
+
+export type SerpErrorCode =
+  | "timeout"
+  | "rate_limit"
+  | "parse_error"
+  | "no_results"
+  | "provider_error"
+  | "missing_input"
+  | "monthly_budget_cap";
+
+export type ErrorEnvelope = {
+  code: SerpErrorCode;
+  message: string;
+  occurred_at: string;
+};
+
+export type FareOption = {
+  airline: string;
+  airline_logo_url: string | null;
+  price: Money;
+  duration_minutes: number;
+  stops: number;
+  depart_iso: string;
+  arrive_iso: string;
+  deeplink: string;
+};
+
+export type HotelQuote = {
+  name: string;
+  place_id: string | null;
+  rating: number | null;
+  price_per_night: Money;
+  total_price: Money;
+  thumbnail_url: string | null;
+  deeplink: string;
+};
+
+export type FlightPricing = {
+  // Pre-existing fields preserved so existing readers keep working.
+  low: number;
+  high: number;
+  currency: string;
+  provider: "serpapi-google-flights";
+  refreshed_at: string;
+  origin_iata: string;
+  destination_iata: string;
+  best_price?: Money;
+  options?: FareOption[];
+  fallback_deeplink?: string;
+  fetch_error?: ErrorEnvelope | null;
+};
+
+export type HotelPricing = {
+  quotes: HotelQuote[];
+  refreshed_at: string;
+  provider: "serpapi-google-hotels";
+  fetch_error: ErrorEnvelope | null;
+};
+
+// Flight + hotel quotes from SerpApi. Both are optional so partial
+// success (one side fetched, the other failed) round-trips cleanly.
 export type LivePricing = {
-  flights?: {
-    low: number;
-    high: number;
-    currency: string;
-    provider: "serpapi-google-flights";
-    refreshed_at: string;
-    origin_iata: string;
-    destination_iata: string;
-  };
+  flights?: FlightPricing;
+  hotels?: HotelPricing;
 };
 
 export type DraftStage =
@@ -293,6 +361,8 @@ export type Activity = {
   rating: number | null;
   price_level: number | null;
   website_url: string | null;
+  place_id: string | null;
+  maps_url: string | null;
   created_at: string;
 };
 
@@ -313,6 +383,11 @@ export type Booking = {
   ai_drafted: boolean;
   created_at: string;
   created_by: string | null;
+  place_id: string | null;
+  maps_url: string | null;
+  website_url: string | null;
+  // Admin override; takes precedence over place_id-derived URLs at render time.
+  custom_url: string | null;
 };
 
 export type Expense = {

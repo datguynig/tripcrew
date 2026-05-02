@@ -1,91 +1,95 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/Button";
-import { useToast } from "@/hooks/useToast";
 import { refreshPrices } from "@/lib/actions/priceRefresh";
+import { useToast } from "@/hooks/useToast";
+
+const RATE_LIMIT_HOURS = 4;
 
 type Props = {
-  tripId: string;
   userId: string;
-  lastRefreshedAt: string | null;
+  tripId: string;
+  lastPriceRefreshAt: string | null;
+  onRefreshed?: (refreshedAt: string) => void;
 };
 
-function formatRelative(iso: string): string {
-  const diff = Date.now() - Date.parse(iso);
-  if (Number.isNaN(diff)) return "just now";
-  const minutes = Math.floor(diff / 60_000);
-  if (minutes < 1) return "just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
+function formatRateLimitCopy(lastIso: string | null): string | null {
+  if (!lastIso) return null;
+  const elapsedMs = Date.now() - Date.parse(lastIso);
+  const remainingMs = RATE_LIMIT_HOURS * 3_600_000 - elapsedMs;
+  if (remainingMs <= 0) return null;
+  const h = Math.floor(remainingMs / 3_600_000);
+  const m = Math.floor((remainingMs % 3_600_000) / 60_000);
+  return h > 0 ? `Try in ${h}h ${m}m` : `Try in ${m}m`;
 }
 
 export function RefreshPricesButton({
-  tripId,
   userId,
-  lastRefreshedAt,
+  tripId,
+  lastPriceRefreshAt,
+  onRefreshed,
 }: Props) {
-  const router = useRouter();
   const toast = useToast();
   const [pending, startTransition] = useTransition();
-  const [optimisticAt, setOptimisticAt] = useState<string | null>(null);
-  const [upgradeError, setUpgradeError] = useState<string | null>(null);
-
-  const stamp = optimisticAt ?? lastRefreshedAt;
+  const [lastAt, setLastAt] = useState(lastPriceRefreshAt);
+  const rateLimited = formatRateLimitCopy(lastAt);
+  const disabled = pending || !!rateLimited;
 
   const handleClick = () => {
-    setUpgradeError(null);
+    if (disabled) return;
     startTransition(async () => {
       const result = await refreshPrices(userId, tripId);
       if (result.success) {
-        setOptimisticAt(result.refreshedAt);
-        toast.success("Live flight prices updated.");
-        router.refresh();
-        return;
-      }
-      if (result.upgradeCta) {
-        setUpgradeError(result.error);
+        setLastAt(result.refreshedAt);
+        toast.success("Prices refreshed.");
+        onRefreshed?.(result.refreshedAt);
       } else {
         toast.error(result.error);
       }
     });
   };
 
+  let label: string;
+  if (pending) label = "Refreshing…";
+  else if (rateLimited) label = rateLimited;
+  else label = "Refresh";
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3 flex-wrap">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleClick}
-          disabled={pending}
-        >
-          {pending ? "Checking…" : "Refresh flight prices"}
-        </Button>
-        <span className="label-sm text-fg-3">
-          {stamp ? `Last checked ${formatRelative(stamp)}` : "Not yet checked"}
-        </span>
-      </div>
-      <p className="text-[12px] text-fg-3 leading-[1.5] max-w-[440px]">
-        Pulls live Google Flights pricing for your origin, destination, and dates.
-        Updates the Flights row in the budget. One refresh per 4h.
-      </p>
-      {upgradeError && (
-        <div className="border border-accent/30 bg-accent/[0.06] px-4 py-3 flex items-center gap-4 flex-wrap text-[13px]">
-          <span className="text-fg-2">{upgradeError}</span>
-          <Link
-            href="/account"
-            className="label-sm-wide text-accent hover:underline shrink-0"
-          >
-            Upgrade →
-          </Link>
-        </div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled}
+      className="inline-flex items-center gap-1.5 px-[10px] py-[6px]
+        label-sm border border-line bg-bg-2 text-fg
+        hover:border-line-2 hover:bg-bg-3
+        disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:bg-bg-2 disabled:hover:border-line
+        transition-colors"
+      aria-busy={pending}
+    >
+      <RefreshIcon spinning={pending} />
+      <span>{label}</span>
+    </button>
+  );
+}
+
+function RefreshIcon({ spinning }: { spinning: boolean }) {
+  return (
+    <svg
+      width="11"
+      height="11"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={spinning ? "animate-spin" : undefined}
+      aria-hidden="true"
+    >
+      <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-15 6.7L3 16" />
+      <path d="M3 21v-5h5" />
+    </svg>
   );
 }
