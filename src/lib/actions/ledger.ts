@@ -176,6 +176,97 @@ export async function addExpense(input: AddExpenseInput) {
   return { ok: true };
 }
 
+const editExpenseSchema = addExpenseSchema.extend({
+  expenseId: z.string().uuid(),
+});
+
+export type EditExpenseInput = z.infer<typeof editExpenseSchema>;
+
+export async function editExpense(input: EditExpenseInput) {
+  const parsed = editExpenseSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const data = parsed.data;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  // Authorise: original payer or trip admin
+  const { data: existing } = await supabase
+    .from("expenses")
+    .select("id, paid_by, trip_id, version")
+    .eq("id", data.expenseId)
+    .maybeSingle<{ id: string; paid_by: string; trip_id: string; version: number }>();
+  if (!existing) return { error: "Expense not found" };
+  if (existing.paid_by !== user.id) {
+    const { data: membership } = await supabase
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", existing.trip_id)
+      .eq("user_id", user.id)
+      .maybeSingle<{ role: string }>();
+    if (membership?.role !== "admin") return { error: "Not authorised" };
+  }
+
+  // Bump version, write the expense fields
+  const { error: updErr } = await supabase
+    .from("expenses")
+    .update({
+      description: data.description,
+      amount: data.amount,
+      original_currency: data.original_currency ?? null,
+      original_amount: data.original_amount ?? null,
+      fx_rate: data.fx_rate ?? null,
+      fx_rate_source: data.fx_rate_source ?? null,
+      fx_rate_date: data.fx_rate_date ?? null,
+      fx_suggested_amount: data.fx_suggested_amount ?? null,
+      fx_user_overridden: data.fx_user_overridden ?? false,
+      version: existing.version + 1,
+    })
+    .eq("id", data.expenseId);
+  if (updErr) return { error: updErr.message };
+
+  // Soft-delete current participants and re-insert. Phase 2 will do
+  // versioned regeneration of obligations on top of this edit.
+  await supabase
+    .from("expense_participants")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("expense_id", data.expenseId)
+    .is("deleted_at", null);
+
+  if (data.participants && data.participants.length > 0) {
+    // Build display-name snapshots
+    const { data: members } = await supabase
+      .from("trip_members")
+      .select("user_id, profiles!trip_members_user_id_fkey(name)")
+      .eq("trip_id", existing.trip_id);
+    const nameById = new Map<string, string>();
+    for (const m of members ?? []) {
+      const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+      if (profile?.name) nameById.set(m.user_id, profile.name);
+    }
+    const { error: insErr } = await supabase.from("expense_participants").insert(
+      data.participants.map((p) => ({
+        trip_id: existing.trip_id,
+        expense_id: data.expenseId,
+        user_id: p.user_id,
+        share_amount: p.share_amount,
+        share_basis: p.share_basis,
+        share_input: p.share_input ?? null,
+        display_name_snapshot: nameById.get(p.user_id) ?? "Crew",
+      })),
+    );
+    if (insErr) return { error: insErr.message };
+  }
+
+  await revalidateTrip(existing.trip_id);
+  return { ok: true };
+}
+
 export async function deleteExpense(id: string) {
   const parsed = z.string().uuid().safeParse(id);
   if (!parsed.success) return { error: "Invalid id" };
@@ -188,13 +279,59 @@ export async function deleteExpense(id: string) {
 
   const { data, error } = await supabase
     .from("expenses")
-    .delete()
+    .update({ deleted_at: new Date().toISOString() })
     .eq("id", parsed.data)
     .eq("paid_by", user.id)
+    .is("deleted_at", null)
     .select("trip_id")
     .maybeSingle<{ trip_id: string }>();
   if (error) return { error: error.message };
   if (!data) return { error: "Only the payer can delete this" };
+
+  // Cascade soft-delete to participants
+  await supabase
+    .from("expense_participants")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("expense_id", parsed.data)
+    .is("deleted_at", null);
+
   await revalidateTrip(data.trip_id);
+  return { ok: true };
+}
+
+export async function restoreExpense(id: string) {
+  const parsed = z.string().uuid().safeParse(id);
+  if (!parsed.success) return { error: "Invalid id" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  // Admin or original payer can restore
+  const { data: row } = await supabase
+    .from("expenses")
+    .select("trip_id, paid_by")
+    .eq("id", parsed.data)
+    .maybeSingle<{ trip_id: string; paid_by: string }>();
+  if (!row) return { error: "Expense not found" };
+  if (row.paid_by !== user.id) {
+    const { data: m } = await supabase
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", row.trip_id)
+      .eq("user_id", user.id)
+      .maybeSingle<{ role: string }>();
+    if (m?.role !== "admin") return { error: "Not authorised" };
+  }
+
+  await supabase.from("expenses").update({ deleted_at: null }).eq("id", parsed.data);
+  await supabase
+    .from("expense_participants")
+    .update({ deleted_at: null })
+    .eq("expense_id", parsed.data);
+
+  await revalidateTrip(row.trip_id);
   return { ok: true };
 }
