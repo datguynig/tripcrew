@@ -7,14 +7,64 @@ import {
   createNotifications,
   tripMemberIdsExcept,
 } from "@/lib/notifications";
-import { computeEqualShares, type ComputedShare } from "@/lib/ledger/shares";
+import {
+  computeEqualShares,
+  computePercentageShares,
+  computeExactShares,
+  type ComputedShare,
+} from "@/lib/ledger/shares";
+import type { ShareBasis } from "@/lib/types";
 
+// share_amount is intentionally NOT in the input schema. The server
+// always recomputes shares from (share_basis, share_input) so a
+// crafted request can't make participant shares total ≠ amount.
 const participantInputSchema = z.object({
   user_id: z.string().uuid(),
-  share_amount: z.number().positive(),
   share_basis: z.enum(["equal", "percentage", "exact"]),
   share_input: z.number().nullable().optional(),
 });
+
+type ParticipantInput = z.infer<typeof participantInputSchema>;
+
+function recomputeShares(
+  total: number,
+  participants: ParticipantInput[],
+): { ok: true; shares: ComputedShare[] } | { ok: false; error: string } {
+  if (participants.length === 0) {
+    return { ok: false, error: "Need at least one participant" };
+  }
+  const basis: ShareBasis = participants[0].share_basis;
+  if (!participants.every((p) => p.share_basis === basis)) {
+    return { ok: false, error: "Mixed share basis not supported" };
+  }
+  if (basis === "equal") {
+    return {
+      ok: true,
+      shares: computeEqualShares(total, participants.map((p) => p.user_id)),
+    };
+  }
+  if (basis === "percentage") {
+    const inputs = participants.map((p) => ({
+      user_id: p.user_id,
+      input: p.share_input ?? 0,
+    }));
+    const sumPct = inputs.reduce((s, i) => s + i.input, 0);
+    if (Math.abs(sumPct - 100) > 0.01) {
+      return { ok: false, error: "Percentages must sum to 100" };
+    }
+    return { ok: true, shares: computePercentageShares(total, inputs) };
+  }
+  // exact
+  const inputs = participants.map((p) => ({
+    user_id: p.user_id,
+    input: p.share_input ?? 0,
+  }));
+  const sumExact = inputs.reduce((s, i) => s + i.input, 0);
+  if (Math.abs(sumExact - total) > 0.01) {
+    return { ok: false, error: "Exact amounts must sum to the total" };
+  }
+  return { ok: true, shares: computeExactShares(inputs) };
+}
 
 const addExpenseSchema = z.object({
   tripId: z.string().uuid(),
@@ -75,22 +125,21 @@ export async function addExpense(input: AddExpenseInput) {
     if (profile?.name) nameById.set(m.user_id, profile.name);
   }
 
-  // Resolve final share rows
+  // Resolve final share rows. The server always recomputes share_amount
+  // from (share_basis, share_input) — see recomputeShares.
   let shares: Array<ComputedShare & { display_name: string }>;
   if (data.participants && data.participants.length > 0) {
-    // Explicit participants. Validate all user_ids are trip members.
     const memberIds = new Set(members.map((m) => m.user_id));
     for (const p of data.participants) {
       if (!memberIds.has(p.user_id)) {
         return { error: "Participant is not a current trip member" };
       }
     }
-    shares = data.participants.map((p) => ({
-      user_id: p.user_id,
-      share_amount: p.share_amount,
-      share_basis: p.share_basis,
-      share_input: p.share_input ?? null,
-      display_name: nameById.get(p.user_id) ?? "Crew",
+    const result = recomputeShares(data.amount, data.participants);
+    if (!result.ok) return { error: result.error };
+    shares = result.shares.map((c) => ({
+      ...c,
+      display_name: nameById.get(c.user_id) ?? "Crew",
     }));
   } else {
     const computed = computeEqualShares(
@@ -239,25 +288,32 @@ export async function editExpense(input: EditExpenseInput) {
     .is("deleted_at", null);
 
   if (data.participants && data.participants.length > 0) {
-    // Build display-name snapshots
     const { data: members } = await supabase
       .from("trip_members")
       .select("user_id, profiles!trip_members_user_id_fkey(name)")
       .eq("trip_id", existing.trip_id);
+    const memberIds = new Set((members ?? []).map((m) => m.user_id));
+    for (const p of data.participants) {
+      if (!memberIds.has(p.user_id)) {
+        return { error: "Participant is not a current trip member" };
+      }
+    }
     const nameById = new Map<string, string>();
     for (const m of members ?? []) {
       const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
       if (profile?.name) nameById.set(m.user_id, profile.name);
     }
+    const result = recomputeShares(data.amount, data.participants);
+    if (!result.ok) return { error: result.error };
     const { error: insErr } = await supabase.from("expense_participants").insert(
-      data.participants.map((p) => ({
+      result.shares.map((s) => ({
         trip_id: existing.trip_id,
         expense_id: data.expenseId,
-        user_id: p.user_id,
-        share_amount: p.share_amount,
-        share_basis: p.share_basis,
-        share_input: p.share_input ?? null,
-        display_name_snapshot: nameById.get(p.user_id) ?? "Crew",
+        user_id: s.user_id,
+        share_amount: s.share_amount,
+        share_basis: s.share_basis,
+        share_input: s.share_input,
+        display_name_snapshot: nameById.get(s.user_id) ?? "Crew",
       })),
     );
     if (insErr) return { error: insErr.message };
@@ -277,21 +333,35 @@ export async function deleteExpense(id: string) {
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not signed in" };
 
+  // Authorise: original payer or trip admin
+  const { data: existing } = await supabase
+    .from("expenses")
+    .select("trip_id, paid_by")
+    .eq("id", parsed.data)
+    .is("deleted_at", null)
+    .maybeSingle<{ trip_id: string; paid_by: string }>();
+  if (!existing) return { error: "Expense not found" };
+  if (existing.paid_by !== user.id) {
+    const { data: m } = await supabase
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", existing.trip_id)
+      .eq("user_id", user.id)
+      .maybeSingle<{ role: string }>();
+    if (m?.role !== "admin") return { error: "Not authorised" };
+  }
+
   // Share one timestamp between the expense and participant rows so
   // restoreExpense can scope the participant restore to exactly the
   // rows soft-deleted at delete time (not pre-edit historical rows).
   const deletedAt = new Date().toISOString();
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("expenses")
     .update({ deleted_at: deletedAt })
     .eq("id", parsed.data)
-    .eq("paid_by", user.id)
-    .is("deleted_at", null)
-    .select("trip_id")
-    .maybeSingle<{ trip_id: string }>();
+    .is("deleted_at", null);
   if (error) return { error: error.message };
-  if (!data) return { error: "Only the payer can delete this" };
 
   await supabase
     .from("expense_participants")
@@ -299,7 +369,7 @@ export async function deleteExpense(id: string) {
     .eq("expense_id", parsed.data)
     .is("deleted_at", null);
 
-  await revalidateTrip(data.trip_id);
+  await revalidateTrip(existing.trip_id);
   return { ok: true };
 }
 

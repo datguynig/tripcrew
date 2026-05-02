@@ -12,11 +12,6 @@ import { INPUT_SM } from "@/lib/styles";
 import { CurrencySection } from "./CurrencySection";
 import { SplitSection, type SplitState } from "./SplitSection";
 import { ExpenseRow } from "./ExpenseRow";
-import {
-  computeEqualShares,
-  computePercentageShares,
-  computeExactShares,
-} from "@/lib/ledger/shares";
 
 type CrewOption = { id: string; name: string };
 
@@ -262,8 +257,10 @@ export function Ledger({
     const rounded = Math.round(amount * 100) / 100;
 
     // Build participants if SplitSection enabled; otherwise default = even split (action handles).
+    // The server recomputes share_amount from (share_basis, share_input), so we only
+    // need to ship the inputs; client validation of sums runs first for fast feedback.
     let participantsInput:
-      | { user_id: string; share_amount: number; share_basis: ShareBasis; share_input: number | null }[]
+      | { user_id: string; share_basis: ShareBasis; share_input: number | null }[]
       | undefined;
     if (splitEnabled) {
       const included = splitState.participants.filter((p) => p.included);
@@ -271,35 +268,35 @@ export function Ledger({
         toast.error("Pick at least one participant.");
         return;
       }
-      let shares;
       if (splitState.basis === "equal") {
-        shares = computeEqualShares(rounded, included.map((p) => p.user_id));
+        participantsInput = included.map((p) => ({
+          user_id: p.user_id,
+          share_basis: "equal" as ShareBasis,
+          share_input: null,
+        }));
       } else if (splitState.basis === "percentage") {
         const sum = included.reduce((s, p) => s + (p.input ?? 0), 0);
         if (Math.abs(sum - 100) > 0.01) {
           toast.error("Percentages must sum to 100.");
           return;
         }
-        shares = computePercentageShares(
-          rounded,
-          included.map((p) => ({ user_id: p.user_id, input: p.input ?? 0 })),
-        );
+        participantsInput = included.map((p) => ({
+          user_id: p.user_id,
+          share_basis: "percentage" as ShareBasis,
+          share_input: p.input ?? 0,
+        }));
       } else {
         const sum = included.reduce((s, p) => s + (p.input ?? 0), 0);
         if (Math.abs(sum - rounded) > 0.01) {
           toast.error(`Shares must sum to ${rounded.toFixed(2)}.`);
           return;
         }
-        shares = computeExactShares(
-          included.map((p) => ({ user_id: p.user_id, input: p.input ?? 0 })),
-        );
+        participantsInput = included.map((p) => ({
+          user_id: p.user_id,
+          share_basis: "exact" as ShareBasis,
+          share_input: p.input ?? 0,
+        }));
       }
-      participantsInput = shares.map((s) => ({
-        user_id: s.user_id,
-        share_amount: s.share_amount,
-        share_basis: s.share_basis,
-        share_input: s.share_input,
-      }));
     }
 
     // FX payload
