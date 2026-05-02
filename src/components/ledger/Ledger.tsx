@@ -30,7 +30,6 @@ type Props = {
   currentUserId: string;
   isAdmin: boolean;
   currency: string | null;
-  targetCrewSize: number | null;
   phantomWarning: PhantomWarning;
 };
 
@@ -69,7 +68,6 @@ export function Ledger({
   currentUserId,
   isAdmin,
   currency,
-  targetCrewSize,
   phantomWarning,
 }: Props) {
   const symbol = currencySymbol(currency);
@@ -206,17 +204,6 @@ export function Ledger({
         .filter((e) => !e.deleted_at)
         .reduce((s, e) => s + Number(e.amount), 0),
     [expenses],
-  );
-  const splitCountForLegacyDisplay =
-    targetCrewSize && targetCrewSize > 0 ? targetCrewSize : crew.length;
-  const perPerson =
-    splitCountForLegacyDisplay > 0 ? total / splitCountForLegacyDisplay : 0;
-  const myTotal = useMemo(
-    () =>
-      expenses
-        .filter((e) => !e.deleted_at && e.paid_by === currentUserId)
-        .reduce((s, e) => s + Number(e.amount), 0),
-    [expenses, currentUserId],
   );
 
   const balances = useMemo(() => {
@@ -432,30 +419,49 @@ export function Ledger({
         </div>
       )}
 
-      <div className="grid grid-cols-3 max-[780px]:grid-cols-1 border border-line mb-7">
-        <div className="p-[22px] px-6 border-r border-line max-[780px]:border-r-0 max-[780px]:border-b last:border-r-0 max-[780px]:last:border-b-0">
-          <div className="label-sm-wide text-fg-3 mb-[10px]">Total pooled</div>
-          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
-            {Math.round(total).toLocaleString()}
+      {(() => {
+        const myNet = balances.find((b) => b.id === currentUserId)?.net ?? 0;
+        const positionTone =
+          myNet > 0.005 ? "text-ok" : myNet < -0.005 ? "text-err" : "text-fg-3";
+        const positionAbs = Math.round(Math.abs(myNet)).toLocaleString();
+        const positionDisplay =
+          Math.abs(myNet) < 0.005
+            ? "Even"
+            : `${myNet > 0 ? "+" : "-"}${symbol}${positionAbs}`;
+        const activeCount = expenses.filter((e) => !e.deleted_at).length;
+        const lastIso = expenses.find((e) => !e.deleted_at)?.created_at;
+        const lastLabel = lastIso
+          ? new Date(lastIso)
+              .toLocaleDateString("en-GB", { day: "2-digit", month: "short" })
+              .toUpperCase()
+          : "NEVER";
+        return (
+          <div className="border border-line mb-7">
+            <div className="px-6 py-[22px] grid grid-cols-[auto_1fr] gap-x-6 items-baseline max-[520px]:grid-cols-1 max-[520px]:gap-y-1">
+              <div className="label-sm-wide text-fg-3">YOUR POSITION</div>
+              <div
+                className={`text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums justify-self-end max-[520px]:justify-self-start ${positionTone}`}
+              >
+                {positionDisplay}
+              </div>
+            </div>
+            <div className="border-t border-line px-6 py-[10px] flex items-baseline gap-3 flex-wrap font-mono text-[11px] text-fg-3 tracking-[0.05em] uppercase">
+              <span className="tabular-nums">
+                {symbol}
+                {Math.round(total).toLocaleString()} pooled
+              </span>
+              <span aria-hidden>·</span>
+              <span className="tabular-nums">
+                {activeCount} {activeCount === 1 ? "expense" : "expenses"}
+              </span>
+              <span aria-hidden>·</span>
+              <span className="tabular-nums">last log {lastLabel}</span>
+            </div>
           </div>
-        </div>
-        <div className="p-[22px] px-6 border-r border-line max-[780px]:border-r-0 max-[780px]:border-b last:border-r-0 max-[780px]:last:border-b-0">
-          <div className="label-sm-wide text-fg-3 mb-[10px]">Even split</div>
-          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
-            {Math.round(perPerson).toLocaleString()}
-          </div>
-        </div>
-        <div className="p-[22px] px-6">
-          <div className="label-sm-wide text-fg-3 mb-[10px]">You&apos;ve covered</div>
-          <div className="text-4xl max-[520px]:text-3xl font-medium tracking-[-0.03em] leading-none tabular-nums">
-            <span className="text-fg-3 text-lg font-normal">{symbol}</span>
-            {Math.round(myTotal).toLocaleString()}
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
+      <div className="label-sm-wide text-fg-3 mb-3">LOG AN EXPENSE</div>
       <div className="grid gap-3 mb-5">
         <div className="grid grid-cols-[1fr_160px_auto] max-[520px]:grid-cols-1 gap-2">
           <input
@@ -514,8 +520,8 @@ export function Ledger({
       )}
 
       {visibleExpenses.length === 0 ? (
-        <div className="border border-line py-14 text-center label text-fg-3 mb-8">
-          No expenses logged
+        <div className="border border-line py-14 text-center font-mono text-[11px] text-fg-3 tracking-[0.08em] uppercase mb-8">
+          NO EXPENSES YET
         </div>
       ) : (
         <div className="border border-line mb-8">
@@ -567,8 +573,23 @@ export function Ledger({
               </div>
             );
           })}
+          {(() => {
+            const unallocated = balances.reduce((s, b) => s + b.net, 0);
+            if (unallocated < 0.005) return null;
+            return (
+              <div className="border-t border-line pt-3 mt-1 grid grid-cols-[1fr_auto] items-baseline">
+                <div className="text-[13px] text-fg-2 tracking-[-0.01em]">
+                  Unallocated to unjoined crew
+                </div>
+                <div className="font-mono text-[13px] tracking-[0.02em] tabular-nums text-warn">
+                  {symbol}
+                  {Math.round(unallocated).toLocaleString()}
+                </div>
+              </div>
+            );
+          })()}
           <div className="font-mono text-[11px] text-fg-3 tracking-[0.05em] uppercase mt-[14px]">
-            Maths runs on per-expense participant shares.
+            Per expense participant shares. Phantom shares preserved as payer credit.
           </div>
         </div>
       )}

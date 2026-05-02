@@ -88,7 +88,6 @@ export default async function LedgerPage({
         currentUserId={user.id}
         isAdmin={isAdmin}
         currency={trip.currency}
-        targetCrewSize={trip.target_crew_size}
         phantomWarning={phantomWarning}
       />
     </section>
