@@ -32,25 +32,34 @@ type Props = {
   // live pricing arrives (Member sees no prices but still needs the
   // "Add origin airport" prompt when origin is unset).
   originIata?: string | null;
+  // Free-text origin name — used as fallback in the Google Flights deeplink
+  // when the user's origin isn't in the IATA table (e.g. small regional airport).
+  originLabel?: string | null;
   destinationIata?: string | null;
 };
 
 function buildFlightFallback({
   originIata,
+  originLabel,
   destinationIata,
+  destinationLabel,
   departDate,
   returnDate,
   adults,
 }: {
   originIata?: string;
+  originLabel?: string;
   destinationIata?: string;
+  destinationLabel?: string;
   departDate?: string | null;
   returnDate?: string | null;
   adults: number;
 }): string {
   const parts: string[] = ["Flights"];
-  if (originIata) parts.push(`from ${originIata}`);
-  if (destinationIata) parts.push(`to ${destinationIata}`);
+  const fromText = originIata ?? originLabel;
+  if (fromText) parts.push(`from ${fromText}`);
+  const toText = destinationIata ?? destinationLabel;
+  if (toText) parts.push(`to ${toText}`);
   if (departDate) parts.push(`on ${departDate}`);
   if (returnDate) parts.push(`returning ${returnDate}`);
   parts.push(`for ${adults} ${adults === 1 ? "adult" : "adults"}`);
@@ -88,6 +97,7 @@ export function SpecGrid({
   endDate,
   destination,
   originIata,
+  originLabel,
   destinationIata,
 }: Props) {
   const toast = useToast();
@@ -123,9 +133,10 @@ export function SpecGrid({
 
   const tier: "member" | "pioneer" = isPioneer ? "pioneer" : "member";
   // Derive from trip prefs (resolved at page level), not from livePricing.
-  // This ensures hasOriginIata is correct for Member-tier and for trips
-  // where pricing hasn't arrived yet.
-  const hasOriginIata = !!originIata;
+  // This ensures hasOriginConfigured is correct for Member-tier and for trips
+  // where pricing hasn't arrived yet. True when an origin was set even if we
+  // couldn't map it to an IATA code (e.g. small regional airport).
+  const hasOriginConfigured = !!originIata || !!originLabel;
   const hasFlightOptions = (livePricing?.flights?.options?.length ?? 0) > 0;
   const hasHotelQuotes = (livePricing?.hotels?.quotes?.length ?? 0) > 0;
   const showStayCell = (targetCrewSize ?? 1) > 1 && hasHotelQuotes;
@@ -134,7 +145,9 @@ export function SpecGrid({
 
   const flightFallbackUrl = buildFlightFallback({
     originIata: originIata ?? undefined,
+    originLabel: originLabel ?? undefined,
     destinationIata: destinationIata ?? undefined,
+    destinationLabel: destination ?? undefined,
     departDate: startDate,
     returnDate: endDate,
     adults,
@@ -259,7 +272,7 @@ export function SpecGrid({
                       tier={tier}
                       livePricing={livePricing}
                       draftedAtIso={draftedAt ?? null}
-                      hasOriginIata={hasOriginIata}
+                      hasOriginIata={hasOriginConfigured}
                     />
                   </button>
                 ) : cell.label.toLowerCase() === "the rule" ? (

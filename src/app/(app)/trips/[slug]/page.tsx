@@ -78,6 +78,7 @@ export default async function TripOverview({
 
   const originRaw = trip.meta?.ai_preferences?.origin ?? null;
   const originIata = resolveOriginIata(originRaw);
+  const originLabel = originRaw?.name ?? null;
   const destinationIata = trip.destination
     ? resolveDestinationIata(trip.destination)
     : null;
@@ -171,6 +172,7 @@ export default async function TripOverview({
               endDate={trip.end_date}
               destination={trip.destination}
               originIata={originIata}
+              originLabel={originLabel}
               destinationIata={destinationIata}
             />
             <Schedule
@@ -199,6 +201,7 @@ export default async function TripOverview({
               endDate={trip.end_date}
               destination={trip.destination}
               originIata={originIata}
+              originLabel={originLabel}
               destinationIata={destinationIata}
             />
             <Schedule
