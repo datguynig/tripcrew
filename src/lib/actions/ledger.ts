@@ -261,6 +261,51 @@ export async function editExpense(input: EditExpenseInput) {
     if (membership?.role !== "admin") return { error: "Not authorised" };
   }
 
+  // Read current trip members for share computation + display-name snapshots.
+  // Done before any mutation so we can validate the full replacement set first.
+  const { data: members } = await supabase
+    .from("trip_members")
+    .select("user_id, profiles!trip_members_user_id_fkey(name)")
+    .eq("trip_id", existing.trip_id);
+  if (!members || members.length === 0) {
+    return { error: "Trip has no members" };
+  }
+  const nameById = new Map<string, string>();
+  for (const m of members) {
+    const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+    if (profile?.name) nameById.set(m.user_id, profile.name);
+  }
+
+  // Compute and validate the replacement participant set BEFORE any mutation.
+  // When participants is omitted, default to even split across current members
+  // (matches addExpense). This stops "edit description on a default expense
+  // wipes shares" because the dialog only sends participants when the user
+  // opts into a custom split.
+  let shares: Array<ComputedShare & { display_name: string }>;
+  if (data.participants && data.participants.length > 0) {
+    const memberIds = new Set(members.map((m) => m.user_id));
+    for (const p of data.participants) {
+      if (!memberIds.has(p.user_id)) {
+        return { error: "Participant is not a current trip member" };
+      }
+    }
+    const result = recomputeShares(data.amount, data.participants);
+    if (!result.ok) return { error: result.error };
+    shares = result.shares.map((c) => ({
+      ...c,
+      display_name: nameById.get(c.user_id) ?? "Crew",
+    }));
+  } else {
+    const computed = computeEqualShares(
+      data.amount,
+      members.map((m) => m.user_id),
+    );
+    shares = computed.map((c) => ({
+      ...c,
+      display_name: nameById.get(c.user_id) ?? "Crew",
+    }));
+  }
+
   // Bump version, write the expense fields
   const { error: updErr } = await supabase
     .from("expenses")
@@ -280,43 +325,32 @@ export async function editExpense(input: EditExpenseInput) {
   if (updErr) return { error: updErr.message };
 
   // Soft-delete current participants and re-insert. Phase 2 will do
-  // versioned regeneration of obligations on top of this edit.
+  // versioned regeneration of obligations on top of this edit. An RPC
+  // transaction is the right shape long term; pre-validation above keeps
+  // the partial-failure window tight (only the final insert can fail).
   await supabase
     .from("expense_participants")
     .update({ deleted_at: new Date().toISOString() })
     .eq("expense_id", data.expenseId)
     .is("deleted_at", null);
 
-  if (data.participants && data.participants.length > 0) {
-    const { data: members } = await supabase
-      .from("trip_members")
-      .select("user_id, profiles!trip_members_user_id_fkey(name)")
-      .eq("trip_id", existing.trip_id);
-    const memberIds = new Set((members ?? []).map((m) => m.user_id));
-    for (const p of data.participants) {
-      if (!memberIds.has(p.user_id)) {
-        return { error: "Participant is not a current trip member" };
-      }
-    }
-    const nameById = new Map<string, string>();
-    for (const m of members ?? []) {
-      const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
-      if (profile?.name) nameById.set(m.user_id, profile.name);
-    }
-    const result = recomputeShares(data.amount, data.participants);
-    if (!result.ok) return { error: result.error };
-    const { error: insErr } = await supabase.from("expense_participants").insert(
-      result.shares.map((s) => ({
-        trip_id: existing.trip_id,
-        expense_id: data.expenseId,
-        user_id: s.user_id,
-        share_amount: s.share_amount,
-        share_basis: s.share_basis,
-        share_input: s.share_input,
-        display_name_snapshot: nameById.get(s.user_id) ?? "Crew",
-      })),
-    );
-    if (insErr) return { error: insErr.message };
+  const { error: insErr } = await supabase.from("expense_participants").insert(
+    shares.map((s) => ({
+      trip_id: existing.trip_id,
+      expense_id: data.expenseId,
+      user_id: s.user_id,
+      share_amount: s.share_amount,
+      share_basis: s.share_basis,
+      share_input: s.share_input,
+      display_name_snapshot: s.display_name,
+    })),
+  );
+  if (insErr) {
+    console.error("[ledger.editExpense] participants insert failed", insErr);
+    return {
+      error:
+        "Saved expense changes, but the split couldn't be re-recorded. Edit the expense again to retry.",
+    };
   }
 
   await revalidateTrip(existing.trip_id);
