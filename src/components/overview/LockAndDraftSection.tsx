@@ -5,6 +5,7 @@ import {
   type Draft,
 } from "@/lib/ai/schema";
 import type {
+  Booking,
   DraftProgress,
   LivePricing,
   ScheduleItem,
@@ -18,6 +19,7 @@ import { TravelBlock } from "./TravelBlock";
 
 type Props = {
   tripId: string;
+  tripSlug?: string;
   userId: string | null;
   isAdmin: boolean;
   isPioneer?: boolean;
@@ -37,6 +39,7 @@ type Props = {
   originIata?: string | null;
   originLabel?: string | null;
   destinationIata?: string | null;
+  bookings?: Booking[];
 };
 
 function parseDraft(
@@ -73,6 +76,7 @@ function buildPlacesIndex(
 
 export function LockAndDraftSection({
   tripId,
+  tripSlug,
   userId,
   isAdmin,
   isPioneer = false,
@@ -92,6 +96,7 @@ export function LockAndDraftSection({
   originIata = null,
   originLabel = null,
   destinationIata = null,
+  bookings = [],
 }: Props) {
   const draft = parseDraft(enrichedDraft, enrichedDraftTier);
   const hasDraft = draft !== null;
@@ -188,6 +193,8 @@ export function LockAndDraftSection({
             livePricing={livePricing}
             isPioneer={isPioneer}
             placesIndex={placesIndex}
+            bookings={bookings}
+            tripSlug={tripSlug}
           />
         )}
       </div>
