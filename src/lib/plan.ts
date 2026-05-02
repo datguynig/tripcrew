@@ -87,21 +87,18 @@ export async function hasProAccessForTrip(
   });
 }
 
-// Pioneer = pro AND profiles.founding_crew_at IS NOT NULL. Used to gate
-// the "live price visibility" delta in Spec B (Member sees deeplinks,
-// Pioneer sees prices). Same any-admin-pays semantics as hasProAccessForTrip.
+// A trip is "Pioneer" iff at least one of its admins has
+// founding_crew_at set. This matches the "any admin pays" pricing
+// semantics used elsewhere — Pioneer status is a property of the
+// trip, not of the caller. (A Pioneer who joins a non-Pioneer trip
+// as a member should still see Member-tier UI for that trip.)
 export async function isPioneerForTrip(
   userId: string,
   tripId: string,
 ): Promise<boolean> {
+  // userId is kept for API stability; the check is trip-scoped only.
+  void userId;
   const supabase = await createClient();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("founding_crew_at")
-    .eq("id", userId)
-    .maybeSingle<{ founding_crew_at: string | null }>();
-  if (profile?.founding_crew_at) return true;
-
   const { data, error } = await supabase
     .from("trip_members")
     .select(
@@ -118,9 +115,7 @@ export async function isPioneerForTrip(
   if (error || !data) return false;
 
   return data.some((member) => {
-    const p = Array.isArray(member.profiles)
-      ? member.profiles[0]
-      : member.profiles;
+    const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
     return !!p?.founding_crew_at;
   });
 }
