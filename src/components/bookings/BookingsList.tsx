@@ -12,6 +12,7 @@ import type { Booking } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { useToast } from "@/hooks/useToast";
 import { INPUT_SM } from "@/lib/styles";
+import { BookingPlaceLinks } from "./BookingPlaceLinks";
 type CrewOption = { id: string; name: string };
 
 type Props = {
@@ -177,11 +178,12 @@ export function BookingsList({
                 }`}
               />
               <div
-                className={`text-[15px] font-medium tracking-[-0.01em] flex items-center gap-2 flex-wrap ${
+                className={`text-[15px] font-medium tracking-[-0.01em] flex items-center gap-2 flex-wrap min-w-0 ${
                   b.done ? "line-through" : ""
                 }`}
               >
-                <span>{b.title}</span>
+                <span className="truncate">{b.title}</span>
+                <BookingPlaceLinks booking={b} />
               </div>
               <select
                 value={b.assignee_id ?? ""}
