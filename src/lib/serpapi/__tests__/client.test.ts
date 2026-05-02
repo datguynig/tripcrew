@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseHotelResponse } from "@/lib/serpapi/client";
+import { parseHotelResponse, parseFlightOptions } from "@/lib/serpapi/client";
 
 test("parseHotelResponse takes top results sorted by rating then price asc", () => {
   const fixture = {
@@ -64,4 +64,75 @@ test("parseHotelResponse handles empty / malformed input", () => {
   assert.equal(parseHotelResponse({ properties: [] }, "GBP").length, 0);
   assert.equal(parseHotelResponse(null, "GBP").length, 0);
   assert.equal(parseHotelResponse("not an object", "GBP").length, 0);
+});
+
+const FLIGHT_FIXTURE = {
+  best_flights: [
+    {
+      price: 242,
+      flights: [
+        {
+          airline: "British Airways",
+          airline_logo: "https://example.com/ba.png",
+          duration: 405,
+          departure_airport: { time: "2026-08-12 09:25" },
+          arrival_airport: { time: "2026-08-12 12:10" },
+        },
+      ],
+      booking_token: "tok_BA",
+    },
+    {
+      price: 268,
+      flights: [
+        {
+          airline: "SAS",
+          airline_logo: "https://example.com/sas.png",
+          duration: 390,
+          departure_airport: { time: "2026-08-12 12:10" },
+          arrival_airport: { time: "2026-08-12 14:40" },
+        },
+      ],
+      booking_token: "tok_SAS",
+    },
+  ],
+  other_flights: [
+    {
+      price: 312,
+      flights: [
+        {
+          airline: "British Airways",
+          airline_logo: "https://example.com/ba.png",
+          duration: 550,
+          departure_airport: { time: "2026-08-12 06:00" },
+          arrival_airport: { time: "2026-08-12 16:30" },
+          layovers: [{}],
+        },
+      ],
+      booking_token: "tok_BA2",
+    },
+  ],
+};
+
+test("parseFlightOptions returns top 3 ascending by price", () => {
+  const opts = parseFlightOptions(FLIGHT_FIXTURE, "GBP");
+  assert.equal(opts.length, 3);
+  assert.equal(opts[0].price.amount, 242);
+  assert.equal(opts[1].price.amount, 268);
+  assert.equal(opts[2].price.amount, 312);
+  assert.equal(opts[2].stops, 1);
+  assert.equal(opts[0].airline, "British Airways");
+});
+
+test("parseFlightOptions handles malformed input safely", () => {
+  assert.equal(parseFlightOptions(null, "GBP").length, 0);
+  assert.equal(parseFlightOptions({}, "GBP").length, 0);
+  assert.equal(parseFlightOptions({ best_flights: [] }, "GBP").length, 0);
+});
+
+test("parseFlightOptions drops options without a price", () => {
+  const fixture = {
+    best_flights: [{ flights: [{ airline: "X" }] }, { price: 0, flights: [{ airline: "Y" }] }],
+    other_flights: [],
+  };
+  assert.equal(parseFlightOptions(fixture, "GBP").length, 0);
 });

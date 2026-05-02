@@ -12,6 +12,8 @@
  * Never imported from a "use client" file — needs SERPAPI_KEY.
  */
 
+import type { FareOption, HotelQuote } from "@/lib/types";
+
 const SERPAPI_BASE = "https://serpapi.com/search.json";
 
 export type FlightSearch = {
@@ -28,6 +30,10 @@ export type FlightPrices = {
   high: number;
   currency: string;
   sampleCount: number;
+  // Spec B Phase 2: structured top-3 fares + cheapest convenience field.
+  // Existing low/high consumers in priceRefresh.ts continue working.
+  options: FareOption[];
+  best_price: { amount: number; currency: string };
 };
 
 type SerpApiFlightOption = {
@@ -39,6 +45,49 @@ type SerpApiResponse = {
   other_flights?: SerpApiFlightOption[];
   error?: string;
 };
+
+type SerpFlight = {
+  airline?: string;
+  airline_logo?: string;
+  duration?: number;
+  departure_airport?: { time?: string };
+  arrival_airport?: { time?: string };
+  layovers?: unknown[];
+};
+
+type SerpFlightOption = {
+  price?: number;
+  flights?: SerpFlight[];
+  booking_token?: string;
+};
+
+const SERPAPI_FLIGHT_DEEPLINK_BASE = "https://www.google.com/travel/flights/booking";
+
+export function parseFlightOptions(raw: unknown, currency: string): FareOption[] {
+  if (!raw || typeof raw !== "object") return [];
+  const j = raw as { best_flights?: SerpFlightOption[]; other_flights?: SerpFlightOption[] };
+  const all = [...(j.best_flights ?? []), ...(j.other_flights ?? [])];
+  const options: FareOption[] = [];
+  for (const opt of all) {
+    if (typeof opt.price !== "number" || opt.price <= 0) continue;
+    const first = opt.flights?.[0];
+    if (!first) continue;
+    options.push({
+      airline: first.airline ?? "Unknown",
+      airline_logo_url: first.airline_logo ?? null,
+      price: { amount: Math.round(opt.price), currency },
+      duration_minutes: typeof first.duration === "number" ? first.duration : 0,
+      stops: Array.isArray(first.layovers) ? first.layovers.length : 0,
+      depart_iso: first.departure_airport?.time ?? "",
+      arrive_iso: first.arrival_airport?.time ?? "",
+      deeplink: opt.booking_token
+        ? `${SERPAPI_FLIGHT_DEEPLINK_BASE}?token=${encodeURIComponent(opt.booking_token)}`
+        : "",
+    });
+  }
+  options.sort((a, b) => a.price.amount - b.price.amount);
+  return options.slice(0, 3);
+}
 
 export function serpApiEnabled(): boolean {
   return (process.env.SERPAPI_KEY ?? "").length > 0;
@@ -104,15 +153,21 @@ export async function fetchFlightPrices(
   const low = prices[0];
   const median = prices[Math.floor(prices.length / 2)];
 
+  const options = parseFlightOptions(json, search.currency);
+  const cheapestFromOptions = options[0]?.price;
+  const best_price = cheapestFromOptions ?? {
+    amount: Math.round(Math.min(...prices)),
+    currency: search.currency,
+  };
   return {
     low,
     high: median,
     currency: search.currency,
     sampleCount: prices.length,
+    options,
+    best_price,
   };
 }
-
-import type { HotelQuote } from "@/lib/types";
 
 export type HotelSearch = {
   destination: string;
