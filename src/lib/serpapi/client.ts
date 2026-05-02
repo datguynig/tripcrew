@@ -30,8 +30,8 @@ export type FlightPrices = {
   high: number;
   currency: string;
   sampleCount: number;
-  // Spec B Phase 2: structured top-3 fares + cheapest convenience field.
-  // Existing low/high consumers in priceRefresh.ts continue working.
+  // low/high preserved for backward compat with priceRefresh consumers;
+  // options/best_price are the structured form.
   options: FareOption[];
   best_price: { amount: number; currency: string };
 };

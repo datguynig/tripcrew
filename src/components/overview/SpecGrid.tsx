@@ -18,7 +18,7 @@ type Props = {
   tripId: string;
   tripSlug?: string;
   currency: string;
-  // Spec B Phase 2:
+  // All optional so callers without live pricing data work unchanged.
   livePricing?: import("@/lib/types").LivePricing | null;
   isPioneer?: boolean;
   userId?: string;

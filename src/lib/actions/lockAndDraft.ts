@@ -506,9 +506,9 @@ export async function generateLockAndDraft(
         }
       }
 
-      // Spec B Phase 2: pricing fetch. Non-blocking — this runs AFTER the
-      // plan + bookings are committed. SerpApi failures cannot poison the
-      // draft. Hotels run for any pro; flights run only for Pioneer.
+      // Non-blocking pricing fetch — runs after plan + bookings are committed
+      // so SerpApi failures cannot poison the draft. Hotels run for any pro;
+      // flights run only for Pioneer.
       if (serpApiEnabled() && trip.start_date && trip.end_date && trip.destination) {
         const cap = await checkSerpApiBudget();
         if (cap.allowed) {

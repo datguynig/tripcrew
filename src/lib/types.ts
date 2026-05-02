@@ -256,8 +256,6 @@ export type FlightPricing = {
   refreshed_at: string;
   origin_iata: string;
   destination_iata: string;
-  // Structured fare options + cheapest pick + per-side error envelope
-  // added in Spec B Phase 2.
   best_price?: Money;
   options?: FareOption[];
   fallback_deeplink?: string;
