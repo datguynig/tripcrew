@@ -5,6 +5,7 @@
 // since "use server" files can only export async functions.
 
 import { z } from "zod";
+import { after } from "next/server";
 import { canGenerateDraft } from "@/lib/gates";
 import { getUserPlan, hasProAccessForTrip, isPioneerForTrip } from "@/lib/plan";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
@@ -527,19 +528,18 @@ export async function generateLockAndDraft(
 
       // Non-blocking pricing fetch — runs after plan + bookings are committed
       // so SerpApi failures cannot poison the draft. Hotels run for any pro;
-      // flights run only for Pioneer.
+      // flights run only for Pioneer. Fire outside the response path via
+      // after() so both lockAndStartDraft and direct DraftingFlow callers
+      // are non-blocking.
       if (serpApiEnabled() && trip.start_date && trip.end_date && trip.destination) {
-        const cap = await checkSerpApiBudget();
-        if (cap.allowed) {
-          await runPricingFetch({
-            userId,
-            tripId,
-            trip,
-            tier: "enriched",
-          });
-        } else {
-          console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
-        }
+        after(async () => {
+          const cap = await checkSerpApiBudget();
+          if (!cap.allowed) {
+            console.warn("[lockAndDraft] SerpApi monthly cap reached, skipping pricing");
+            return;
+          }
+          await runPricingFetch({ userId, tripId, trip, tier: "enriched" });
+        });
       }
     } else {
       const { error: updateError } = await supabase
@@ -738,20 +738,42 @@ async function runPricingFetch(args: {
       : undefined;
   const currency = trip.currency ?? "GBP";
 
-  let hotelQuotes: Awaited<ReturnType<typeof fetchHotelQuotes>> = null;
-  try {
-    hotelQuotes = await fetchHotelQuotes({
-      destination: trip.destination,
-      checkIn: trip.start_date,
-      checkOut: trip.end_date,
-      rooms,
-      perRoomBudget,
-      currency,
-    });
-  } catch (err) {
+  // Resolve Pioneer status and IATA codes before launching parallel fetches.
+  const isPioneer = await isPioneerForTrip(userId, tripId);
+  const originRaw = trip.meta?.ai_preferences?.origin ?? null;
+  const originIata = resolveOriginIata(originRaw);
+  const destinationIata = resolveDestinationIata(trip.destination);
+
+  // Launch hotel and flight fetches in parallel. Flights only run for
+  // Pioneer trips with resolvable IATA codes.
+  const hotelTask = fetchHotelQuotes({
+    destination: trip.destination,
+    checkIn: trip.start_date,
+    checkOut: trip.end_date,
+    rooms,
+    perRoomBudget,
+    currency,
+  }).catch((err) => {
     console.error("[lockAndDraft.pricing] hotels fetch threw", err);
-    hotelQuotes = null;
-  }
+    return null;
+  });
+
+  const flightTask =
+    isPioneer && originIata && destinationIata
+      ? fetchFlightPrices({
+          originIata,
+          destinationIata,
+          outboundDate: trip.start_date,
+          returnDate: trip.end_date,
+          adults: Math.max(1, trip.target_crew_size ?? 1),
+          currency,
+        }).catch((err) => {
+          console.error("[lockAndDraft.pricing] flights fetch threw", err);
+          return null;
+        })
+      : Promise.resolve(null);
+
+  const [hotelQuotes, flightResult] = await Promise.all([hotelTask, flightTask]);
 
   const refreshedAt = new Date().toISOString();
   const buildError = (code: ErrorEnvelope["code"], message: string): ErrorEnvelope => ({
@@ -775,40 +797,20 @@ async function runPricingFetch(args: {
           fetch_error: buildError("no_results", "SerpApi returned no hotels at draft time."),
         };
 
-  const isPioneer = await isPioneerForTrip(userId, tripId);
   let flights: FlightPricing | undefined;
-  if (isPioneer) {
-    const originRaw = trip.meta?.ai_preferences?.origin ?? null;
-    const originIata = resolveOriginIata(originRaw);
-    const destinationIata = resolveDestinationIata(trip.destination);
-    if (originIata && destinationIata) {
-      try {
-        const fp = await fetchFlightPrices({
-          originIata,
-          destinationIata,
-          outboundDate: trip.start_date,
-          returnDate: trip.end_date,
-          adults: Math.max(1, trip.target_crew_size ?? 1),
-          currency,
-        });
-        if (fp) {
-          flights = {
-            low: fp.low,
-            high: fp.high,
-            currency: fp.currency,
-            provider: "serpapi-google-flights",
-            refreshed_at: refreshedAt,
-            origin_iata: originIata,
-            destination_iata: destinationIata,
-            best_price: fp.best_price,
-            options: fp.options,
-            fetch_error: null,
-          };
-        }
-      } catch (err) {
-        console.error("[lockAndDraft.pricing] flights fetch threw", err);
-      }
-    }
+  if (isPioneer && originIata && destinationIata && flightResult) {
+    flights = {
+      low: flightResult.low,
+      high: flightResult.high,
+      currency: flightResult.currency,
+      provider: "serpapi-google-flights",
+      refreshed_at: refreshedAt,
+      origin_iata: originIata,
+      destination_iata: destinationIata,
+      best_price: flightResult.best_price,
+      options: flightResult.options,
+      fetch_error: null,
+    };
   }
 
   // Persist the live_pricing into trips.meta. Re-read the latest meta
