@@ -404,11 +404,23 @@ export async function deleteExpense(id: string) {
     .is("deleted_at", null);
   if (error) return { error: error.message };
 
-  await supabase
+  const { error: participantDeleteErr } = await supabase
     .from("expense_participants")
     .update({ deleted_at: deletedAt })
     .eq("expense_id", parsed.data)
     .is("deleted_at", null);
+  if (participantDeleteErr) {
+    console.error("[ledger.deleteExpense] participants soft-delete failed", participantDeleteErr);
+    await supabase
+      .from("expenses")
+      .update({ deleted_at: null })
+      .eq("id", parsed.data)
+      .eq("deleted_at", deletedAt);
+    return {
+      error:
+        "The expense couldn't be fully deleted because its split rows did not update. Try again.",
+    };
+  }
 
   await revalidateTrip(existing.trip_id);
   return { ok: true };
@@ -451,14 +463,30 @@ export async function restoreExpense(id: string) {
     .eq("id", parsed.data)
     .maybeSingle<{ deleted_at: string | null }>();
 
-  await supabase.from("expenses").update({ deleted_at: null }).eq("id", parsed.data);
+  const { error: expenseRestoreErr } = await supabase
+    .from("expenses")
+    .update({ deleted_at: null })
+    .eq("id", parsed.data);
+  if (expenseRestoreErr) return { error: expenseRestoreErr.message };
 
   if (snap?.deleted_at) {
-    await supabase
+    const { error: participantRestoreErr } = await supabase
       .from("expense_participants")
       .update({ deleted_at: null })
       .eq("expense_id", parsed.data)
       .eq("deleted_at", snap.deleted_at);
+    if (participantRestoreErr) {
+      console.error("[ledger.restoreExpense] participants restore failed", participantRestoreErr);
+      await supabase
+        .from("expenses")
+        .update({ deleted_at: snap.deleted_at })
+        .eq("id", parsed.data)
+        .is("deleted_at", null);
+      return {
+        error:
+          "The expense couldn't be fully restored because its split rows did not update. Try again.",
+      };
+    }
   }
 
   await revalidateTrip(row.trip_id);
