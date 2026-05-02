@@ -4,7 +4,10 @@ const ScheduleItemPlaceSchema = z.object({
   name: z.string().min(2).max(80),
 });
 
-const PlaceListSchema = z.array(ScheduleItemPlaceSchema).max(4).default([]);
+const PlaceListSchema = z.preprocess(
+  (raw) => (raw == null ? [] : raw),
+  z.array(ScheduleItemPlaceSchema).max(4),
+);
 
 export const DraftActivitySchema = z.object({
   placeId: z.string().optional(),
@@ -139,7 +142,7 @@ export const EnrichedDraftSchema = z.object({
       description: z.string().min(2).max(300),
       bestFor: z.string().min(2).max(60),
     }),
-  ).min(1).max(5),
+  ).max(5),
   itinerary: z.array(DraftDaySchema),
   bookAhead: z.array(DraftActivityLikeSchema),
   budget: DraftBudgetSchema,
