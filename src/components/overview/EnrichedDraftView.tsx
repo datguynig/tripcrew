@@ -1,5 +1,6 @@
 import type { PersistedEnrichedDraft } from "@/lib/ai/schema";
 import type {
+  Booking,
   FlightPricing,
   HotelPricing,
   HotelQuote,
@@ -8,6 +9,7 @@ import type {
 } from "@/lib/types";
 import { currencySymbol } from "@/lib/currency";
 import { ArrowUpRightIcon, MapPinIcon } from "@/components/ui/icons";
+import { BookAheadList } from "./BookAheadList";
 
 type Props = {
   draft: PersistedEnrichedDraft;
@@ -16,6 +18,8 @@ type Props = {
   livePricing?: LivePricing | null;
   isPioneer?: boolean;
   placesIndex?: Map<string, ScheduleItemPlace>;
+  bookings?: Booking[];
+  tripSlug?: string;
 };
 
 type LinkedActivity = {
@@ -55,6 +59,8 @@ export function EnrichedDraftView({
   livePricing,
   isPioneer = false,
   placesIndex,
+  bookings = [],
+  tripSlug,
 }: Props) {
   const symbol = currencySymbol(currency);
   const liveFlights = getLiveFlightsForTier(livePricing?.flights ?? null, isPioneer);
@@ -162,20 +168,24 @@ export function EnrichedDraftView({
         </section>
       )}
 
-      {draft.bookAhead.length > 0 && (
-        <section className="grid gap-4">
-          <div className="label-sm text-fg-3">BOOK AHEAD</div>
-          <ul className="border border-line bg-bg-2 divide-y divide-line">
-            {draft.bookAhead.map((item, i) => (
-              <ActivityLine
-                key={i}
-                act={item}
-                placesIndex={placesIndex}
-                className="px-5 py-4 text-[13px] text-fg-2 leading-[1.55]"
-              />
-            ))}
-          </ul>
-        </section>
+      {bookings.length > 0 && tripSlug ? (
+        <BookAheadList initial={bookings} tripSlug={tripSlug} />
+      ) : (
+        draft.bookAhead.length > 0 && (
+          <section className="grid gap-4">
+            <div className="label-sm text-fg-3">BOOK AHEAD</div>
+            <ul className="border border-line bg-bg-2 divide-y divide-line">
+              {draft.bookAhead.map((item, i) => (
+                <ActivityLine
+                  key={i}
+                  act={item}
+                  placesIndex={placesIndex}
+                  className="px-5 py-4 text-[13px] text-fg-2 leading-[1.55]"
+                />
+              ))}
+            </ul>
+          </section>
+        )
       )}
 
       <section className="grid gap-4">

@@ -62,7 +62,11 @@ export default async function TripOverview({
     { count: crewCount },
     isPioneer,
   ] = await Promise.all([
-    supabase.from("bookings").select("done").eq("trip_id", trip.id),
+    supabase
+      .from("bookings")
+      .select("*")
+      .eq("trip_id", trip.id)
+      .order("position", { ascending: true }),
     supabase.from("expenses").select("amount").eq("trip_id", trip.id),
     supabase
       .from("trip_members")
@@ -193,6 +197,7 @@ export default async function TripOverview({
 
       <LockAndDraftSection
         tripId={trip.id}
+        tripSlug={trip.slug}
         userId={user?.id ?? null}
         isAdmin={isAdmin}
         isPioneer={isPioneer}
@@ -212,6 +217,7 @@ export default async function TripOverview({
         originIata={originIata}
         originLabel={originLabel}
         destinationIata={destinationIata}
+        bookings={bookings ?? []}
       />
     </>
   );
