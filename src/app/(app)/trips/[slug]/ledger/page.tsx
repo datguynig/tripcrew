@@ -75,7 +75,7 @@ export default async function LedgerPage({
 
   const lead =
     trip.meta?.section_leads?.ledger ??
-    "Pool everything, split even. Log what you pay, balances update.";
+    "Pool what you pay. Split per expense, equal or weighted. Balances update live.";
 
   return (
     <section className="py-14 pb-24 section-enter">
