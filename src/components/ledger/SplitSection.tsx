@@ -23,9 +23,21 @@ type Props = {
   onToggle: (enabled: boolean) => void;
   value: SplitState;
   onChange: (next: SplitState) => void;
+  // When false, the section is always rendered expanded and the opt-in
+  // pill is never shown. "Use even split" repurposes from "collapse" to
+  // "reset to defaults" so it remains useful in always-on contexts.
+  collapsible?: boolean;
 };
 
-export function SplitSection({ total, crew, enabled, onToggle, value, onChange }: Props) {
+export function SplitSection({
+  total,
+  crew,
+  enabled,
+  onToggle,
+  value,
+  onChange,
+  collapsible = true,
+}: Props) {
   const computed = useMemo<ComputedShare[]>(() => {
     const included = value.participants.filter((p) => p.included);
     if (included.length === 0) return [];
@@ -49,7 +61,7 @@ export function SplitSection({ total, crew, enabled, onToggle, value, onChange }
 
   const sumShares = computed.reduce((s, c) => s + c.share_amount, 0);
 
-  if (!enabled) {
+  if (collapsible && !enabled) {
     return (
       <button
         type="button"
@@ -61,13 +73,24 @@ export function SplitSection({ total, crew, enabled, onToggle, value, onChange }
     );
   }
 
+  const handleResetOrCollapse = () => {
+    if (collapsible) {
+      onToggle(false);
+      return;
+    }
+    onChange({
+      basis: "equal",
+      participants: crew.map((c) => ({ user_id: c.id, included: true })),
+    });
+  };
+
   return (
     <div className="border border-line bg-bg-2 p-4 grid gap-3">
       <div className="flex items-baseline justify-between">
         <div className="label-sm-wide text-fg-3">SPLIT</div>
         <button
           type="button"
-          onClick={() => onToggle(false)}
+          onClick={handleResetOrCollapse}
           className="label-sm text-fg-3 hover:text-fg transition-colors"
         >
           Use even split

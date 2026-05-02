@@ -78,7 +78,6 @@ export function Ledger({
   const [amt, setAmt] = useState("");
   const [fxEnabled, setFxEnabled] = useState(false);
   const [fxState, setFxState] = useState<FxState>(initialFxState);
-  const [splitEnabled, setSplitEnabled] = useState(false);
   const [splitState, setSplitState] = useState<SplitState>(() => buildInitialSplitState(crew));
   const [showDeleted, setShowDeleted] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
@@ -249,13 +248,19 @@ export function Ledger({
         ? Math.round(fxState.trip_amount * 100) / 100
         : rounded;
 
-    // Build participants if SplitSection enabled; otherwise default = even split (action handles).
-    // The server recomputes share_amount from (share_basis, share_input), so we only
-    // need to ship the inputs; client validation of sums runs first for fast feedback.
+    // Build participants from the always-visible split section. The server
+    // recomputes share_amount from (share_basis, share_input); client checks
+    // run first for fast feedback. When the split is the default (equal +
+    // all crew included), we omit participants and let the server compute
+    // the even split — same wire shape as the pre-Phase-1 default path.
     let participantsInput:
       | { user_id: string; share_basis: ShareBasis; share_input: number | null }[]
       | undefined;
-    if (splitEnabled) {
+    const isDefaultSplit =
+      splitState.basis === "equal" &&
+      splitState.participants.length > 0 &&
+      splitState.participants.every((p) => p.included);
+    if (!isDefaultSplit) {
       const included = splitState.participants.filter((p) => p.included);
       if (included.length === 0) {
         toast.error("Pick at least one participant.");
@@ -312,7 +317,6 @@ export function Ledger({
     setAmt("");
     setFxEnabled(false);
     setFxState(initialFxState);
-    setSplitEnabled(false);
     setSplitState(buildInitialSplitState(crew));
 
     startTransition(async () => {
@@ -500,10 +504,11 @@ export function Ledger({
         <SplitSection
           total={fxEnabled && fxState.trip_amount ? fxState.trip_amount : parseFloat(amt) || 0}
           crew={crew}
-          enabled={splitEnabled}
-          onToggle={setSplitEnabled}
+          enabled
+          onToggle={() => {}}
           value={splitState}
           onChange={setSplitState}
+          collapsible={false}
         />
       </div>
 
