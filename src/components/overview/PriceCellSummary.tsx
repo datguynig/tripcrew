@@ -1,7 +1,11 @@
 import type { LivePricing } from "@/lib/types";
 import { currencySymbol } from "@/lib/currency";
 
-const STALE_AFTER_MS = 60_000;
+// If pricing hasn't arrived within this window after the draft was
+// generated, we assume the after() callback was reaped or SerpApi
+// failed silently — fall back to deeplink. Tuned for hotels (~15s)
+// + flights (~15s) + Vercel function buffer.
+const STALE_AFTER_MS = 3 * 60_000;
 
 type Kind = "flight" | "stay";
 type Tier = "member" | "pioneer";
