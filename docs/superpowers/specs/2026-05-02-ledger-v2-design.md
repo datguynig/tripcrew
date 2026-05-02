@@ -226,7 +226,12 @@ Pending and rejected payments never migrate. Only `verified` payments are subjec
 
 Only `verified` payments count toward `obligation.is_settled`. `pending` and `rejected` and `voided` do not.
 
-#### Allowed transitions (enforced at the server-action layer + DB CHECK constraint)
+#### Allowed transitions
+
+Transition enforcement happens in **two layers**:
+
+1. **Server-action layer.** Each transition has a dedicated server action (`verifyPayment`, `rejectPayment`, `voidPayment`) that reads the current row, asserts the source state matches the allowed `From`, asserts the actor is authorised per the Authority table, and updates atomically. Cross-row checks (recorder-vs-current-user, ≤5-minute window from `recorded_at`) live here.
+2. **DB layer.** A CHECK constraint validates allowed `status` values (`status IN ('pending', 'verified', 'rejected', 'voided')`) and per-row field consistency (e.g., `(status = 'verified') = (verified_at IS NOT NULL)`, same for rejected and voided). CHECK constraints cannot read the previous row state, so they cannot enforce transition validity by themselves. If we want a defence-in-depth backstop against direct SQL writes, a `before update` trigger reading `OLD.status` and `NEW.status` is the right tool — flagged as optional polish in the implementation plan.
 
 | From | To | Notes |
 |---|---|---|
@@ -392,16 +397,15 @@ Tap a row to expand — shows payment history (all rows, including rejected with
 
 ## Notifications
 
-All in-app, layered onto the existing `notifications` table. Adds 5 new `kind` values:
+All in-app, layered onto the existing `notifications` table. Adds 6 new `kind` values:
 
 - `expense_added` (existing) — payload extended with FX info when present
-- `payment_due_reminder` — `{ debtor_id (recipient), creditor_name, expense_description, amount, currency, due_date, obligation_id }`
+- `payment_due_reminder` — summary; one notification per `(trip_id, debtor_id, reminder_date)` covers all of that debtor's obligations due on that date. Payload: `{ debtor_id (recipient), reminder_date, currency, total_amount, obligations: [{ obligation_id, creditor_id, creditor_name, expense_description?, amount }] }` (`expense_description` is null for ad-hoc post-trip obligations introduced in Phase 3)
 - `payment_recorded` — `{ creditor_id (recipient), debtor_name, amount, currency, expense_description, obligation_id, payment_id }`
 - `payment_verified` — `{ debtor_id (recipient), amount, currency, expense_description, payment_id }`
 - `payment_rejected` — `{ debtor_id (recipient), amount, currency, rejection_note?, payment_id }`
-- `expense_settled` — `{ recipient (both A and B), other_member_name, total_settled, currency }`
-
-Coalescing: `payment_due_reminder` is per-(recipient, due_date) — if a debtor has 5 obligations due tomorrow, they get one summary notification, not 5.
+- `payment_reissued` — audit notification fanned out to both debtor and creditor when an auto-pair migrates payments from a superseded obligation to a new one. Payload: `{ recipient, old_obligation_id, new_obligation_id, migrated_payment_ids: [...], expense_description, amount }`
+- `expense_settled` (Phase 3) — `{ recipient (both A and B), other_member_name, total_settled, currency }`
 
 ## RLS posture
 
