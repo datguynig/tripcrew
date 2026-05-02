@@ -206,10 +206,20 @@ export async function generateLockAndDraft(
   ): Promise<void> => {
     const progress: DraftProgress = { stage, startedAt };
     if (detail) progress.detail = detail;
+
+    // Re-read meta to avoid clobbering concurrent writes (e.g. price
+    // refresh racing in parallel). Last-writer-wins on draft_progress is
+    // acceptable since progress is sequential within this action.
+    const { data: latest } = await supabase
+      .from("trips")
+      .select("meta")
+      .eq("id", tripId)
+      .maybeSingle<{ meta: TripMeta | null }>();
+
     await supabase
       .from("trips")
       .update({
-        meta: { ...(trip.meta ?? {}), draft_progress: progress },
+        meta: { ...(latest?.meta ?? {}), draft_progress: progress },
       })
       .eq("id", tripId);
   };
@@ -369,10 +379,18 @@ export async function generateLockAndDraft(
 
     if (tier === "enriched") {
       const setup = (draft as EnrichedDraft).setup;
+      // Re-read meta immediately before commit to avoid clobbering any
+      // concurrent writes (price refresh, polaroid edits, brief edits).
+      const { data: latestTrip } = await supabase
+        .from("trips")
+        .select("meta")
+        .eq("id", tripId)
+        .maybeSingle<{ meta: TripMeta | null }>();
+      const currentMeta = latestTrip?.meta ?? trip.meta ?? {};
       // Drop draft_progress on success — the page will see "no progress
       // marker + enriched_draft_generated_at populated" and render the
       // finished plan.
-      const { draft_progress: _drop, ...metaWithoutProgress } = trip.meta ?? {};
+      const { draft_progress: _drop, ...metaWithoutProgress } = currentMeta;
       void _drop;
       const nextMeta: TripMeta = {
         ...metaWithoutProgress,
@@ -384,7 +402,7 @@ export async function generateLockAndDraft(
         // On first lock: empty shell signals "loading" to realtime listeners.
         // On redraft: preserve existing pricing so a draft failure doesn't
         // wipe previously-fetched data.
-        live_pricing: trip.meta?.live_pricing ?? { flights: undefined, hotels: undefined },
+        live_pricing: currentMeta.live_pricing ?? { flights: undefined, hotels: undefined },
       };
 
       const { error: updateError } = await supabase
@@ -566,10 +584,17 @@ export async function generateLockAndDraft(
       startedAt,
       error: { message: friendlyMessage, retryable: true },
     };
+    // Re-read meta before writing the error state to avoid clobbering
+    // any concurrent writes that happened before the failure.
+    const { data: latestOnFailure } = await service
+      .from("trips")
+      .select("meta")
+      .eq("id", tripId)
+      .maybeSingle<{ meta: TripMeta | null }>();
     await service
       .from("trips")
       .update({
-        meta: { ...(trip.meta ?? {}), draft_progress: failedProgress },
+        meta: { ...(latestOnFailure?.meta ?? trip.meta ?? {}), draft_progress: failedProgress },
       })
       .eq("id", tripId);
 
