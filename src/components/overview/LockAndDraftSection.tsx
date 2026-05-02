@@ -153,7 +153,7 @@ export function LockAndDraftSection({
               <RefreshPricesButton
                 tripId={tripId}
                 userId={userId}
-                lastRefreshedAt={lastPriceRefreshAt}
+                lastPriceRefreshAt={lastPriceRefreshAt}
               />
             </div>
           )}
