@@ -87,11 +87,17 @@ export async function hasProAccessForTrip(
   });
 }
 
-// A trip is "Pioneer" iff at least one of its admins has
-// founding_crew_at set. This matches the "any admin pays" pricing
-// semantics used elsewhere — Pioneer status is a property of the
-// trip, not of the caller. (A Pioneer who joins a non-Pioneer trip
-// as a member should still see Member-tier UI for that trip.)
+// A trip is "Pioneer" iff at least one of its admins is a permanent
+// founder (`profiles.is_founder = true`) OR has `founding_crew_at` set
+// (i.e. completed founding-crew checkout). The two flags are separate
+// columns: `is_founder` marks the founder account and is forever-true;
+// `founding_crew_at` is stamped at checkout time for paid Pioneers.
+// Either one grants Pioneer-tier UI for the trip.
+//
+// This matches the "any admin pays" pricing semantics used elsewhere —
+// Pioneer status is a property of the trip, not of the caller. (A
+// Pioneer who joins a non-Pioneer trip as a member should still see
+// Member-tier UI for that trip.)
 export async function isPioneerForTrip(
   userId: string,
   tripId: string,
@@ -105,7 +111,8 @@ export async function isPioneerForTrip(
       `
       user_id,
       profiles!inner (
-        founding_crew_at
+        founding_crew_at,
+        is_founder
       )
     `,
     )
@@ -116,6 +123,6 @@ export async function isPioneerForTrip(
 
   return data.some((member) => {
     const p = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles;
-    return !!p?.founding_crew_at;
+    return !!p?.founding_crew_at || p?.is_founder === true;
   });
 }
