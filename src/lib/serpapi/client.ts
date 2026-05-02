@@ -243,7 +243,11 @@ export async function fetchHotelQuotes(
     q: search.destination,
     check_in_date: search.checkIn,
     check_out_date: search.checkOut,
-    adults: String(Math.max(1, search.rooms * 2)),
+    // SerpApi Google Hotels caps at 6 travellers per query. For larger
+    // crews we still surface the top-3 hotels (filtered for what fits
+    // within 6 adults across the requested rooms); admins can complete
+    // the actual booking off-platform when the real party size exceeds 6.
+    adults: String(Math.min(6, Math.max(1, search.rooms * 2))),
     currency: search.currency,
     hl: "en",
     api_key: apiKey,
