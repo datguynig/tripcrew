@@ -86,3 +86,41 @@ export async function hasProAccessForTrip(
     });
   });
 }
+
+// Pioneer = pro AND profiles.founding_crew_at IS NOT NULL. Used to gate
+// the "live price visibility" delta in Spec B (Member sees deeplinks,
+// Pioneer sees prices). Same any-admin-pays semantics as hasProAccessForTrip.
+export async function isPioneerForTrip(
+  userId: string,
+  tripId: string,
+): Promise<boolean> {
+  const supabase = await createClient();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("founding_crew_at")
+    .eq("id", userId)
+    .maybeSingle<{ founding_crew_at: string | null }>();
+  if (profile?.founding_crew_at) return true;
+
+  const { data, error } = await supabase
+    .from("trip_members")
+    .select(
+      `
+      user_id,
+      profiles!inner (
+        founding_crew_at
+      )
+    `,
+    )
+    .eq("trip_id", tripId)
+    .eq("role", "admin");
+
+  if (error || !data) return false;
+
+  return data.some((member) => {
+    const p = Array.isArray(member.profiles)
+      ? member.profiles[0]
+      : member.profiles;
+    return !!p?.founding_crew_at;
+  });
+}
