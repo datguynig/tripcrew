@@ -91,24 +91,6 @@ export function EnrichedDraftView({
                 <p className="text-[14px] text-fg-2 leading-[1.55]">
                   {area.description}
                 </p>
-                {area.hotelSuggestions.length > 0 && (
-                  <ul className="grid gap-1.5 mt-1">
-                    {area.hotelSuggestions.map((hotel) => (
-                      <li key={hotel.searchUrl} className="text-[13px]">
-                        <a
-                          href={hotel.searchUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-fg hover:text-accent transition-colors"
-                        >
-                          <span className="font-medium">{hotel.area}</span>
-                          <span className="text-fg-3"> · {hotel.description}</span>
-                          <span className="text-accent ml-1">↗</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
             ))}
           </div>
@@ -151,19 +133,7 @@ export function EnrichedDraftView({
                           <ul className="grid gap-1.5">
                             {block.activities.map((act, ai) => (
                               <li key={ai} className="text-[13px] text-fg-2 leading-[1.55]">
-                                {act.googleMapsUrl ? (
-                                  <a
-                                    href={act.googleMapsUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-fg hover:text-accent transition-colors"
-                                  >
-                                    <span className="font-medium">{act.name}</span>
-                                    <span className="text-accent ml-1">↗</span>
-                                  </a>
-                                ) : (
-                                  <span className="font-medium text-fg">{act.name}</span>
-                                )}
+                                <span className="font-medium text-fg">{act.name}</span>
                                 {act.description && (
                                   <span className="text-fg-3"> · {act.description}</span>
                                 )}
@@ -210,16 +180,6 @@ export function EnrichedDraftView({
                     </p>
                   )}
                 </div>
-                {item.googleMapsUrl && (
-                  <a
-                    href={item.googleMapsUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="label-sm-wide text-accent hover:underline shrink-0"
-                  >
-                    Open ↗
-                  </a>
-                )}
               </li>
             ))}
           </ul>
