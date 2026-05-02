@@ -274,18 +274,20 @@ export async function refreshPrices(
   const flightsFailed = isPioneer && flightError !== null;
   const allAttemptedFailed = isPioneer ? hotelsFailed && flightsFailed : hotelsFailed;
 
-  const userPlan = await getUserPlan(userId);
-  const { error: rpcError } = await supabase.rpc("record_price_refresh", {
-    p_user_id: userId,
-    p_trip_id: tripId,
-    p_is_trial: userPlan === "trial",
-  });
-  if (rpcError) {
-    return {
-      success: false,
-      error: "Price refresh could not be recorded.",
-      upgradeCta: false,
-    };
+  if (!allAttemptedFailed) {
+    const userPlan = await getUserPlan(userId);
+    const { error: rpcError } = await supabase.rpc("record_price_refresh", {
+      p_user_id: userId,
+      p_trip_id: tripId,
+      p_is_trial: userPlan === "trial",
+    });
+    if (rpcError) {
+      return {
+        success: false,
+        error: "Price refresh could not be recorded.",
+        upgradeCta: false,
+      };
+    }
   }
 
   const nextMeta: TripMeta = {
