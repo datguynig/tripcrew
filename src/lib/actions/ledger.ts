@@ -335,3 +335,44 @@ export async function restoreExpense(id: string) {
   await revalidateTrip(row.trip_id);
   return { ok: true };
 }
+
+export async function dismissMigrationWarning(tripId: string) {
+  const parsed = z.string().uuid().safeParse(tripId);
+  if (!parsed.success) return { error: "Invalid id" };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not signed in" };
+
+  const { data: m } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", parsed.data)
+    .eq("user_id", user.id)
+    .maybeSingle<{ role: string }>();
+  if (m?.role !== "admin") return { error: "Not authorised" };
+
+  const { data: trip } = await supabase
+    .from("trips")
+    .select("meta, slug")
+    .eq("id", parsed.data)
+    .maybeSingle<{ meta: Record<string, unknown> | null; slug: string }>();
+  if (!trip) return { error: "Trip not found" };
+
+  const meta = (trip.meta ?? {}) as Record<string, unknown>;
+  const warnings = (meta.migration_warnings ?? {}) as Record<string, unknown>;
+  const phantom = (warnings.ledger_v2_phantom_shares ?? {}) as Record<string, unknown>;
+  const nextMeta = {
+    ...meta,
+    migration_warnings: {
+      ...warnings,
+      ledger_v2_phantom_shares: { ...phantom, shown: true },
+    },
+  };
+
+  await supabase.from("trips").update({ meta: nextMeta }).eq("id", parsed.data);
+  if (trip.slug) revalidatePath(`/trips/${trip.slug}/ledger`);
+  return { ok: true };
+}
