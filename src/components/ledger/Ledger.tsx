@@ -12,6 +12,7 @@ import { INPUT_SM } from "@/lib/styles";
 import { CurrencySection } from "./CurrencySection";
 import { SplitSection, type SplitState } from "./SplitSection";
 import { ExpenseRow } from "./ExpenseRow";
+import { EditExpenseDialog } from "./EditExpenseDialog";
 
 type CrewOption = { id: string; name: string };
 
@@ -83,6 +84,7 @@ export function Ledger({
   const [splitState, setSplitState] = useState<SplitState>(() => buildInitialSplitState(crew));
   const [showDeleted, setShowDeleted] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const toast = useToast();
 
@@ -359,9 +361,21 @@ export function Ledger({
     });
   };
 
-  const handleEdit = (_id: string) => {
-    toast.error("Edit not available yet");
+  const handleEdit = (id: string) => {
+    setEditingId(id);
   };
+
+  const editingExpense = useMemo(
+    () => (editingId ? expenses.find((e) => e.id === editingId) ?? null : null),
+    [editingId, expenses],
+  );
+  const editingParticipants = useMemo(
+    () =>
+      editingId
+        ? participants.filter((p) => p.expense_id === editingId && !p.deleted_at)
+        : [],
+    [editingId, participants],
+  );
 
   const handleDismissBanner = () => {
     setBannerDismissed(true);
@@ -539,6 +553,19 @@ export function Ledger({
             Maths runs on per-expense participant shares.
           </div>
         </div>
+      )}
+
+      {editingExpense && (
+        <EditExpenseDialog
+          open={!!editingId}
+          onOpenChange={(o) => {
+            if (!o) setEditingId(null);
+          }}
+          expense={editingExpense}
+          participants={editingParticipants}
+          crew={crew}
+          tripCurrency={tripCurrency}
+        />
       )}
     </>
   );
