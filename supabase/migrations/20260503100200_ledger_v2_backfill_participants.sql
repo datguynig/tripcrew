@@ -16,7 +16,10 @@ declare
   per_share numeric(12, 2);
   trip_target int;
   trip_members_count int;
-  any_warning boolean;
+  intended_sum numeric(12, 2);
+  current_sum numeric(12, 2);
+  remainder numeric(12, 2);
+  last_participant_id uuid;
 begin
   for e in
     select id, trip_id, amount from expenses where deleted_at is null
@@ -36,6 +39,7 @@ begin
       from trip_members tm
       join profiles p on p.id = tm.user_id
       where tm.trip_id = e.trip_id
+      order by tm.user_id
     loop
       insert into expense_participants (
         trip_id, expense_id, user_id, share_amount,
@@ -46,6 +50,29 @@ begin
       )
       on conflict do nothing;
     end loop;
+
+    -- Absorb the rounding remainder into the last inserted row so the sum
+    -- of inserted shares equals round(amount * joined_count / target, 2),
+    -- which mirrors applyRoundingRemainder in src/lib/ledger/shares.ts.
+    if trip_members_count > 0 then
+      intended_sum := round(e.amount * trip_members_count::numeric / trip_target, 2);
+      select coalesce(sum(share_amount), 0) into current_sum
+        from expense_participants
+        where expense_id = e.id and share_basis = 'equal' and deleted_at is null;
+      remainder := intended_sum - current_sum;
+      if remainder <> 0 then
+        select id into last_participant_id
+          from expense_participants
+          where expense_id = e.id and share_basis = 'equal' and deleted_at is null
+          order by user_id desc
+          limit 1;
+        if last_participant_id is not null then
+          update expense_participants
+            set share_amount = share_amount + remainder
+            where id = last_participant_id;
+        end if;
+      end if;
+    end if;
 
     -- Tag the trip if joined < target so admins see a one-time banner
     if trip_members_count < trip_target then
