@@ -15,7 +15,6 @@ export const DraftActivitySchema = z.object({
   description: z.string(),
   approxDurationMinutes: z.number().int().positive().optional(),
   bookAhead: z.boolean().default(false),
-  googleMapsUrl: z.string().url().optional(),
 });
 
 // Permissive: Gemini occasionally returns bookAhead items as objects

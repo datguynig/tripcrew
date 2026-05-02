@@ -136,8 +136,9 @@ Use this data. Do not invent places. When VIBE PREFERENCES above demands a kind 
 ${placesContext}
 
 LINKS
+- The flight search URL below is the only URL you should output anywhere in your response.
 - Flight search URL, use exactly: ${flightSearchUrl}
-- Do not embed any other URLs in your output. The platform resolves place links server-side.
+- Do not embed any other URLs in your output. The platform resolves all other place links server-side.
 
 REQUIREMENTS
 1. Use only places from REAL DESTINATION DATA. Do not invent attractions, restaurants, or hotels.
@@ -151,7 +152,7 @@ REQUIREMENTS
 9. Output valid JSON only. Do not wrap in markdown code fences.
 10. For every schedule day item, populate \`places\` with up to 4 entries from REAL DESTINATION DATA — just \`{ name }\`, no URLs. The platform resolves these to verified Google Maps + website links.
 11. For every bookAhead item that targets a specific venue, set \`place_name\` to that venue's exact name from REAL DESTINATION DATA. Skip \`place_name\` for generic bookings (e.g. "Book the morning train").
-12. Do not output any URLs in \`body\`, \`description\`, or any free-text field. URLs in prose will be silently stripped.
+12. Do not output any URLs in your response, anywhere — neither in \`body\`, \`description\`, or any free-text field, nor in structured fields like \`googleMapsUrl\` or \`website\`. The platform resolves all place links server-side via \`placeId\`. URLs in prose will be silently stripped; URLs in structured fields will be ignored. Use \`placeId\` to ground places, never URLs.
 
 SETUP REQUIREMENTS
 Alongside the itinerary above, you also produce a "setup" object. This is the trip's at-a-glance brief: editorial hero copy, a 4-cell spec grid, a day-by-day schedule, an activity shortlist, and a list of bookings the crew should action. Rules:
@@ -193,8 +194,7 @@ OUTPUT SCHEMA
               "name": "string",
               "description": "string",
               "approxDurationMinutes": number,
-              "bookAhead": boolean,
-              "googleMapsUrl": "string, optional"
+              "bookAhead": boolean
             }
           ],
           "notes": "string, optional"
