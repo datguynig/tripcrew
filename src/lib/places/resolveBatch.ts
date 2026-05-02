@@ -32,7 +32,8 @@ function isValidHttpUrl(url: string | null | undefined): url is string {
   }
 }
 
-// Haversine distance in metres.
+// Spherical (Haversine), not flat-earth — destinations span large enough
+// distances that an equirectangular approximation drifts at high latitudes.
 function distanceMeters(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6_371_000;
   const toRad = (deg: number) => (deg * Math.PI) / 180;

@@ -215,7 +215,8 @@ export async function generateLockAndDraft(
     let outputTokens = 0;
     let durationMs = 0;
     let model = getGeminiModelName();
-    // Spec B: populated during the enriched Gemini pass; consumed in the save block.
+    // Hoisted so the post-Gemini resolution and the save block downstream
+    // share scope; populated only on the enriched path.
     let resolvedPlaces = new Map<string, ResolvedPlace>();
     let placeIdToData = new Map<string, { maps_url: string | null; website_url: string | null }>();
 
@@ -264,10 +265,10 @@ export async function generateLockAndDraft(
       durationMs = result.durationMs;
       model = result.model;
 
-      // Spec B Step 2: collect every place name the AI emitted across schedule
-      // + bookings, resolve to verified place_ids in one batch. Activities
-      // use SetupActivitySchema which has no placeId; place enrichment for
-      // activities is handled separately (backfill-media script).
+      // One Places batch per draft: any name the AI mentions on schedule
+      // or bookings becomes a verified place_id, or it's silently dropped.
+      // Activities take a different path (backfill-media script) because
+      // SetupActivitySchema has no placeId field.
       const allNames = new Set<string>();
       const enrichedDraft = draft as EnrichedDraft;
       for (const row of enrichedDraft.setup?.schedule ?? []) {
@@ -322,7 +323,9 @@ export async function generateLockAndDraft(
         });
       }
 
-      // Spec B Step 4: apply place resolution to schedule rows + strip prose URLs.
+      // Belt-and-braces: even though the prompt forbids inline URLs, strip
+      // any that slip through before persisting. Pills come from the
+      // structured `places` array, never from the body prose.
       const URL_RE = /https?:\/\/\S+/g;
       for (const row of enrichedDraft.setup?.schedule ?? []) {
         if (typeof row.body === "string") {
@@ -368,9 +371,9 @@ export async function generateLockAndDraft(
       const nextMeta: TripMeta = {
         ...metaWithoutProgress,
         spec_grid: setup.specGrid,
-        // Cast: schedule rows were mutated in-place above (Spec B Step 4)
-        // to carry full ScheduleItemPlace entries; Zod's static type still
-        // says { name: string }[] because that's the shape it validates.
+        // Zod's inferred type for places is { name }[] — the validation
+        // shape — but the runtime mutation above attaches place_id /
+        // maps_url / website_url. The cast crosses that boundary.
         schedule: setup.schedule as unknown as TripMeta["schedule"],
       };
 
@@ -430,10 +433,10 @@ export async function generateLockAndDraft(
         }
       }
 
-      // Spec B: preserve admin manual edits across regeneration. Snapshot
-      // (lower-cased trimmed title) → { custom_url, assignee_id, done } for
-      // existing AI-drafted bookings, merge them back into the new rows by
-      // exact-title match after re-insert.
+      // Manual admin edits (custom_url, assignee, done) survive regeneration:
+      // snapshot existing ai_drafted rows before delete, merge by exact-title
+      // match after re-insert. Title rename loses the merge — accepted v1
+      // trade-off; Levenshtein is a follow-up.
       const { data: existingAiBookings } = await service
         .from("bookings")
         .select("title, custom_url, assignee_id, done")

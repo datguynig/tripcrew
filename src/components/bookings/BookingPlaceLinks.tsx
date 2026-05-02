@@ -1,8 +1,20 @@
 import type { Booking } from "@/lib/types";
 import { MapPinIcon, ArrowUpRightIcon } from "@/components/ui/icons";
 
+// Defence in depth: setBookingCustomUrl validates at write, but a misconfigured
+// migration or direct DB edit could surface a non-http(s) value here.
+function isSafeHref(url: string | null): url is string {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export function BookingPlaceLinks({ booking }: { booking: Booking }) {
-  if (booking.custom_url) {
+  if (isSafeHref(booking.custom_url)) {
     return (
       <a
         href={booking.custom_url}

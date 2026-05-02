@@ -308,7 +308,6 @@ export type Activity = {
   rating: number | null;
   price_level: number | null;
   website_url: string | null;
-  // Spec B
   place_id: string | null;
   maps_url: string | null;
   created_at: string;
@@ -331,10 +330,10 @@ export type Booking = {
   ai_drafted: boolean;
   created_at: string;
   created_by: string | null;
-  // Spec B
   place_id: string | null;
   maps_url: string | null;
   website_url: string | null;
+  // Admin override; takes precedence over place_id-derived URLs at render time.
   custom_url: string | null;
 };
 
