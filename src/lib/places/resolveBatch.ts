@@ -19,7 +19,7 @@ const DEFAULT_MAX_LOOKUPS = 25;
 
 function isValidName(name: string): boolean {
   const trimmed = name.trim();
-  return trimmed.length >= 1 && trimmed.length <= 80;
+  return trimmed.length >= 2 && trimmed.length <= 80;
 }
 
 function isHttps(url: string | null | undefined): url is string {

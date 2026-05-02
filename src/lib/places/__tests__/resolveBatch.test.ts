@@ -84,8 +84,8 @@ test("resolvePlaceNames nulls non-https website URLs", async () => {
       websiteUri: "javascript:alert(1)",
     },
   ];
-  const result = await resolvePlaceNames(["X"], STOCKHOLM, 25_000, { searchText: search, maxLookups: 25 });
-  const r = result.get("X");
+  const result = await resolvePlaceNames(["Vasa"], STOCKHOLM, 25_000, { searchText: search, maxLookups: 25 });
+  const r = result.get("Vasa");
   assert.ok(r);
   assert.equal(r?.website_url, null);
   assert.equal(r?.maps_url, "https://www.google.com/maps/x");
