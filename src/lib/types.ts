@@ -390,13 +390,43 @@ export type Booking = {
   custom_url: string | null;
 };
 
+export type FxRateSource = "frankfurter" | "manual";
+export type ShareBasis = "equal" | "percentage" | "exact";
+
 export type Expense = {
   id: string;
   trip_id: string;
   description: string;
-  amount: string;
+  amount: string;                       // numeric returned as string
   paid_by: string;
   created_at: string;
+  // Phase 1 additions
+  original_currency: string | null;
+  original_amount: string | null;
+  fx_rate: string | null;
+  fx_rate_source: FxRateSource | null;
+  fx_rate_date: string | null;
+  fx_suggested_amount: string | null;
+  fx_user_overridden: boolean;
+  version: number;
+  deleted_at: string | null;
+};
+
+export type ExpenseParticipant = {
+  id: string;
+  trip_id: string;
+  expense_id: string;
+  user_id: string;
+  share_amount: string;                 // numeric as string
+  share_basis: ShareBasis;
+  share_input: string | null;
+  display_name_snapshot: string;
+  deleted_at: string | null;
+  created_at: string;
+};
+
+export type ExpenseWithParticipants = Expense & {
+  participants: ExpenseParticipant[];
 };
 
 export type Post = {
