@@ -29,6 +29,7 @@ import {
 } from "@/lib/ai/schema";
 import { logAiUsage } from "@/lib/ai/usage";
 import { buildGoogleFlightsUrl } from "@/lib/deeplinks/builders";
+import { resolvePlaceNames, type ResolvedPlace } from "@/lib/places/resolveBatch";
 import type {
   AiOccasion,
   AiPreferences,
@@ -214,6 +215,9 @@ export async function generateLockAndDraft(
     let outputTokens = 0;
     let durationMs = 0;
     let model = getGeminiModelName();
+    // Spec B: populated during the enriched Gemini pass; consumed in the save block.
+    let resolvedPlaces = new Map<string, ResolvedPlace>();
+    let placeIdToData = new Map<string, { maps_url: string | null; website_url: string | null }>();
 
     if (tier === "enriched") {
       await writeProgress("places", "Pulling live places near " + ctx.destination);
@@ -259,6 +263,84 @@ export async function generateLockAndDraft(
       outputTokens = result.outputTokens;
       durationMs = result.durationMs;
       model = result.model;
+
+      // Spec B Step 2: collect every place name the AI emitted across schedule
+      // + bookings, resolve to verified place_ids in one batch. Activities
+      // use SetupActivitySchema which has no placeId; place enrichment for
+      // activities is handled separately (backfill-media script).
+      const allNames = new Set<string>();
+      const enrichedDraft = draft as EnrichedDraft;
+      for (const row of enrichedDraft.setup?.schedule ?? []) {
+        for (const p of row.places ?? []) {
+          if (p?.name) allNames.add(p.name);
+        }
+      }
+      for (const b of enrichedDraft.setup?.bookings ?? []) {
+        if (b.place_name) allNames.add(b.place_name);
+      }
+
+      const destLatLng = enriched.resolved?.location
+        ? {
+            lat: enriched.resolved.location.latitude,
+            lng: enriched.resolved.location.longitude,
+          }
+        : null;
+
+      if (destLatLng && allNames.size > 0) {
+        try {
+          resolvedPlaces = await resolvePlaceNames(
+            Array.from(allNames),
+            destLatLng,
+            50_000,
+          );
+        } catch (err) {
+          // Per spec §2.5 item 4: places resolution failure NEVER blocks the
+          // draft save. Log and proceed with empty resolutions.
+          console.error("[lockAndDraft] places resolution failed, continuing", err);
+          await logAiUsage({
+            userId,
+            tripId,
+            feature: "lock_and_draft_enriched",
+            model: "google-places",
+            estimatedCostGBP: 0,
+            succeeded: false,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+
+      // Build a map of placeId → { maps_url, website_url } for activity
+      // enrichment. Only topAttractions are PlaceDetails (carry googleMapsUri
+      // + websiteUri); the other collections are PlaceSummary and lack those
+      // fields. SetupActivitySchema has no placeId field so this map is used
+      // as a future hook; currently no setup activity references a placeId.
+      for (const item of enriched.topAttractions ?? []) {
+        if (!item.id || placeIdToData.has(item.id)) continue;
+        placeIdToData.set(item.id, {
+          maps_url: item.googleMapsUri ?? null,
+          website_url: item.websiteUri ?? null,
+        });
+      }
+
+      // Spec B Step 4: apply place resolution to schedule rows + strip prose URLs.
+      const URL_RE = /https?:\/\/\S+/g;
+      for (const row of enrichedDraft.setup?.schedule ?? []) {
+        if (typeof row.body === "string") {
+          row.body = row.body.replace(URL_RE, "").replace(/\s+/g, " ").trim();
+        }
+        if (Array.isArray(row.places)) {
+          row.places = row.places.map((p) => {
+            const r = p?.name ? resolvedPlaces.get(p.name) : null;
+            return {
+              name: p.name,
+              place_id: r?.place_id ?? null,
+              maps_url: r?.maps_url ?? null,
+              website_url: r?.website_url ?? null,
+            };
+          });
+        }
+      }
+
     } else {
       await writeProgress("drafting", "Drafting summary and themes");
       const prompt = buildBasicDraftPrompt(ctx);
@@ -286,7 +368,10 @@ export async function generateLockAndDraft(
       const nextMeta: TripMeta = {
         ...metaWithoutProgress,
         spec_grid: setup.specGrid,
-        schedule: setup.schedule,
+        // Cast: schedule rows were mutated in-place above (Spec B Step 4)
+        // to carry full ScheduleItemPlace entries; Zod's static type still
+        // says { name: string }[] because that's the shape it validates.
+        schedule: setup.schedule as unknown as TripMeta["schedule"],
       };
 
       const { error: updateError } = await supabase
@@ -330,6 +415,11 @@ export async function generateLockAndDraft(
         category: a.category,
         position: activityBase + i,
         ai_drafted: true,
+        // SetupActivitySchema has no placeId; place enrichment for activities
+        // runs via the backfill-media script. These fields are left null here.
+        place_id: null as string | null,
+        maps_url: null as string | null,
+        website_url: null as string | null,
       }));
       if (activityRows.length > 0) {
         const { error: actErr } = await service
@@ -338,6 +428,28 @@ export async function generateLockAndDraft(
         if (actErr) {
           console.error("[generateLockAndDraft] activities insert failed", actErr);
         }
+      }
+
+      // Spec B: preserve admin manual edits across regeneration. Snapshot
+      // (lower-cased trimmed title) → { custom_url, assignee_id, done } for
+      // existing AI-drafted bookings, merge them back into the new rows by
+      // exact-title match after re-insert.
+      const { data: existingAiBookings } = await service
+        .from("bookings")
+        .select("title, custom_url, assignee_id, done")
+        .eq("trip_id", tripId)
+        .eq("ai_drafted", true);
+
+      const bookingSnapshot = new Map<
+        string,
+        { custom_url: string | null; assignee_id: string | null; done: boolean }
+      >();
+      for (const b of existingAiBookings ?? []) {
+        bookingSnapshot.set((b.title ?? "").toLowerCase().trim(), {
+          custom_url: b.custom_url ?? null,
+          assignee_id: b.assignee_id ?? null,
+          done: !!b.done,
+        });
       }
 
       await service
@@ -355,13 +467,24 @@ export async function generateLockAndDraft(
         .maybeSingle<{ position: number }>();
       const bookingBase = (lastBooking?.position ?? 0) + 1;
 
-      const bookingRows = setup.bookings.map((b, i) => ({
-        trip_id: tripId,
-        title: b.title,
-        position: bookingBase + i,
-        created_by: userId,
-        ai_drafted: true,
-      }));
+      const bookingRows = setup.bookings.map((b, i) => {
+        const r = b.place_name ? resolvedPlaces.get(b.place_name) : null;
+        const titleKey = (b.title ?? "").toLowerCase().trim();
+        const preserved = bookingSnapshot.get(titleKey);
+        return {
+          trip_id: tripId,
+          title: b.title,
+          position: bookingBase + i,
+          created_by: userId,
+          ai_drafted: true,
+          place_id: r?.place_id ?? null,
+          maps_url: r?.maps_url ?? null,
+          website_url: r?.website_url ?? null,
+          custom_url: preserved?.custom_url ?? null,
+          assignee_id: preserved?.assignee_id ?? null,
+          done: preserved?.done ?? false,
+        };
+      });
       if (bookingRows.length > 0) {
         const { error: bookErr } = await service
           .from("bookings")
