@@ -15,6 +15,7 @@ type Props = {
   tripId: string;
   userId: string | null;
   isAdmin: boolean;
+  isPioneer?: boolean;
   destination: string | null;
   currency: string;
   enrichedDraft: unknown;
@@ -44,6 +45,7 @@ export function LockAndDraftSection({
   tripId,
   userId,
   isAdmin,
+  isPioneer = false,
   destination,
   currency,
   enrichedDraft,
@@ -147,7 +149,7 @@ export function LockAndDraftSection({
             </div>
           </div>
 
-          {draft.tier === "enriched" && (
+          {draft.tier === "enriched" && isPioneer && (
             <div className="grid gap-2">
               <div className="label-sm text-fg-3">PRICE CHECK</div>
               <RefreshPricesButton

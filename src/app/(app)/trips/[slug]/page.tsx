@@ -205,6 +205,7 @@ export default async function TripOverview({
         tripId={trip.id}
         userId={user?.id ?? null}
         isAdmin={isAdmin}
+        isPioneer={isPioneer}
         destination={trip.destination}
         currency={trip.currency ?? "GBP"}
         enrichedDraft={trip.enriched_draft}
