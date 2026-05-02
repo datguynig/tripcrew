@@ -75,6 +75,33 @@ test("resolvePlaceNames rejects names that fail validation", async () => {
   assert.equal(result.size, 0, "no valid resolutions for invalid inputs");
 });
 
+test("resolvePlaceNames accepts 2-char and 80-char names at boundary", async () => {
+  const calls: string[] = [];
+  const search: PlaceSearchFn = async (query) => {
+    calls.push(query);
+    return [
+      {
+        id: `place_${query}`,
+        location: { latitude: STOCKHOLM.lat, longitude: STOCKHOLM.lng },
+        googleMapsUri: `https://www.google.com/maps/place/?q=place_id:place_${query}`,
+        websiteUri: null,
+      },
+    ];
+  };
+
+  const eightyChar = "a".repeat(80);
+  const result = await resolvePlaceNames(
+    ["Hi", eightyChar],
+    STOCKHOLM,
+    25_000,
+    { searchText: search, maxLookups: 25 },
+  );
+
+  assert.equal(calls.length, 2, "both boundary-length names looked up");
+  assert.ok(result.get("Hi"), "2-char name accepted");
+  assert.ok(result.get(eightyChar), "80-char name accepted");
+});
+
 test("resolvePlaceNames nulls non-https website URLs", async () => {
   const search: PlaceSearchFn = async () => [
     {

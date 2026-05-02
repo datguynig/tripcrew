@@ -22,7 +22,7 @@ function isValidName(name: string): boolean {
   return trimmed.length >= 2 && trimmed.length <= 80;
 }
 
-function isHttps(url: string | null | undefined): url is string {
+function isValidHttpUrl(url: string | null | undefined): url is string {
   if (!url) return false;
   try {
     const u = new URL(url);
@@ -56,10 +56,11 @@ export async function resolvePlaceNames(
     options.searchText ??
     (async (query) => {
       const results = await textSearch({ query, maxResults: 1 });
-      // textSearch returns PlaceSummary; we re-fetch with details if we
-      // need website. For now, the summary's `id` plus a generic Maps
-      // URL is enough — Step 5 in lockAndDraft can later upgrade to
-      // details for website_url. Keep this helper minimal.
+      // NOTE: this default path does NOT pass locationBias to Places, so
+      // the distance filter at line 100 may discard the top-1 result for
+      // common names (e.g. "Central Park" near Stockholm). Task 5 (lockAndDraft)
+      // MUST supply a bias-aware PlaceSearchFn via options.searchText —
+      // don't rely on this default in production.
       return results.map((r) => ({
         id: r.id,
         location: { latitude: r.location.latitude, longitude: r.location.longitude },
@@ -98,13 +99,15 @@ export async function resolvePlaceNames(
       lng: top.location.longitude,
     });
     if (dist > radiusMeters) continue;
+    if (!top.id) continue;
+    const mapsUri = top.googleMapsUri ?? null;
+    const websiteUri = top.websiteUri ?? null;
     out.set(name, {
       place_id: top.id,
-      maps_url:
-        isHttps(top.googleMapsUri ?? null)
-          ? (top.googleMapsUri as string)
-          : `https://www.google.com/maps/place/?q=place_id:${top.id}`,
-      website_url: isHttps(top.websiteUri ?? null) ? (top.websiteUri as string) : null,
+      maps_url: isValidHttpUrl(mapsUri)
+        ? mapsUri
+        : `https://www.google.com/maps/place/?q=place_id:${top.id}`,
+      website_url: isValidHttpUrl(websiteUri) ? websiteUri : null,
     });
   }
 
