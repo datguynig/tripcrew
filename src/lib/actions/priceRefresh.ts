@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { canRefreshPrices } from "@/lib/gates";
-import { getUserPlan } from "@/lib/plan";
+import { getUserPlan, isPioneerForTrip } from "@/lib/plan";
 import { logAiUsage } from "@/lib/ai/usage";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { fetchFlightPrices, fetchHotelQuotes, serpApiEnabled } from "@/lib/serpapi/client";
@@ -143,11 +143,12 @@ export async function refreshPrices(
 
   const rooms = Math.max(1, Math.ceil((trip.target_crew_size ?? 1) / 2));
 
-  // Flights need IATA on both sides. Hotels search by destination string
-  // and don't need IATA at all — they should run independently. When
-  // IATA is missing we skip the flight call entirely and surface the
-  // reason on flight_error.
-  const flightTask = (originIata && destinationIata)
+  // Flights need IATA on both sides and a Pioneer subscription. Hotels
+  // search by destination string and don't need IATA — they run for all
+  // tiers. When IATA is missing or the user is on Member tier we skip the
+  // flight call entirely.
+  const isPioneer = await isPioneerForTrip(userId, tripId);
+  const flightTask = (isPioneer && originIata && destinationIata)
     ? fetchFlightPrices({
         originIata,
         destinationIata,
@@ -201,6 +202,9 @@ export async function refreshPrices(
     };
   } else if (flightResult.status === "rejected") {
     flightError = buildError("provider_error", String(flightResult.reason));
+  } else if (!isPioneer) {
+    // Member tier — flights weren't attempted. No error.
+    flightError = null;
   } else if (!originIata) {
     flightError = buildError(
       "missing_input",
@@ -263,10 +267,12 @@ export async function refreshPrices(
 
   const livePricing: LivePricing = { flights, hotels };
 
-  // If BOTH sides failed and we have nothing previously cached, we still
-  // want to record the attempt timestamp via record_price_refresh (so the
-  // rate limit advances) but signal failure to the user.
-  const bothFailed = flightError !== null && hotels.fetch_error !== null;
+  // If all attempted fetches failed, record the attempt (so the rate limit
+  // advances) but signal failure to the user. For Member trips only hotels
+  // are attempted, so hotel failure alone counts as all-failed.
+  const hotelsFailed = hotels.fetch_error !== null;
+  const flightsFailed = isPioneer && flightError !== null;
+  const allAttemptedFailed = isPioneer ? hotelsFailed && flightsFailed : hotelsFailed;
 
   const userPlan = await getUserPlan(userId);
   const { error: rpcError } = await supabase.rpc("record_price_refresh", {
@@ -308,18 +314,18 @@ export async function refreshPrices(
     feature: "price_refresh",
     model: "none",
     estimatedCostGBP: 0,
-    succeeded: !bothFailed,
-    errorMessage: bothFailed
+    succeeded: !allAttemptedFailed,
+    errorMessage: allAttemptedFailed
       ? `flights:${flightError?.code ?? "ok"};hotels:${hotels.fetch_error?.code ?? "ok"}`
       : undefined,
   });
 
   revalidatePath(`/trips/${trip.slug}`);
 
-  if (bothFailed) {
+  if (allAttemptedFailed) {
     return {
       success: false,
-      error: "Couldn't fetch fresh flight or hotel prices. Try again later.",
+      error: "Couldn't fetch fresh prices. Try again later.",
       upgradeCta: false,
     };
   }
