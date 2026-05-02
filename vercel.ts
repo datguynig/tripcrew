@@ -26,5 +26,14 @@ export const config: VercelConfig = {
       path: "/api/cron/teaser-cost-alert",
       schedule: "0 11 * * *",
     },
+    {
+      // Ledger v2 Phase 2 · payment-due reminder fanout. Reads obligations
+      // due tomorrow, groups by (trip_id, debtor_id), and calls the
+      // record_payment_reminder_summary RPC to atomically insert the
+      // idempotency marker + the notification row. Daily at 08:00 UTC
+      // (Hobby-tier limit; one reminder per debtor per trip per day).
+      path: "/api/cron/payment-reminders",
+      schedule: "0 8 * * *",
+    },
   ],
 };
