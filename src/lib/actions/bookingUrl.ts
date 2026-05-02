@@ -57,7 +57,8 @@ export async function setBookingCustomUrl(
   const { error } = await supabase
     .from("bookings")
     .update({ custom_url: validated.value })
-    .eq("id", bookingId);
+    .eq("id", bookingId)
+    .eq("trip_id", row.trip_id);
   if (error) {
     return { success: false, error: "Could not save URL." };
   }
