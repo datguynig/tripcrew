@@ -2,7 +2,7 @@
 
 Working document. Gitignored. Tracks what's shipped vs. what we've promised — especially the Pioneer tier commitments. Update as features land.
 
-**Last updated:** 2026-05-01
+**Last updated:** 2026-05-03
 
 ---
 
@@ -73,7 +73,7 @@ Neither item misleads at the gate boundary — both are landing-page copy issues
 | Live flight prices via SerpApi Google Flights | ✅ | Shipped 2026-04 (commit `a6158fe`) |
 | 10 regens per trip (gating) | ✅ | `canGenerateDraft` gate |
 | Bookings checklist | ✅ | Per-trip bookings table |
-| Ledger + per-person balances | ✅ | Expenses table + balance computation |
+| Ledger + per-person balances | ✅ | v1 expenses + balance compute. Enhanced 2026-05-02 by Ledger v2 Phase 1 (PR #9): `expense_participants` table, FX columns, soft-delete, edit dialog, custom splits. Enhanced 2026-05-03 by Phase 2 (PR #10): payback schedules, `payment_obligations` + `payments` tables with state machine, daily cron reminder, ScheduleView + ReissuedPanel surfaces |
 | Realtime crew chat (feed) | ✅ | `/feed` route, posts + likes + replies |
 | Polaroid memory stack | ✅ | Shipped — auto-composed slot 0–4 + admin overrides |
 | Per-trip ambient tint | ✅ | Hero photo dominant-colour extraction |
@@ -177,6 +177,8 @@ These are real things we know we want but aren't promising publicly yet.
 
 | Item | Why deferred | Source |
 |---|---|---|
+| **Ledger v2 Phase 3 — post-trip settle-up** | Spec + plan written 2026-05-02. ~6 tasks (pair-wise nets, ad-hoc obligations, `expense_settled` notification fanout). Phases 1 + 2 shipped 2026-05-03 in PRs #9 + #10. | [docs/superpowers/plans/2026-05-02-ledger-v2.md](docs/superpowers/plans/2026-05-02-ledger-v2.md) |
+| **Rotate `CRON_SECRET` in Vercel Production** | Currently set to placeholder `dev-only-cron-secret-not-for-prod`. 30-second fix: `openssl rand -hex 32`, paste into Vercel env vars, redeploy. All 4 daily crons share the secret. | Flagged 2026-05-03 |
 | Personalised teaser on landing page | Ship read-only Lisbon first, measure, only build if v1 underperforms | [memory: project_landing_page_v2_personalized_teaser](~/.claude/projects/-Users-nigel-Claude-tripcrew/memory/project_landing_page_v2_personalized_teaser.md) |
 | Bookings agent (actual booking, not just suggestions) | Big undertaking, MCP/API integrations | Pioneer v2 |
 | Multi-trip dashboard (manage 5+ active trips) | Useful for power users, not core promise | Pioneer v2 |

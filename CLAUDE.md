@@ -75,7 +75,11 @@ Tables (see [src/lib/types.ts](src/lib/types.ts) for TS shapes and [supabase/mig
 - `destination_votes` — yes/maybe/no per candidate per user
 - `activities` + `votes` — shortlist items + user votes; activities track `ai_drafted`, and carry optional `photo_url` / `photo_attribution` / `rating` / `price_level` / `website_url` from Places enrichment (Phase 4 of media rollout — not yet surfaced on the card UI)
 - `bookings` — checklist items; any member can edit/tick; rows track `ai_drafted`
-- `expenses` — `paid_by` + `amount`; only payer deletes own
+- `expenses` — `paid_by` + `amount` in trip currency; Phase 1 added FX columns (`original_currency`, `original_amount`, `fx_rate`, `fx_rate_source`, `fx_rate_date`, `fx_suggested_amount`, `fx_user_overridden`), soft-delete (`deleted_at`), `version` (bumped on edit). Phase 2 added `schedule jsonb` with `(type ∈ "none" | "single" | "installments")` CHECK
+- `expense_participants` — Phase 1 — one row per (expense, debtor) with `share_amount` + `share_basis` (`equal` | `percentage` | `exact`) + `share_input` + `display_name_snapshot` + `deleted_at`. Server recomputes `share_amount` from `(basis, input)` on every write — never trusts client-supplied numbers
+- `payment_obligations` — Phase 2 — one row per (debtor, creditor, due_date, expense_version). Status enum `open | superseded | voided`, with `superseded_by` self-FK and `voided_by/at/reason` audit. Indexed on `(trip_id, status, due_date)`, `(debtor_id, status)`, partial `(expense_id) where status = 'open'`. Reads gated to trip members; writes service-role only
+- `payments` — Phase 2 — one row per recorded payment against an obligation. State machine `pending → verified | rejected | voided` with paired CHECKs ensuring `(status, *_at)` consistency. Transition validity enforced server-side via `.eq("status", expected_pre)` guards. `recorded_by` audit; reads via obligations join
+- `payment_due_reminders_sent` — Phase 2 — composite PK `(trip_id, debtor_id, reminder_date)` for cron idempotency. Written via SECURITY DEFINER RPC `record_payment_reminder_summary` which atomically inserts the marker + the `payment_due_reminder` notification, returning `'sent'` or `'duplicate'`
 - `posts` — crew-chat messages; optional `image_url`, optional `caption`, optional `reply_to_post_id` (quotes a parent), `edited_at` stamp when the author edits within the 5-min window
 - `post_likes` — `(post_id, user_id)` composite PK; reactions on crew-chat messages
 - `trip_notification_prefs` — per-user per-trip notification preferences, currently `feed_muted`
@@ -104,11 +108,11 @@ Hand-rolled in [src/components/ui/](src/components/ui/): `Button`, `Badge`, `Car
 
 Use [useRealtimeTable](src/hooks/useRealtimeTable.ts) for collaborative tables: initial fetch → subscribe to Postgres changes filtered by `trip_id` → reducer over INSERT/UPDATE/DELETE. Unsubscribe on unmount.
 
-Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `posts`, `post_likes`, `notifications`, `trip_notification_prefs`.
+Realtime-backed tables: `trip_members`, `destination_candidates`, `destination_votes`, `votes`, `bookings`, `expenses`, `expense_participants`, `payment_obligations`, `payments`, `posts`, `post_likes`, `notifications`, `trip_notification_prefs`.
 
 ## Server actions
 
-Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `lockAndDraft.ts`, `draftCandidates.ts`, `tripPreferences.ts`, `airports.ts`, `notifications.ts`, `overviewInline.ts`. Every action validates input with Zod before touching the DB.
+Grouped in [src/lib/actions/](src/lib/actions/) by feature: `trips.ts`, `destinations.ts`, `bookings.ts`, `ledger.ts`, `payments.ts`, `obligations.ts`, `fx.ts`, `feed.ts`, `shortlist.ts`, `invites.ts`, `acceptInvite.ts`, `lockAndDraft.ts`, `draftCandidates.ts`, `tripPreferences.ts`, `airports.ts`, `notifications.ts`, `overviewInline.ts`. Every action validates input with Zod before touching the DB. Money-write actions on Phase 2 tables (`payment_obligations`, `payments`) authorize via the user-scoped client then mutate via `createServiceClient()` — RLS on those tables stays read-only by design.
 
 ## Locking a trip
 
@@ -143,8 +147,9 @@ Env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID`, `STRI
 
 In-app realtime feed surfaced via the topbar bell. Fan-out happens inside the server actions that trigger events — one row per recipient inserted with the service-role client, then Supabase Realtime pushes to each user's bell.
 
-Seven `kind` values (union enforced in [src/lib/types.ts](src/lib/types.ts)):
+Thirteen `kind` values (union enforced in [src/lib/types.ts](src/lib/types.ts)):
 
+Phase-0 / earlier:
 - `crew_joined` — someone accepted an invite or was added to the trip
 - `destination_locked` — admin locked the winning destination
 - `trip_drafted` — admin ran Lock & draft
@@ -153,9 +158,41 @@ Seven `kind` values (union enforced in [src/lib/types.ts](src/lib/types.ts)):
 - `candidate_proposed` — new destination candidate proposed
 - `feed_message` — new crew-chat post (message, photo, or reply). Coalesced per `(recipient, trip, actor)` — a burst from one person collapses to one bell row carrying the most recent excerpt.
 
+Ledger v2 Phase 2:
+- `payment_due_reminder` — cron-fired daily at 08:00 UTC, one row per debtor per trip, summarising what falls due tomorrow (idempotent via `payment_due_reminders_sent` + the SECURITY DEFINER RPC)
+- `payment_recorded` — debtor or creditor recorded a payment; notifies the other party
+- `payment_verified` — admin verified a pending payment; notifies the recorder
+- `payment_rejected` — creditor or admin rejected a pending payment; notifies the recorder, payload includes optional rejection note
+- `payment_reissued` — reserved (not currently fanned out — auto-pair on edit migrates verified payments silently; ReissuedPanel surfaces orphans for admin attention)
+
+Ledger v2 Phase 3 (placeholder, not fanned out yet):
+- `expense_settled` — reserved for the post-trip settle-up flow.
+
 Pointers: [src/lib/actions/notifications.ts](src/lib/actions/notifications.ts) (`listRecent`, `markAsRead`, `markAllRead`), migration [20260419220000_notifications.sql](supabase/migrations/20260419220000_notifications.sql). Unread-count query is backed by a partial index on `read_at is null` so the bell stays fast even with thousands of read rows. Mark-read writes use the service role — the SSR client verifies the user and the update is scoped to `user_id = auth.uid()` in the query (the RLS update policy was removed; see [20260419230000_notifications_tighten_rls.sql](supabase/migrations/20260419230000_notifications_tighten_rls.sql)).
 
 Coalescing: `createNotifications` takes `coalesceByActorAndTrip: true` to delete any prior unread rows for `(recipient, trip, actor, kind)` before inserting. Used by `feed_message` so a chatty crew member doesn't flood every other crew member's bell. Payload always reflects the most recent event. Feed-message fanout respects `trip_notification_prefs.feed_muted`; muting a trip's crew chat also marks the existing unread feed-message backlog as read.
+
+## Ledger
+
+Two phases shipped (Spec A — Ledger v2, plan: [docs/superpowers/plans/2026-05-02-ledger-v2.md](docs/superpowers/plans/2026-05-02-ledger-v2.md), spec: [docs/superpowers/specs/2026-05-02-ledger-v2-design.md](docs/superpowers/specs/2026-05-02-ledger-v2-design.md)). Phase 3 (post-trip settle-up) is queued.
+
+**Phase 1 — relational splits + multi-currency + soft-delete (PR #9, merged 2026-05-02):**
+- `expense_participants` table replaces the implicit even-split-across-target_crew_size logic. Every expense generates one participant row per debtor with explicit `share_amount` + `share_basis` (`equal` | `percentage` | `exact`).
+- Frankfurter (free, ECB-rate) FX wrapper at [src/lib/fx/frankfurter.ts](src/lib/fx/frankfurter.ts). Inline currency picker on the log form. Trip-currency override flag preserves user-edited amounts vs. auto-suggestions.
+- Soft-delete via `deleted_at` on both `expenses` and `expense_participants`, with shared-timestamp scoping in `restoreExpense` so edit-then-delete-then-restore doesn't double-count.
+- Edit dialog ([EditExpenseDialog.tsx](src/components/ledger/EditExpenseDialog.tsx)) re-uses CurrencySection + SplitSection from the log form. Server-side `recomputeShares` validates `(basis, input)` and recomputes `share_amount` — never trusts the client.
+- Admin RLS policies on `expenses` (admin update + delete) added in [20260503110100_ledger_v2_admin_expense_rls.sql](supabase/migrations/20260503110100_ledger_v2_admin_expense_rls.sql).
+- Page redesign: YOUR POSITION two-tier masthead, LOG AN EXPENSE section label, always-visible SplitSection, settlement-panel phantom-share footnote when nets don't sum to total.
+
+**Phase 2 — pre-trip installments + obligations + payments + cron (PR #10, merged 2026-05-03):**
+- `expenses.schedule jsonb` (`type ∈ none | single | installments`), `payment_obligations`, `payments`, `payment_due_reminders_sent`. Schema in migrations `20260504100000`–`20260504100400`.
+- Pure helpers: [src/lib/ledger/obligations.ts](src/lib/ledger/obligations.ts) (`buildObligationRows` — generates one row per non-payer × installment-period, uses `applyRoundingRemainder` for cent-accurate per-debtor totals), [src/lib/ledger/pairing.ts](src/lib/ledger/pairing.ts) (`decidePair` — exact / partial / overpayment / none).
+- Server actions: `recordPayment` (debtor or creditor), `verifyPayment` (admin), `rejectPayment` (creditor or admin), `voidPayment` (recorder ≤5min OR admin; verified always admin-only), `voidObligation` (admin, accepts open or superseded). All authorize via user-scoped client then mutate via service-role since `payment_obligations` and `payments` have read-only RLS by design.
+- `addExpense` writes the schedule + generates obligations. `editExpense` only supersedes + regenerates when amount, split, or schedule actually changes — description-only edits preserve the existing schedule + obligations. Auto-pair on edit migrates exact-match verified payments to the new obligation.
+- Cron: [/api/cron/payment-reminders](src/app/api/cron/payment-reminders/route.ts) daily at 08:00 UTC via [vercel.json](vercel.json), groups by (trip, debtor) due tomorrow, calls the SECURITY DEFINER RPC for atomic marker + notification fanout. Auth via shared `CRON_SECRET`.
+- UI: [SchedulePaybackSection](src/components/ledger/SchedulePaybackSection.tsx) (opt-in pill in the log form, single date or N installments), [ObligationRow](src/components/ledger/ObligationRow.tsx) (record / verify / reject / void with status-tone map), [ScheduleView](src/components/ledger/ScheduleView.tsx) (obligations grouped by Past Due / future dates / no date, local-day overdue logic), [ReissuedPanel](src/components/ledger/ReissuedPanel.tsx) (admin-only orphan reconciliation when auto-pair can't migrate payments after edit). Tab strip in [Ledger.tsx](src/components/ledger/Ledger.tsx) toggles between Expenses (existing) and Schedule.
+
+**Phase 3 (queued, not started):** post-trip settle-up — pair-wise nets, ad-hoc obligations, `expense_settled` notification fanout. ~6 tasks in the plan.
 
 ## Crew chat
 
@@ -193,7 +230,8 @@ Smoke covers main authed routes; a11y sweeps the same surfaces with axe-core.
 Not built yet, not currently planned — picks for the next plan, or to fill space between plans.
 
 - Push notifications (in-app notifications already ship — see §Notifications)
-- Multi-currency within one trip's ledger (currently: trip has one currency)
-- Receipt OCR, per-item splits, weighted splits
+- Ledger v2 Phase 3 — post-trip settle-up (pair-wise nets, ad-hoc obligations, `expense_settled` fanout). Spec + plan written; queued.
+- Receipt OCR, per-item splits (weighted splits already shipped via Phase 1's `equal | percentage | exact` basis)
 - Activity creation by non-admin members (currently: activities are admin-seeded)
 - Infinite-scroll older chat history (currently: last 200 messages on load)
+- Conversational AI / `/trips/[slug]/concierge` — Pioneer M1 commitment, unspecced, brand-credibility risk on the marketing surface
