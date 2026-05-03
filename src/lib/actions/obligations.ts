@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 
 const voidSchema = z.object({
   obligationId: z.string().uuid(),
@@ -28,9 +28,11 @@ export async function voidObligation(input: z.infer<typeof voidSchema>) {
       trip_id: string;
       status: string;
       trips: { slug: string } | { slug: string }[];
-    }>();
+  }>();
   if (!ob) return { error: "Obligation not found" };
-  if (ob.status !== "open") return { error: "Obligation is not open" };
+  if (ob.status !== "open" && ob.status !== "superseded") {
+    return { error: "Obligation cannot be voided" };
+  }
 
   const { data: m } = await supabase
     .from("trip_members")
@@ -41,7 +43,8 @@ export async function voidObligation(input: z.infer<typeof voidSchema>) {
   if (m?.role !== "admin") return { error: "Only an admin can void" };
 
   const nowIso = new Date().toISOString();
-  const { error: updErr } = await supabase
+  const service = createServiceClient();
+  const { error: updErr } = await service
     .from("payment_obligations")
     .update({
       status: "voided",
@@ -50,7 +53,7 @@ export async function voidObligation(input: z.infer<typeof voidSchema>) {
       void_reason: parsed.data.reason ?? null,
     })
     .eq("id", ob.id)
-    .eq("status", "open");
+    .in("status", ["open", "superseded"]);
   if (updErr) return { error: updErr.message };
 
   const trip = Array.isArray(ob.trips) ? ob.trips[0] : ob.trips;

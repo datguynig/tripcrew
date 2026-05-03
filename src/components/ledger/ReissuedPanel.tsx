@@ -10,7 +10,7 @@ import type { PaymentObligation, Payment } from "@/lib/types";
 type Props = {
   orphans: Array<{
     obligation: PaymentObligation;
-    verifiedTotal: number;
+    activeTotal: number;
     payments: Payment[];
   }>;
   isAdmin: boolean;
@@ -37,11 +37,11 @@ export function ReissuedPanel({ orphans, isAdmin }: Props) {
       <div className="px-5 py-3 border-b border-warn/30">
         <div className="label-sm-wide text-warn">REISSUED · NEEDS ADMIN ATTENTION</div>
         <p className="text-[12px] text-fg-2 mt-1 leading-[1.5]">
-          These superseded obligations have verified payments that did not auto-pair to the
+          These superseded obligations have payments that did not auto-pair to the
           new schedule. Void to write off, or contact the debtor to reconcile.
         </p>
       </div>
-      {orphans.map(({ obligation, verifiedTotal, payments }) => {
+      {orphans.map(({ obligation, activeTotal, payments }) => {
         const symbol = currencySymbol(obligation.currency);
         return (
           <div
@@ -56,7 +56,7 @@ export function ReissuedPanel({ orphans, isAdmin }: Props) {
                 <span className="text-fg-3"> · {obligation.due_date ?? "no date"}</span>
               </div>
               <div className="font-mono text-[12px] tabular-nums">
-                {symbol}{verifiedTotal.toFixed(2)} verified · was {symbol}
+                {symbol}{activeTotal.toFixed(2)} active · was {symbol}
                 {Number(obligation.amount).toFixed(2)}
               </div>
             </div>

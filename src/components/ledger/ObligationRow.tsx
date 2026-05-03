@@ -179,8 +179,8 @@ export function ObligationRow({ obligation, payments, currentUserId, isAdmin }: 
                       reject
                     </button>
                   )}
-                {(p.status === "pending" || p.status === "verified") &&
-                  (p.recorded_by === currentUserId || isAdmin) && (
+                {((p.status === "pending" && (p.recorded_by === currentUserId || isAdmin)) ||
+                  (p.status === "verified" && isAdmin)) && (
                     <Button
                       variant="icon"
                       onClick={() => handleVoid(p.id)}

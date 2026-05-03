@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/finalise-applications",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/teaser-day-7-nudge",
+      "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/cron/teaser-cost-alert",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/cron/payment-reminders",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}

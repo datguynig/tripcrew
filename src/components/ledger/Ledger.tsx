@@ -76,8 +76,8 @@ function buildInitialSplitState(crew: CrewOption[]): SplitState {
 export function Ledger({
   initial,
   participants: initialParticipants,
-  obligations,
-  payments,
+  obligations: initialObligations,
+  payments: initialPayments,
   crew,
   tripId,
   currentUserId,
@@ -90,6 +90,8 @@ export function Ledger({
   const tripCurrency = currency ?? "GBP";
   const [expenses, setExpenses] = useState<Expense[]>(initial);
   const [participants, setParticipants] = useState<ExpenseParticipant[]>(initialParticipants);
+  const [obligations, setObligations] = useState<PaymentObligation[]>(initialObligations);
+  const [payments, setPayments] = useState<Payment[]>(initialPayments);
   const [desc, setDesc] = useState("");
   const [amt, setAmt] = useState("");
   const [fxEnabled, setFxEnabled] = useState(false);
@@ -106,6 +108,8 @@ export function Ledger({
 
   useEffect(() => setExpenses(initial), [initial]);
   useEffect(() => setParticipants(initialParticipants), [initialParticipants]);
+  useEffect(() => setObligations(initialObligations), [initialObligations]);
+  useEffect(() => setPayments(initialPayments), [initialPayments]);
   useEffect(() => {
     setSplitState((prev) => {
       // Re-init split participants when crew membership changes (additions / departures).
@@ -122,6 +126,16 @@ export function Ledger({
 
   useEffect(() => {
     const supabase = createClient();
+    const refetchPayments = () =>
+      supabase
+        .from("payments")
+        .select("*, payment_obligations!inner(trip_id)")
+        .eq("payment_obligations.trip_id", tripId)
+        .returns<Payment[]>()
+        .then(({ data }) => {
+          if (data) setPayments(data);
+        });
+
     const channel = supabase
       .channel("rt:expenses")
       .on(
@@ -178,6 +192,44 @@ export function Ledger({
           });
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "payment_obligations",
+          filter: `trip_id=eq.${tripId}`,
+        },
+        (payload) => {
+          setObligations((prev) => {
+            if (payload.eventType === "INSERT") {
+              const row = payload.new as PaymentObligation;
+              if (prev.some((o) => o.id === row.id)) return prev;
+              return [...prev, row];
+            }
+            if (payload.eventType === "UPDATE") {
+              const row = payload.new as Partial<PaymentObligation> & { id: string };
+              return prev.map((o) => (o.id === row.id ? { ...o, ...row } : o));
+            }
+            if (payload.eventType === "DELETE") {
+              const row = payload.old as { id?: string };
+              return prev.filter((o) => o.id !== row.id);
+            }
+            return prev;
+          });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "payments",
+        },
+        () => {
+          void refetchPayments();
+        },
+      )
       .subscribe((status) => {
         if (status !== "SUBSCRIBED") return;
         void supabase
@@ -198,6 +250,15 @@ export function Ledger({
           .then(({ data }) => {
             if (data) setParticipants(data);
           });
+        void supabase
+          .from("payment_obligations")
+          .select("*")
+          .eq("trip_id", tripId)
+          .returns<PaymentObligation[]>()
+          .then(({ data }) => {
+            if (data) setObligations(data);
+          });
+        void refetchPayments();
       });
 
     return () => {
@@ -267,18 +328,20 @@ export function Ledger({
     return m;
   }, [payments]);
 
-  // Orphans: superseded obligations with verified payments still attached
+  // Orphans: superseded obligations with active payments still attached
   // and no superseded_by back-link. ReissuedPanel surfaces these for admins
   // to void or reconcile.
   const orphans = useMemo(() => {
-    const out: { obligation: PaymentObligation; verifiedTotal: number; payments: Payment[] }[] = [];
+    const out: { obligation: PaymentObligation; activeTotal: number; payments: Payment[] }[] = [];
     for (const o of obligations) {
       if (o.status !== "superseded" || o.superseded_by) continue;
       const ps = paymentsByObligationId.get(o.id) ?? [];
-      const verifiedTotal = ps
-        .filter((p) => p.status === "verified")
+      const activePayments = ps.filter((p) => p.status === "pending" || p.status === "verified");
+      const activeTotal = activePayments
         .reduce((s, p) => s + Number(p.amount), 0);
-      if (verifiedTotal > 0) out.push({ obligation: o, verifiedTotal, payments: ps });
+      if (activePayments.length > 0) {
+        out.push({ obligation: o, activeTotal, payments: activePayments });
+      }
     }
     return out;
   }, [obligations, paymentsByObligationId]);

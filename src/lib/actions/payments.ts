@@ -56,7 +56,8 @@ export async function recordPayment(input: z.infer<typeof recordPaymentSchema>) 
     return { error: "Only the debtor or creditor can record a payment" };
   }
 
-  const { data: payment, error: insErr } = await supabase
+  const service = createServiceClient();
+  const { data: payment, error: insErr } = await service
     .from("payments")
     .insert({
       obligation_id: ob.id,
@@ -72,7 +73,6 @@ export async function recordPayment(input: z.infer<typeof recordPaymentSchema>) 
 
   // Notify the creditor (or debtor if creditor recorded)
   const recipient = user.id === ob.debtor_id ? ob.creditor_id : ob.debtor_id;
-  const service = createServiceClient();
   const { data: actor } = await service
     .from("profiles")
     .select("name")
@@ -149,13 +149,15 @@ export async function verifyPayment(paymentId: string) {
 
   const ob = await fetchObligationContext(payment.obligation_id);
   if (!ob) return { error: "Obligation not found" };
+  if (ob.status !== "open") return { error: "Obligation is not open" };
 
   if (!(await isAdmin(user.id, ob.trip_id))) {
     return { error: "Only an admin can verify" };
   }
 
   const nowIso = new Date().toISOString();
-  const { error: updErr } = await supabase
+  const service = createServiceClient();
+  const { error: updErr } = await service
     .from("payments")
     .update({ status: "verified", verified_by: user.id, verified_at: nowIso })
     .eq("id", payment.id)
@@ -213,7 +215,8 @@ export async function rejectPayment(input: z.infer<typeof rejectSchema>) {
   if (!allowed) return { error: "Only the creditor or an admin can reject" };
 
   const nowIso = new Date().toISOString();
-  const { error: updErr } = await supabase
+  const service = createServiceClient();
+  const { error: updErr } = await service
     .from("payments")
     .update({
       status: "rejected",
@@ -294,7 +297,8 @@ export async function voidPayment(input: z.infer<typeof voidSchema>) {
   }
 
   const nowIso = new Date().toISOString();
-  const { error: updErr } = await supabase
+  const service = createServiceClient();
+  const { error: updErr } = await service
     .from("payments")
     .update({
       status: "voided",
