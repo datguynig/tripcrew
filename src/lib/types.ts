@@ -410,6 +410,8 @@ export type Expense = {
   fx_user_overridden: boolean;
   version: number;
   deleted_at: string | null;
+  // Phase 2 addition
+  schedule: Schedule | null;
 };
 
 export type ExpenseParticipant = {
@@ -427,6 +429,58 @@ export type ExpenseParticipant = {
 
 export type ExpenseWithParticipants = Expense & {
   participants: ExpenseParticipant[];
+};
+
+// Phase 2 — pre-trip installments
+export type ScheduleNone = { type: "none" };
+export type ScheduleSingle = { type: "single"; due_date: string };
+export type ScheduleInstallments = {
+  type: "installments";
+  installments: { due_date: string; fraction: number }[];
+};
+export type Schedule = ScheduleNone | ScheduleSingle | ScheduleInstallments;
+
+export type ObligationStatus = "open" | "superseded" | "voided";
+export type PaymentStatus = "pending" | "verified" | "rejected" | "voided";
+
+export type PaymentObligation = {
+  id: string;
+  trip_id: string;
+  expense_id: string | null;
+  expense_version: number | null;
+  debtor_id: string;
+  creditor_id: string;
+  debtor_name_snapshot: string;
+  creditor_name_snapshot: string;
+  due_date: string | null;
+  amount: string;
+  currency: string;
+  installment_index: number | null;
+  status: ObligationStatus;
+  superseded_by: string | null;
+  voided_by: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
+  created_at: string;
+  created_by: string;
+};
+
+export type Payment = {
+  id: string;
+  obligation_id: string;
+  amount: string;
+  recorded_by: string;
+  recorded_at: string;
+  status: PaymentStatus;
+  verified_by: string | null;
+  verified_at: string | null;
+  rejected_by: string | null;
+  rejected_at: string | null;
+  rejection_note: string | null;
+  voided_by: string | null;
+  voided_at: string | null;
+  void_reason: string | null;
+  note: string | null;
 };
 
 export type Post = {
@@ -522,7 +576,15 @@ export type NotificationKind =
   | "expense_added"
   | "role_changed"
   | "candidate_proposed"
-  | "feed_message";
+  | "feed_message"
+  // Phase 2 (ledger v2)
+  | "payment_due_reminder"
+  | "payment_recorded"
+  | "payment_verified"
+  | "payment_rejected"
+  | "payment_reissued"
+  // Phase 3 (ledger v2)
+  | "expense_settled";
 
 export type NotificationPayload = {
   actor_name?: string;
@@ -539,6 +601,28 @@ export type NotificationPayload = {
   reply_to_post_id?: string | null;
   reply_to_author_id?: string | null;
   excerpt?: string;
+  // Phase 2 — payment_due_reminder
+  reminder_date?: string;
+  total_amount?: string;
+  obligations?: Array<{
+    obligation_id: string;
+    creditor_id: string;
+    creditor_name: string;
+    expense_description?: string;
+    amount: string;
+  }>;
+  // Phase 2 — payment_recorded / payment_verified / payment_rejected
+  obligation_id?: string;
+  payment_id?: string;
+  debtor_name?: string;
+  rejection_note?: string;
+  // Phase 2 — payment_reissued
+  old_obligation_id?: string;
+  new_obligation_id?: string;
+  migrated_payment_ids?: string[];
+  // Phase 3 — expense_settled
+  other_member_name?: string;
+  total_settled?: string;
 };
 
 export type TripNotificationPrefs = {

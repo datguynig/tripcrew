@@ -13,7 +13,40 @@ import {
   computeExactShares,
   type ComputedShare,
 } from "@/lib/ledger/shares";
-import type { ShareBasis } from "@/lib/types";
+import { buildObligationRows } from "@/lib/ledger/obligations";
+import type { Schedule, ShareBasis } from "@/lib/types";
+
+const scheduleSchema: z.ZodType<Schedule> = z
+  .discriminatedUnion("type", [
+    z.object({ type: z.literal("none") }),
+    z.object({
+      type: z.literal("single"),
+      due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    }),
+    z.object({
+      type: z.literal("installments"),
+      installments: z
+        .array(
+          z.object({
+            due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            fraction: z.number().min(0).max(1),
+          }),
+        )
+        .min(2)
+        .max(12),
+    }),
+  ])
+  .superRefine((value, ctx) => {
+    if (value.type !== "installments") return;
+    const sum = value.installments.reduce((s, i) => s + i.fraction, 0);
+    if (Math.abs(sum - 1) > 0.0001) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["installments"],
+        message: "Installment fractions must sum to 1",
+      });
+    }
+  });
 
 // share_amount is intentionally NOT in the input schema. The server
 // always recomputes shares from (share_basis, share_input) so a
@@ -66,6 +99,22 @@ function recomputeShares(
   return { ok: true, shares: computeExactShares(inputs) };
 }
 
+function schedulesEqual(a: Schedule | null | undefined, b: Schedule | null | undefined): boolean {
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+}
+
+function sharesEqual(
+  next: Array<ComputedShare & { display_name: string }>,
+  current: Array<{ user_id: string; share_amount: string | number }>,
+): boolean {
+  if (next.length !== current.length) return false;
+  const currentByUser = new Map(current.map((p) => [p.user_id, Number(p.share_amount)]));
+  return next.every((s) => {
+    const prev = currentByUser.get(s.user_id);
+    return prev != null && Math.abs(prev - s.share_amount) < 0.01;
+  });
+}
+
 const addExpenseSchema = z.object({
   tripId: z.string().uuid(),
   description: z.string().min(1).max(200),
@@ -80,6 +129,8 @@ const addExpenseSchema = z.object({
   fx_user_overridden: z.boolean().optional(),
   // Participants. When omitted, defaults to even split across all current trip members.
   participants: z.array(participantInputSchema).min(1).optional(),
+  // Phase 2 — payback schedule. Omit / "none" = no obligations generated.
+  schedule: scheduleSchema.optional(),
 });
 
 export type AddExpenseInput = z.infer<typeof addExpenseSchema>;
@@ -105,6 +156,7 @@ export async function addExpense(input: AddExpenseInput) {
   const data = parsed.data;
 
   const supabase = await createClient();
+  const service = createServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -194,7 +246,6 @@ export async function addExpense(input: AddExpenseInput) {
 
   await revalidateTrip(data.tripId);
 
-  const service = createServiceClient();
   const [{ data: actor }, { data: trip }, recipients] = await Promise.all([
     service
       .from("profiles")
@@ -222,6 +273,50 @@ export async function addExpense(input: AddExpenseInput) {
     },
     recipients,
   });
+
+  // Phase 2 — persist the schedule on the expense and generate one
+  // obligation row per (non-payer × installment-period). Omit / "none"
+  // schedules generate no obligations; the existing per-expense splits
+  // continue to drive the live settlement panel.
+  if (data.schedule) {
+    const { error: scheduleErr } = await supabase
+      .from("expenses")
+      .update({ schedule: data.schedule })
+      .eq("id", expense.id);
+    if (scheduleErr) {
+      console.error("[ledger.addExpense] schedule update failed", scheduleErr);
+      return { error: "Saved expense, but payback schedule couldn't be recorded." };
+    }
+  }
+  if (data.schedule && data.schedule.type !== "none") {
+    const rows = buildObligationRows({
+      expense_id: expense.id,
+      trip_id: data.tripId,
+      payer_id: user.id,
+      payer_name: actor?.name ?? "Crew",
+      expense_version: 1,
+      currency: trip?.currency ?? "GBP",
+      participants: shares.map((s) => ({
+        user_id: s.user_id,
+        share_amount: s.share_amount,
+        display_name_snapshot: s.display_name,
+      })),
+      schedule: data.schedule,
+    });
+    if (rows.length > 0) {
+      const { error: obErr } = await service
+        .from("payment_obligations")
+        .insert(rows.map((r) => ({ ...r, created_by: user.id })));
+      if (obErr) {
+        console.error("[ledger.addExpense] obligation insert failed", obErr);
+        return {
+          error:
+            "Saved expense, but payback obligations couldn't be recorded. Edit the expense to retry.",
+        };
+      }
+    }
+  }
+
   return { ok: true };
 }
 
@@ -239,6 +334,7 @@ export async function editExpense(input: EditExpenseInput) {
   const data = parsed.data;
 
   const supabase = await createClient();
+  const service = createServiceClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -247,9 +343,16 @@ export async function editExpense(input: EditExpenseInput) {
   // Authorise: original payer or trip admin
   const { data: existing } = await supabase
     .from("expenses")
-    .select("id, paid_by, trip_id, version")
+    .select("id, paid_by, trip_id, amount, version, schedule")
     .eq("id", data.expenseId)
-    .maybeSingle<{ id: string; paid_by: string; trip_id: string; version: number }>();
+    .maybeSingle<{
+      id: string;
+      paid_by: string;
+      trip_id: string;
+      amount: string;
+      version: number;
+      schedule: Schedule | null;
+    }>();
   if (!existing) return { error: "Expense not found" };
   if (existing.paid_by !== user.id) {
     const { data: membership } = await supabase
@@ -306,6 +409,18 @@ export async function editExpense(input: EditExpenseInput) {
     }));
   }
 
+  const { data: currentParticipants } = await supabase
+    .from("expense_participants")
+    .select("user_id, share_amount")
+    .eq("expense_id", data.expenseId)
+    .is("deleted_at", null);
+  const nextSchedule = data.schedule ?? existing.schedule ?? null;
+  const scheduleChanged = data.schedule !== undefined && !schedulesEqual(data.schedule, existing.schedule);
+  const amountChanged = Math.abs(Number(existing.amount) - data.amount) >= 0.01;
+  const shareChanged = !sharesEqual(shares, currentParticipants ?? []);
+  const shouldRegenerateObligations =
+    !!nextSchedule && (scheduleChanged || amountChanged || shareChanged);
+
   // Bump version, write the expense fields
   const { error: updErr } = await supabase
     .from("expenses")
@@ -358,6 +473,128 @@ export async function editExpense(input: EditExpenseInput) {
       error:
         "Saved expense changes, but the split couldn't be re-recorded. Edit the expense again to retry.",
     };
+  }
+
+  // Phase 2 — persist schedule, supersede current obligations, regenerate
+  // from the new (amount, participants, schedule), then auto-pair the
+  // simplest exact-match case (debtor/creditor/due_date/amount all equal).
+  // Anything that doesn't auto-pair surfaces in ReissuedPanel for admin
+  // attention.
+  if (data.schedule) {
+    const { error: scheduleErr } = await supabase
+      .from("expenses")
+      .update({ schedule: data.schedule })
+      .eq("id", data.expenseId);
+    if (scheduleErr) {
+      console.error("[ledger.editExpense] schedule update failed", scheduleErr);
+      return { error: "Saved expense changes, but payback schedule couldn't be updated." };
+    }
+  }
+
+  let oldObligations: Array<{
+    id: string;
+    debtor_id: string;
+    creditor_id: string;
+    due_date: string | null;
+    amount: string;
+  }> = [];
+
+  if (shouldRegenerateObligations) {
+    const { data: oldRows, error: oldObligationsErr } = await supabase
+      .from("payment_obligations")
+      .select("id, debtor_id, creditor_id, due_date, amount")
+      .eq("expense_id", data.expenseId)
+      .eq("status", "open");
+    if (oldObligationsErr) return { error: oldObligationsErr.message };
+    oldObligations = oldRows ?? [];
+
+    const oldIds = oldObligations.map((o) => o.id);
+    if (oldIds.length > 0) {
+      const { error: supersedeErr } = await service
+        .from("payment_obligations")
+        .update({ status: "superseded" })
+        .in("id", oldIds);
+      if (supersedeErr) {
+        console.error("[ledger.editExpense] obligation supersede failed", supersedeErr);
+        return { error: "Saved expense changes, but existing payback obligations couldn't be reissued." };
+      }
+    }
+  }
+
+  if (shouldRegenerateObligations && nextSchedule.type !== "none") {
+    const { data: payerRow } = await supabase
+      .from("profiles")
+      .select("name")
+      .eq("id", existing.paid_by)
+      .maybeSingle<{ name: string }>();
+    const { data: tripRow } = await supabase
+      .from("trips")
+      .select("currency")
+      .eq("id", existing.trip_id)
+      .maybeSingle<{ currency: string }>();
+    const newRows = buildObligationRows({
+      expense_id: data.expenseId,
+      trip_id: existing.trip_id,
+      payer_id: existing.paid_by,
+      payer_name: payerRow?.name ?? "Crew",
+      expense_version: existing.version + 1,
+      currency: tripRow?.currency ?? "GBP",
+      participants: shares.map((s) => ({
+        user_id: s.user_id,
+        share_amount: s.share_amount,
+        display_name_snapshot: s.display_name,
+      })),
+      schedule: nextSchedule,
+    });
+    if (newRows.length > 0) {
+      const { data: insertedRows, error: newRowsErr } = await service
+        .from("payment_obligations")
+        .insert(
+          newRows.map((r) => ({ ...r, created_by: user.id })),
+        )
+        .select("id, debtor_id, creditor_id, due_date, amount");
+      if (newRowsErr) {
+        console.error("[ledger.editExpense] obligation insert failed", newRowsErr);
+        if (oldObligations.length > 0) {
+          await service
+            .from("payment_obligations")
+            .update({ status: "open" })
+            .in("id", oldObligations.map((o) => o.id))
+            .eq("status", "superseded");
+        }
+        return { error: "Saved expense changes, but replacement payback obligations couldn't be recorded." };
+      }
+
+      const newRowsInserted = insertedRows ?? [];
+      for (const oldOb of oldObligations ?? []) {
+        const candidate = newRowsInserted.find(
+          (n) =>
+            n.debtor_id === oldOb.debtor_id &&
+            n.creditor_id === oldOb.creditor_id &&
+            n.due_date === oldOb.due_date &&
+            Number(n.amount) === Number(oldOb.amount),
+        );
+        if (candidate) {
+          const { error: moveErr } = await service
+            .from("payments")
+            .update({ obligation_id: candidate.id })
+            .eq("obligation_id", oldOb.id)
+            .in("status", ["pending", "verified"]);
+          if (moveErr) {
+            console.error("[ledger.editExpense] payment auto-pair failed", moveErr);
+            return { error: "Saved expense changes, but existing payments couldn't be re-linked." };
+          }
+          const { error: pairErr } = await service
+            .from("payment_obligations")
+            .update({ superseded_by: candidate.id })
+            .eq("id", oldOb.id);
+          if (pairErr) {
+            console.error("[ledger.editExpense] superseded_by update failed", pairErr);
+            return { error: "Saved expense changes, but reissued obligations couldn't be linked." };
+          }
+        }
+      }
+    }
   }
 
   await revalidateTrip(existing.trip_id);

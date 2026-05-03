@@ -3,7 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser, getTrip } from "@/lib/auth";
 import { SectionHeader } from "@/components/layout/SectionHeader";
 import { Ledger } from "@/components/ledger/Ledger";
-import type { Expense, ExpenseParticipant } from "@/lib/types";
+import type {
+  Expense,
+  ExpenseParticipant,
+  Payment,
+  PaymentObligation,
+} from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +35,13 @@ export default async function LedgerPage({
     { data: participants },
     { data: members },
     { data: tripMember },
+    { data: obligations },
+    { data: payments },
   ] = await Promise.all([
     supabase
       .from("expenses")
       .select(
-        "id, trip_id, description, amount, paid_by, created_at, original_currency, original_amount, fx_rate, fx_rate_source, fx_rate_date, fx_suggested_amount, fx_user_overridden, version, deleted_at",
+        "id, trip_id, description, amount, paid_by, created_at, original_currency, original_amount, fx_rate, fx_rate_source, fx_rate_date, fx_suggested_amount, fx_user_overridden, version, deleted_at, schedule",
       )
       .eq("trip_id", trip.id)
       .order("created_at", { ascending: false })
@@ -56,6 +63,16 @@ export default async function LedgerPage({
       .eq("trip_id", trip.id)
       .eq("user_id", user.id)
       .maybeSingle<{ role: string }>(),
+    supabase
+      .from("payment_obligations")
+      .select("*")
+      .eq("trip_id", trip.id)
+      .returns<PaymentObligation[]>(),
+    supabase
+      .from("payments")
+      .select("*, payment_obligations!inner(trip_id)")
+      .eq("payment_obligations.trip_id", trip.id)
+      .returns<Payment[]>(),
   ]);
 
   const crew =
@@ -83,11 +100,14 @@ export default async function LedgerPage({
       <Ledger
         initial={expenses ?? []}
         participants={participants ?? []}
+        obligations={obligations ?? []}
+        payments={payments ?? []}
         crew={crew}
         tripId={trip.id}
         currentUserId={user.id}
         isAdmin={isAdmin}
         currency={trip.currency}
+        tripEndDate={trip.end_date ?? null}
         phantomWarning={phantomWarning}
       />
     </section>
